@@ -115,7 +115,24 @@
     window.logout = logout;
 
     // ---------- Firebase: Users / Researchers ----------
-    function ensureGlobalResearchersSeed() {
+    async function ensureGlobalResearchersSeed() {
+        try {
+            // First try to load from JSON file
+            const response = await fetch('/assets/researchers.json');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.researchers && Array.isArray(data.researchers) && data.researchers.length > 0) {
+                    allResearchers = data.researchers;
+                    // Update Firebase with the JSON data
+                    await database.ref('global/researchers').set(data.researchers);
+                    return;
+                }
+            }
+        } catch (error) {
+            console.log('Could not load researchers from JSON, using Firebase fallback');
+        }
+        
+        // Fallback to Firebase
         return database.ref('global/researchers').once('value').then(snap => {
             let list = snap.val();
             if (!Array.isArray(list) || list.length === 0) {
