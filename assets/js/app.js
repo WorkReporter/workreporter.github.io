@@ -235,8 +235,17 @@
         const today = new Date();
         setInputValue('report-date', formatDate(today));
         const dayOfWeek = today.getDay();
+        
+        // Show weekly option only on Thursday (day 4) and Friday (day 5)
         const weeklyToggle = document.querySelector('[data-type="weekly"]');
-        if (weeklyToggle) weeklyToggle.style.display = (dayOfWeek === 4) ? 'block' : 'none';
+        if (weeklyToggle) {
+            if (dayOfWeek === 4 || dayOfWeek === 5) {
+                weeklyToggle.style.display = 'block';
+            } else {
+                weeklyToggle.style.display = 'none';
+            }
+        }
+        
         selectReportType('daily');
         showScreen('daily-report');
     }
@@ -494,8 +503,19 @@
         // Cap to 4 messages, reset each Sunday implicitly as we compute per current week
         const limited = missing.slice(0, 4);
         if (limited.length > 0) {
-            const text = limited.map(d => `${dayNames[d.getDay()]} (${d.getDate()}/${d.getMonth() + 1})`).join(', ');
-            missingDiv.innerHTML = `<div class="notification"><strong>חסרים דיווחים עבור:</strong><br>${text}</div>`;
+            let html = '<div class="missing-reports-container">';
+            html += '<h4 style="color: #dc2626; margin-bottom: 10px;">📋 דיווחים חסרים השבוע:</h4>';
+            limited.forEach(d => {
+                const dayName = dayNames[d.getDay()];
+                const dateStr = `${d.getDate()}/${d.getMonth() + 1}`;
+                html += `<div class="missing-report-item">
+                    <span class="missing-day">${dayName}</span>
+                    <span class="missing-date">${dateStr}</span>
+                    <span class="missing-status">חסר דיווח</span>
+                </div>`;
+            });
+            html += '</div>';
+            missingDiv.innerHTML = html;
         }
     }
 
