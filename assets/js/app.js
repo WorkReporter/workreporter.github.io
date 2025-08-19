@@ -285,7 +285,7 @@
         if (!container) return;
         const entryDiv = document.createElement('div');
         entryDiv.className = 'work-entry';
-        const available = [...(activeResearchers || []), 'משימה אחרות', 'סמינר / קורס / הכשרה'];
+        const available = [...(activeResearchers || allResearchers || []), 'משימה אחרות', 'סמינר / קורס / הכשרה'];
         entryDiv.innerHTML = `
             ${container.children.length > 0 ? '<button class="remove-btn" onclick="removeEntry(this)">×</button>' : ''}
             <div class="form-group">
@@ -317,7 +317,7 @@
         if (!container) return;
         const entryDiv = document.createElement('div');
         entryDiv.className = 'work-entry';
-        const available = [...(activeResearchers || []), 'משימה אחרות', 'סמינר / קורס / הכשרה'];
+        const available = [...(activeResearchers || allResearchers || []), 'משימה אחרות', 'סמינר / קורס / הכשרה'];
         entryDiv.innerHTML = `
             ${container.children.length > 0 ? '<button class="remove-btn" onclick="removeEntry(this)">×</button>' : ''}
             <div class="form-group">
@@ -606,6 +606,20 @@
     }
 
     function signInUser(email, password) { return auth.signInWithEmailAndPassword(email, password); }
+    
+    function translateErrorMessage(error) {
+        const errorMessages = {
+            'auth/invalid-login-credentials': 'פרטי התחברות שגויים',
+            'auth/user-not-found': 'משתמש לא נמצא',
+            'auth/wrong-password': 'סיסמה שגויה',
+            'auth/invalid-email': 'כתובת אימייל לא תקינה',
+            'auth/weak-password': 'סיסמה חלשה מדי',
+            'auth/email-already-in-use': 'כתובת אימייל כבר קיימת במערכת',
+            'auth/too-many-requests': 'יותר מדי ניסיונות התחברות, נסה שוב מאוחר יותר',
+            'auth/network-request-failed': 'בעיית חיבור לאינטרנט'
+        };
+        return errorMessages[error.code] || error.message;
+    }
 
     // ---------- Helpers ----------
     function setInputValue(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
@@ -634,7 +648,7 @@
         const signin = document.getElementById('signin-form');
         if (signin) signin.addEventListener('submit', function (e) {
             e.preventDefault(); const email = getInputValue('login-email'); const pwd = getInputValue('login-password');
-            signInUser(email, pwd).catch(err => setHTML('login-messages', `<div class="error-message">${err.message}</div>`));
+            signInUser(email, pwd).catch(err => setHTML('login-messages', `<div class="error-message">${translateErrorMessage(err)}</div>`));
         });
         const signup = document.getElementById('signup-form');
         if (signup) signup.addEventListener('submit', function (e) {
@@ -642,11 +656,11 @@
             const data = { firstName: getInputValue('register-first-name'), lastName: getInputValue('register-last-name'), position: getInputValue('register-position'), email: getInputValue('register-email'), password: getInputValue('register-password') };
             const confirm = getInputValue('register-confirm-password');
             if (data.password !== confirm) { setHTML('register-messages', '<div class="error-message">סיסמאות אינן תואמות</div>'); return; }
-            createUser(data).then(() => signInUser(data.email, data.password)).catch(err => setHTML('register-messages', `<div class="error-message">${err.message}</div>`));
+            createUser(data).then(() => signInUser(data.email, data.password)).catch(err => setHTML('register-messages', `<div class="error-message">${translateErrorMessage(err)}</div>`));
         });
         const resetForm = document.getElementById('reset-password-form');
         if (resetForm) resetForm.addEventListener('submit', function (e) {
-            e.preventDefault(); const email = getInputValue('reset-email'); auth.sendPasswordResetEmail(email).then(() => setHTML('forgot-password-messages', '<div class="success-message">קישור לשחזור סיסמה נשלח למייל שלך</div>')).catch(err => setHTML('forgot-password-messages', `<div class="error-message">${err.message}</div>`));
+            e.preventDefault(); const email = getInputValue('reset-email'); auth.sendPasswordResetEmail(email).then(() => setHTML('forgot-password-messages', '<div class="success-message">קישור לשחזור סיסמה נשלח למייל שלך</div>')).catch(err => setHTML('forgot-password-messages', `<div class="error-message">${translateErrorMessage(err)}</div>`));
         });
 
         // initial
