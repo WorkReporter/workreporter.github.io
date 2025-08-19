@@ -16,11 +16,10 @@ window.APP_CONFIG = {
     // Default global researchers list (seed)
     defaultResearchers: [
         "יעל זלצר",
-        "גיאורגי שטרנברג",
-        "אלון סלע",
+        "גיאורגי שטנברג",
         "ויקטור בלוך",
         "יפתח קלפ",
         "ספי ורניק",
-        "נעם דוד"
+        "אלון סלע"
     ],
 };

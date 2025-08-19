@@ -173,11 +173,16 @@
         const ta = document.getElementById('admin-researchers-textarea');
         if (!ta) return;
         const list = ta.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        
+        // Save to Firebase
         window.database.ref('global/researchers').set(list).then(() => {
             // refresh currently loaded list in app state
             const state = window.getAppState();
             if (state) state.allResearchers = list;
             window.renderResearchers?.();
+            
+            // Also update the JSON file (this would require a server endpoint in a real app)
+            console.log('Researchers updated in Firebase. To update JSON file, contact administrator.');
         });
     }
     window.saveResearchersFromTextarea = saveResearchersFromTextarea;
