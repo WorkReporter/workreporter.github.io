@@ -45,6 +45,12 @@
             cursor: pointer;
         }
 
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
         .navigation {
             display: flex;
             gap: 10px;
@@ -463,7 +469,10 @@
     <div class="header">
         <div class="user-icon" onclick="showScreen('user-profile')">👤</div>
         <h1>ניי שרייר - המרכזת גורמי אנוש</h1>
-        <div onclick="showScreen('main')" style="cursor: pointer;">🏠</div>
+        <div class="header-actions">
+            <div onclick="showScreen('main')" style="cursor: pointer;">🏠</div>
+            <button id="logout-btn" onclick="logout()" style="display:none; background:#ef4444; color:white; border: 1px solid #ef4444; padding:6px 10px; border-radius:6px; cursor:pointer;">התנתק</button>
+        </div>
     </div>
 
     <!-- Navigation -->
@@ -472,6 +481,7 @@
         <button class="nav-btn" onclick="showScreen('calendar')">יומן</button>
         <button class="nav-btn active" onclick="showScreen('main')">בית</button>
         <button class="nav-btn" onclick="showScreen('active-researchers')">חוקרים פעילים</button>
+        <button id="admin-nav-btn" class="nav-btn" onclick="showScreen('admin')" style="display:none;">ממשק מנהל</button>
     </div>
 
     <!-- Login Screen -->
@@ -633,8 +643,42 @@
             <select id="report-year"></select>
         </div>
         <button class="btn" onclick="generateReport()">הצג דוח</button>
+        <button class="btn add" onclick="downloadMyMonthlyCsv()">הורדת CSV (שלי לחודש)</button>
         
         <div id="report-results" style="margin-top: 30px;"></div>
+    </div>
+
+    <!-- Admin Screen -->
+    <div id="admin-screen" class="container hidden">
+        <h2 style="text-align: center; margin-bottom: 20px;">ממשק מנהל</h2>
+        <div id="admin-messages" style="margin-bottom:15px;"></div>
+        <div class="form-group">
+            <label>חודש:</label>
+            <select id="admin-month">
+                <option value="1">ינואר</option>
+                <option value="2">פברואר</option>
+                <option value="3">מרץ</option>
+                <option value="4">אפריל</option>
+                <option value="5">מאי</option>
+                <option value="6">יוני</option>
+                <option value="7">יולי</option>
+                <option value="8">אוגוסט</option>
+                <option value="9">ספטמבר</option>
+                <option value="10">אוקטובר</option>
+                <option value="11">נובמבר</option>
+                <option value="12">דצמבר</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>שנה:</label>
+            <select id="admin-year"></select>
+        </div>
+        <button class="btn" onclick="generateAdminAnalytics()">טען נתונים</button>
+        <button class="btn add" onclick="downloadAdminCsv()">הורדת CSV (אגג' חודשי)</button>
+        <div style="margin:20px 0;">
+            <canvas id="admin-pie" height="180"></canvas>
+        </div>
+        <div id="admin-stats"></div>
     </div>
 
     <!-- Daily Report Screen -->
@@ -687,6 +731,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-auth-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script>
         // Firebase Configuration
@@ -714,6 +759,10 @@
         let currentYear = new Date().getFullYear();
         let selectedDate = null;
         let currentWeek = getCurrentWeek();
+        let isAdmin = false;
+        let allReportsByUser = null; // for admin
+        let adminChart = null;
+        const HOURS_PER_DAY = 8; // conversion for weekly reports
 
         // Researchers list
         const allResearchers = [
@@ -726,15 +775,16 @@
         function init() {
             auth.onAuthStateChanged((user) => {
                 if (user) {
-                    // User is signed in, but we stay on the login screen.
-                    // Pre-fill the email address.
-                    document.getElementById('email').value = user.email;
-
-                    // We keep the currentUser object ready for when they log in.
                     currentUser = user;
+                    onLoginSuccess(user);
+                    setAuthUIState(true);
+                } else {
+                    currentUser = null;
+                    reports = [];
+                    isAdmin = false;
+                    setAuthUIState(false);
+                    showScreen('login');
                 }
-                // Always start on the login screen, which is the default.
-                showScreen('login');
             });
         }
 
@@ -770,18 +820,25 @@
         }
 
         function loadUserProfile(uid) {
-            database.ref('users/' + uid).once('value')
+            return database.ref('users/' + uid).once('value')
                 .then((snapshot) => {
                     const userData = snapshot.val();
                     if (userData) {
-                        document.getElementById('profile-first-name').value = userData.firstName;
-                        document.getElementById('profile-last-name').value = userData.lastName;
-                        document.getElementById('profile-position').value = userData.position;
-                        document.getElementById('profile-email').value = userData.email;
+                        document.getElementById('profile-first-name').value = userData.firstName || '';
+                        document.getElementById('profile-last-name').value = userData.lastName || '';
+                        document.getElementById('profile-position').value = userData.position || '';
+                        document.getElementById('profile-email').value = userData.email || '';
+                        isAdmin = !!userData.isAdmin;
+                        updateAdminUI();
+                    } else {
+                        isAdmin = false;
+                        updateAdminUI();
                     }
                 })
                 .catch((error) => {
                     console.error('Error loading user profile:', error);
+                    isAdmin = false;
+                    updateAdminUI();
                 });
         }
 
@@ -799,18 +856,46 @@
 
         function onLoginSuccess(user) {
             currentUser = user;
-            loadUserProfile(user.uid);
-            loadActiveResearchers(user.uid);
-            loadReports(user.uid);
             initializeDates();
-            updateNotifications();
-            showScreen('main');
+            Promise.all([
+                loadUserProfile(user.uid),
+                loadActiveResearchers(user.uid),
+                loadReports(user.uid)
+            ]).finally(() => {
+                updateNotifications();
+                showScreen('main');
+            });
+        }
+
+        function setAuthUIState(isLoggedIn) {
+            const nav = document.querySelector('.navigation');
+            const logoutBtn = document.getElementById('logout-btn');
+            if (isLoggedIn) {
+                if (nav) nav.style.display = '';
+                if (logoutBtn) logoutBtn.style.display = '';
+            } else {
+                if (nav) nav.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+            }
+        }
+
+        function logout() {
+            auth.signOut().then(() => {
+                currentUser = null;
+                reports = [];
+                isAdmin = false;
+                updateAdminUI();
+                setAuthUIState(false);
+                showScreen('login');
+            }).catch((error) => {
+                alert('שגיאה בהתנתקות: ' + error.message);
+            });
         }
 
 
         // Screen management
         function showScreen(screenName) {
-            const screens = ['login', 'main', 'user-profile', 'active-researchers', 'calendar', 'reports', 'daily-report'];
+            const screens = ['login', 'main', 'user-profile', 'active-researchers', 'calendar', 'reports', 'daily-report', 'admin'];
             screens.forEach(screen => {
                 document.getElementById(screen + '-screen').classList.add('hidden');
             });
@@ -833,6 +918,9 @@
             } else if (screenName === 'active-researchers') {
                 document.querySelector('.nav-btn[onclick="showScreen(\'active-researchers\')"]').classList.add('active');
                 renderResearchers();
+            } else if (screenName === 'admin') {
+                document.querySelector('.nav-btn[onclick="showScreen(\'admin\')"]').classList.add('active');
+                initializeAdminScreen();
             }
         }
 
@@ -1614,6 +1702,161 @@
             html += '</div>';
 
             resultsDiv.innerHTML = html;
+        }
+
+        function updateAdminUI() {
+            const adminNavBtn = document.getElementById('admin-nav-btn');
+            if (adminNavBtn) {
+                adminNavBtn.style.display = isAdmin ? '' : 'none';
+            }
+        }
+
+        function initializeAdminScreen() {
+            const yearSelect = document.getElementById('admin-year');
+            const nowY = new Date().getFullYear();
+            yearSelect.innerHTML = '';
+            for (let y = nowY - 2; y <= nowY + 1; y++) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                if (y === nowY) opt.selected = true;
+                yearSelect.appendChild(opt);
+            }
+            document.getElementById('admin-month').value = new Date().getMonth() + 1;
+            loadAllReportsForAdmin();
+        }
+
+        function loadAllReportsForAdmin() {
+            if (!isAdmin) return;
+            database.ref('reports').once('value')
+                .then((snapshot) => {
+                    allReportsByUser = snapshot.val() || {};
+                    generateAdminAnalytics();
+                })
+                .catch((error) => {
+                    const msg = document.getElementById('admin-messages');
+                    msg.innerHTML = `<div class="error-message">אין הרשאה לקרוא את כל הדיווחים. הוסף isAdmin=true למנהל ועדכן כלל ב-Database שיאפשר למנהל לקרוא את הנתיב /reports. ${error.message}</div>`;
+                });
+        }
+
+        function aggregateReportsByResearcherFromAll(month, year) {
+            const result = {};
+            if (!allReportsByUser) return result;
+            Object.entries(allReportsByUser).forEach(([uid, userReports]) => {
+                Object.values(userReports || {}).forEach((report) => {
+                    if (!report || !report.date) return;
+                    const d = new Date(report.date);
+                    if (d.getMonth() + 1 !== month || d.getFullYear() !== year) return;
+                    if (!Array.isArray(report.entries)) return;
+                    report.entries.forEach((entry) => {
+                        if (!entry || !entry.researcher) return;
+                        const key = entry.researcher;
+                        if (!result[key]) result[key] = 0;
+                        if (report.type === 'daily' && typeof entry.hours === 'number') {
+                            result[key] += entry.hours;
+                        } else if (report.type === 'weekly' && typeof entry.days === 'number') {
+                            result[key] += entry.days * HOURS_PER_DAY;
+                        }
+                    });
+                });
+            });
+            return result;
+        }
+
+        function generateAdminAnalytics() {
+            if (!isAdmin) return;
+            const m = parseInt(document.getElementById('admin-month').value);
+            const y = parseInt(document.getElementById('admin-year').value);
+            const byResearcher = aggregateReportsByResearcherFromAll(m, y);
+            const labels = Object.keys(byResearcher);
+            const data = Object.values(byResearcher);
+
+            const ctx = document.getElementById('admin-pie').getContext('2d');
+            if (adminChart) {
+                adminChart.destroy();
+            }
+            adminChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: labels.map((_, i) => `hsl(${(i*47)%360} 70% 60%)`),
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            const total = data.reduce((a,b)=>a+b,0);
+            let html = '<div style="padding:15px; background:#f9fafb; border-radius:6px;">';
+            html += `<p><strong>סה"כ שעות (חודשי): ${total}</strong></p>`;
+            html += '<h4 style="margin-top:10px;">פילוח לפי חוקר:</h4>';
+            labels.forEach((label, idx) => {
+                html += `<p>${label}: ${data[idx]} שעות</p>`;
+            });
+            html += '</div>';
+            document.getElementById('admin-stats').innerHTML = html;
+        }
+
+        function buildMonthlyCsvRowsForAll(month, year) {
+            const byResearcher = aggregateReportsByResearcherFromAll(month, year);
+            const rows = [['Researcher','TotalHours(month)']];
+            Object.entries(byResearcher).forEach(([name, hours]) => {
+                rows.push([name, hours]);
+            });
+            return rows;
+        }
+
+        function downloadCsv(filename, rows) {
+            const csv = rows.map(r => r.map(v => {
+                const s = String(v ?? '');
+                if (s.includes('"') || s.includes(',') || s.includes('\n')) {
+                    return '"' + s.replace(/"/g,'""') + '"';
+                }
+                return s;
+            }).join(',')).join('\n');
+            const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadAdminCsv() {
+            if (!isAdmin) return;
+            const m = parseInt(document.getElementById('admin-month').value);
+            const y = parseInt(document.getElementById('admin-year').value);
+            const rows = buildMonthlyCsvRowsForAll(m, y);
+            downloadCsv(`admin-monthly-${y}-${String(m).padStart(2,'0')}.csv`, rows);
+        }
+
+        function downloadMyMonthlyCsv() {
+            const month = parseInt(document.getElementById('report-month').value);
+            const year = parseInt(document.getElementById('report-year').value);
+            const byResearcher = {};
+            const monthReports = reports.filter(report => {
+                const d = new Date(report.date);
+                return d.getMonth() + 1 === month && d.getFullYear() === year;
+            });
+            monthReports.forEach(report => {
+                (report.entries || []).forEach(entry => {
+                    if (!entry || !entry.researcher) return;
+                    if (!byResearcher[entry.researcher]) byResearcher[entry.researcher] = 0;
+                    if (report.type === 'daily' && typeof entry.hours === 'number') byResearcher[entry.researcher] += entry.hours;
+                    if (report.type === 'weekly' && typeof entry.days === 'number') byResearcher[entry.researcher] += entry.days * HOURS_PER_DAY;
+                });
+            });
+            const rows = [['Researcher','TotalHours(month)']];
+            Object.entries(byResearcher).forEach(([name, hours]) => rows.push([name, hours]));
+            downloadCsv(`my-monthly-${year}-${String(month).padStart(2,'0')}.csv`, rows);
         }
 
         // Event listeners for toggles
