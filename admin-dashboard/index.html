@@ -85,41 +85,7 @@
         <p>טוען נתונים...</p>
       </section>
 
-      <section id="user-section" class="grid" hidden>
-        <div class="card">
-          <h2>הפרטים שלי</h2>
-          <table class="table" id="self-user-table">
-            <thead>
-              <tr>
-                <th>שם פרטי</th>
-                <th>שם משפחה</th>
-                <th>תפקיד</th>
-                <th>אימייל</th>
-                <th>נוצר בתאריך</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
 
-        <div class="card">
-          <div class="card-header">
-            <h2>הדיווחים שלי</h2>
-            <button id="export-self-csv" class="btn">הורד CSV</button>
-          </div>
-          <table class="table" id="self-reports-table">
-            <thead>
-              <tr>
-                <th>תאריך</th>
-                <th>חוקר/משימה</th>
-                <th>שעות</th>
-                <th>פרטים</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </section>
 
       <section id="admin-section" hidden>
         <div class="grid">
@@ -128,18 +94,20 @@
               <h2>רשימת עובדים</h2>
               <button id="export-all-csv" class="btn">הורד CSV מלא</button>
             </div>
-            <table class="table" id="users-table">
-              <thead>
-                <tr>
-                  <th>שם פרטי</th>
-                  <th>שם משפחה</th>
-                  <th>תפקיד</th>
-                  <th>אימייל</th>
-                  <th>נוצר בתאריך</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
+            <div class="table-wrap">
+              <table class="table" id="users-table">
+                <thead>
+                  <tr>
+                    <th>שם פרטי</th>
+                    <th>שם משפחה</th>
+                    <th>תפקיד</th>
+                    <th>אימייל</th>
+                    <th>נוצר בתאריך</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
 
           <div class="card">
@@ -154,18 +122,20 @@
 
           <div class="card">
             <h2>כל הדיווחים</h2>
-            <table class="table" id="reports-table">
-              <thead>
-                <tr>
-                  <th>עובד</th>
-                  <th>תאריך</th>
-                  <th>חוקר/משימה</th>
-                  <th>שעות</th>
-                  <th>פרטים</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
+            <div class="table-wrap">
+              <table class="table" id="reports-table">
+                <thead>
+                  <tr>
+                    <th>עובד</th>
+                    <th>תאריך</th>
+                    <th>חוקר/משימה</th>
+                    <th>שעות</th>
+                    <th>פרטים</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>

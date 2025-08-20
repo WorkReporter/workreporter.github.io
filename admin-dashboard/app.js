@@ -65,7 +65,6 @@ function setLoading(isLoading) {
 
 function setSignedOutUI() {
   hide(el.adminSection);
-  hide(el.userSection);
   hide(el.adminFilters);
   show(el.authSection);
   el.userInfo.textContent = '';
@@ -430,7 +429,8 @@ el.btnExportSelfCsv?.addEventListener('click', () => {
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
-    setSignedOutUI();
+    // Not signed-in: redirect to homepage to sign in
+    window.location.href = '/homepage.html';
     return;
   }
   setSignedInUI(user);
@@ -445,34 +445,21 @@ onAuthStateChanged(auth, async user => {
     initYearOptions();
     syncFiltersUI();
     renderAllAdminViews();
-    hide(el.userSection);
     subscribeAsAdmin();
     if (location.hash !== '#/admin') {
       location.hash = '#/admin';
     }
   } else {
-    // Regular user view
+    // Non-admin shouldn’t be here – send to homepage
     isAdmin = false;
-    hide(el.adminSection);
-    hide(el.adminFilters);
-    show(el.userSection);
-    subscribeAsUser(user.uid);
-    if (location.hash !== '#/me') {
-      location.hash = '#/me';
-    }
+    window.location.href = '/homepage.html';
   }
 });
 
-// Optional lightweight routing based on hash, mainly for deep-link comfort.
 function applyRoute() {
   const hash = location.hash;
   if (hash === '#/admin' && isAdmin) {
     show(el.adminSection);
-    hide(el.userSection);
-  } else if (hash === '#/admin' && !isAdmin) {
-    // Non-admin forcing admin route falls back to user section
-    hide(el.adminSection);
-    show(el.userSection);
   }
 }
 
