@@ -51,9 +51,9 @@
                 ]).then(() => {
                     updateAdminUI();
                     updateNotifications();
-                    showScreen('main');
+                    showScreen(isAdmin ? 'admin' : 'main');
                 }).catch(() => {
-                    showScreen('main');
+                    showScreen(isAdmin ? 'admin' : 'main');
                 });
             } else {
                 currentUser = null;
