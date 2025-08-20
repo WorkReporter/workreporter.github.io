@@ -20,7 +20,6 @@ const firebaseConfig = {
   databaseURL: "https://work-report-volcani-default-rtdb.firebaseio.com/"
 };
 
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
@@ -87,17 +86,19 @@ const state = {
   selfReports: [],
 };
 
-function attemptAdminDetection() {
-  // We attempt to read the protected root 'users'. Only the manager can read it per Security Rules.
-  return get(ref(db, 'users'))
-    .then(snapshot => {
-      isAdmin = true;
-      return snapshot;
-    })
-    .catch(err => {
-      isAdmin = false;
-      return null;
-    });
+async function attemptAdminDetection() {
+  // Try several admin-only paths. If any succeed, treat as admin.
+  const candidates = ['users', 'reports', 'adminOnly/ping'];
+  for (const path of candidates) {
+    try {
+      const snapshot = await get(ref(db, path));
+      console.info('[admin-check] allowed on path:', path, 'exists:', snapshot?.exists?.());
+      return true;
+    } catch (e) {
+      console.warn('[admin-check] denied on path:', path, e?.code || e);
+    }
+  }
+  return false;
 }
 
 function subscribeAsAdmin() {
@@ -364,20 +365,41 @@ onAuthStateChanged(auth, async user => {
   }
   setSignedInUI(user);
   setLoading(true);
-  const snapshot = await attemptAdminDetection();
+  const allowed = await attemptAdminDetection();
   setLoading(false);
-  if (snapshot) {
+  if (allowed) {
     // Admin view
     isAdmin = true;
     show(el.adminSection);
     hide(el.userSection);
     subscribeAsAdmin();
+    if (location.hash !== '#/admin') {
+      location.hash = '#/admin';
+    }
   } else {
     // Regular user view
     isAdmin = false;
     hide(el.adminSection);
     show(el.userSection);
     subscribeAsUser(user.uid);
+    if (location.hash !== '#/me') {
+      location.hash = '#/me';
+    }
   }
 });
+
+// Optional lightweight routing based on hash, mainly for deep-link comfort.
+function applyRoute() {
+  const hash = location.hash;
+  if (hash === '#/admin' && isAdmin) {
+    show(el.adminSection);
+    hide(el.userSection);
+  } else if (hash === '#/admin' && !isAdmin) {
+    // Non-admin forcing admin route falls back to user section
+    hide(el.adminSection);
+    show(el.userSection);
+  }
+}
+
+window.addEventListener('hashchange', applyRoute);
 
