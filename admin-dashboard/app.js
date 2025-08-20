@@ -6,7 +6,7 @@
 // - Admin detection is done by attempting to read the protected path 'users' root.
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getAuth, onAuthStateChanged, signOut as firebaseSignOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getDatabase, ref, get, onValue } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
 const firebaseConfig = {
@@ -77,8 +77,8 @@ function setSignedInUI(user) {
 }
 
 async function signIn() {
-  const provider = new GoogleAuthProvider();
-  await signInWithPopup(auth, provider);
+  // Redirect to homepage.html where the email/password login exists
+  window.location.href = '/homepage.html';
 }
 
 async function signOut() {
@@ -214,7 +214,6 @@ function renderAdminReportsTable(reportsByUser, usersById) {
         const hours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
         rows.push(`<tr>
           <td>${escapeHtml(fullName(user))}</td>
-          <td>${escapeHtml(uid)}</td>
           <td>${escapeHtml(formatDate(r?.date))}</td>
           <td>${escapeHtml(e?.researcher || '')}</td>
           <td>${escapeHtml(String(hours))}</td>
@@ -391,7 +390,9 @@ function toCsv(rows, columns) {
 }
 
 function download(filename, content, type = 'text/csv;charset=utf-8') {
-  const blob = new Blob([content], { type });
+  // Prepend UTF-8 BOM to ensure Hebrew renders correctly in Excel
+  const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  const blob = new Blob([bom, content], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
