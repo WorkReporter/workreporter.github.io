@@ -51,8 +51,10 @@
                 ]).then(() => {
                     updateAdminUI();
                     updateNotifications();
+                    // If admin, land directly on admin screen; otherwise go to main
                     showScreen(isAdmin ? 'admin' : 'main');
                 }).catch(() => {
+                    // Even on partial failures, route admins to admin screen for convenience
                     showScreen(isAdmin ? 'admin' : 'main');
                 });
             } else {
@@ -131,7 +133,7 @@
         } catch (error) {
             console.log('Could not load researchers from JSON, using Firebase fallback');
         }
-        
+
         // Fallback to Firebase
         return database.ref('global/researchers').once('value').then(snap => {
             let list = snap.val();
@@ -244,7 +246,7 @@
         const today = new Date();
         setInputValue('report-date', formatDate(today));
         const dayOfWeek = today.getDay();
-        
+
         // Show weekly option only on Thursday (day 4)
         const weeklyToggle = document.querySelector('[data-type="weekly"]');
         if (weeklyToggle) {
@@ -254,7 +256,7 @@
                 weeklyToggle.style.display = 'none';
             }
         }
-        
+
         selectReportType('daily');
         showScreen('daily-report');
         // Ensure there is at least one daily entry by default
