@@ -24,6 +24,54 @@
     </header>
 
     <main class="container">
+      <section class="grid" id="admin-filters" hidden>
+        <div class="card">
+          <div class="card-header">
+            <h2>סינון נתונים</h2>
+          </div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <div>
+              <label for="filter-month" style="display:block; color:#aab0c0; font-size:12px;">חודש</label>
+              <select id="filter-month" class="btn" style="min-width:120px;">
+                <option value="1">ינואר</option>
+                <option value="2">פברואר</option>
+                <option value="3">מרץ</option>
+                <option value="4">אפריל</option>
+                <option value="5">מאי</option>
+                <option value="6">יוני</option>
+                <option value="7">יולי</option>
+                <option value="8">אוגוסט</option>
+                <option value="9">ספטמבר</option>
+                <option value="10">אוקטובר</option>
+                <option value="11">נובמבר</option>
+                <option value="12">דצמבר</option>
+              </select>
+            </div>
+            <div>
+              <label for="filter-year" style="display:block; color:#aab0c0; font-size:12px;">שנה</label>
+              <select id="filter-year" class="btn" style="min-width:120px;"></select>
+            </div>
+            <label style="display:flex; gap:8px; align-items:center;">
+              <input type="checkbox" id="allocate-others" checked />
+              חלוקת "משימה אחרות" בין החוקרים הפעילים של העובד
+            </label>
+            <button id="apply-filters" class="btn">רענון</button>
+          </div>
+        </div>
+
+        <div class="card" id="kpi-total-hours" hidden>
+          <div class="card-header"><h2>סה"כ שעות (חודש נבחר)</h2></div>
+          <div style="font-size:28px; font-weight:700;"> <span id="kpi-hours">0</span> </div>
+        </div>
+        <div class="card" id="kpi-users" hidden>
+          <div class="card-header"><h2>מספר עובדים</h2></div>
+          <div style="font-size:28px; font-weight:700;"> <span id="kpi-users-count">0</span> </div>
+        </div>
+        <div class="card" id="kpi-entries" hidden>
+          <div class="card-header"><h2>מספר רשומות דיווח</h2></div>
+          <div style="font-size:28px; font-weight:700;"> <span id="kpi-entries-count">0</span> </div>
+        </div>
+      </section>
       <section id="auth-section" class="card" hidden>
         <h2>נדרש להתחבר</h2>
         <p>התחברו כדי לגשת לנתונים.</p>
@@ -63,9 +111,9 @@
             <thead>
               <tr>
                 <th>תאריך</th>
-                <th>קטגוריה</th>
+                <th>חוקר/משימה</th>
                 <th>שעות</th>
-                <th>תיאור</th>
+                <th>פרטים</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -95,12 +143,12 @@
           </div>
 
           <div class="card">
-            <h2>שעות לפי חוקרים</h2>
+            <h2>שעות לפי חוקרים/משימות (חודש נבחר)</h2>
             <canvas id="bar-hours-by-user" height="140"></canvas>
           </div>
 
           <div class="card">
-            <h2>התפלגות שעות לפי קטגוריות</h2>
+            <h2>התפלגות שעות לפי חוקרים/משימות</h2>
             <canvas id="pie-hours-by-category" height="140"></canvas>
           </div>
 
@@ -112,9 +160,9 @@
                   <th>עובד</th>
                   <th>UID</th>
                   <th>תאריך</th>
-                  <th>קטגוריה</th>
+                  <th>חוקר/משימה</th>
                   <th>שעות</th>
-                  <th>תיאור</th>
+                  <th>פרטים</th>
                 </tr>
               </thead>
               <tbody></tbody>

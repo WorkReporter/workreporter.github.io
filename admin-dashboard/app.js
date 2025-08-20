@@ -30,6 +30,14 @@ const el = {
   loading: document.getElementById('loading'),
   adminSection: document.getElementById('admin-section'),
   userSection: document.getElementById('user-section'),
+  adminFilters: document.getElementById('admin-filters'),
+  filterMonth: document.getElementById('filter-month'),
+  filterYear: document.getElementById('filter-year'),
+  allocateOthers: document.getElementById('allocate-others'),
+  applyFilters: document.getElementById('apply-filters'),
+  kpiHours: document.getElementById('kpi-hours'),
+  kpiUsersCount: document.getElementById('kpi-users-count'),
+  kpiEntriesCount: document.getElementById('kpi-entries-count'),
   usersTableBody: document.querySelector('#users-table tbody'),
   reportsTableBody: document.querySelector('#reports-table tbody'),
   selfUserTableBody: document.querySelector('#self-user-table tbody'),
@@ -46,6 +54,7 @@ const el = {
 
 let isAdmin = false;
 let chartInstances = { bar: null, pie: null };
+const HOURS_PER_DAY = 8;
 
 function show(elm) { if (elm) elm.hidden = false; }
 function hide(elm) { if (elm) elm.hidden = true; }
@@ -57,6 +66,7 @@ function setLoading(isLoading) {
 function setSignedOutUI() {
   hide(el.adminSection);
   hide(el.userSection);
+  hide(el.adminFilters);
   show(el.authSection);
   el.userInfo.textContent = '';
 }
@@ -84,6 +94,11 @@ const state = {
   usersById: {}, // { uid: user }
   reportsByUser: {}, // { uid: [report, ...] }
   selfReports: [],
+  filters: {
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+    allocateOthers: true,
+  },
 };
 
 async function attemptAdminDetection() {
@@ -108,7 +123,7 @@ function subscribeAsAdmin() {
     state.usersById = users;
     renderUsersTable(users);
     // Update charts if we already have reports
-    renderChartsAndMaybeTables();
+    renderAllAdminViews();
   });
 
   // Subscribe to all reports
@@ -116,7 +131,7 @@ function subscribeAsAdmin() {
     const reports = snapshot.val() || {};
     state.reportsByUser = reports;
     renderAdminReportsTable(reports, state.usersById);
-    renderChartsAndMaybeTables();
+    renderAllAdminViews();
   });
 }
 
@@ -129,10 +144,20 @@ function subscribeAsUser(uid) {
 
   // Own reports
   onValue(ref(db, `reports/${uid}`), snapshot => {
-    const reports = snapshot.val() || {};
-    const list = Object.entries(reports).map(([id, r]) => ({ id, uid, ...r }));
-    state.selfReports = list;
-    renderSelfReportsTable(list);
+    const byId = snapshot.val() || {};
+    const flat = [];
+    Object.entries(byId).forEach(([reportId, r]) => {
+      const date = r?.date || '';
+      const type = r?.type || 'daily';
+      const entries = Array.isArray(r?.entries) ? r.entries : [];
+      entries.forEach((e, idx) => {
+        const hours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
+        flat.push({ id: `${reportId}#${idx}`, uid, date, researcher: e?.researcher || '', hours, description: e?.detail || '' });
+      });
+    });
+    flat.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    state.selfReports = flat;
+    renderSelfReportsTable(flat);
   });
 }
 
@@ -175,19 +200,27 @@ function renderSelfUserTable(user) {
 }
 
 function renderAdminReportsTable(reportsByUser, usersById) {
+  const { month, year } = state.filters;
   const rows = [];
-  Object.entries(reportsByUser).forEach(([uid, items]) => {
+  Object.entries(reportsByUser || {}).forEach(([uid, byId]) => {
     const user = usersById?.[uid] || {};
-    if (!items) return;
-    Object.entries(items).forEach(([reportId, r]) => {
-      rows.push(`<tr>
-        <td>${escapeHtml(fullName(user))}</td>
-        <td>${escapeHtml(uid)}</td>
-        <td>${escapeHtml(formatDate(r?.date))}</td>
-        <td>${escapeHtml(r?.category)}</td>
-        <td>${escapeHtml(String(r?.hours ?? ''))}</td>
-        <td>${escapeHtml(r?.description || '')}</td>
-      </tr>`);
+    if (!byId) return;
+    Object.values(byId).forEach(r => {
+      const d = r?.date ? new Date(r.date) : null;
+      if (!d || (d.getMonth() + 1) !== month || d.getFullYear() !== year) return;
+      const type = r?.type || 'daily';
+      const entries = Array.isArray(r?.entries) ? r.entries : [];
+      entries.forEach(e => {
+        const hours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
+        rows.push(`<tr>
+          <td>${escapeHtml(fullName(user))}</td>
+          <td>${escapeHtml(uid)}</td>
+          <td>${escapeHtml(formatDate(r?.date))}</td>
+          <td>${escapeHtml(e?.researcher || '')}</td>
+          <td>${escapeHtml(String(hours))}</td>
+          <td>${escapeHtml(e?.detail || '')}</td>
+        </tr>`);
+      });
     });
   });
   rows.sort();
@@ -197,7 +230,7 @@ function renderAdminReportsTable(reportsByUser, usersById) {
 function renderSelfReportsTable(list) {
   const rows = list.map(r => `<tr>
     <td>${escapeHtml(formatDate(r?.date))}</td>
-    <td>${escapeHtml(r?.category)}</td>
+    <td>${escapeHtml(r?.researcher || '')}</td>
     <td>${escapeHtml(String(r?.hours ?? ''))}</td>
     <td>${escapeHtml(r?.description || '')}</td>
   </tr>`);
@@ -220,35 +253,62 @@ function escapeHtml(str) {
     .replaceAll("'", '&#039;');
 }
 
-function aggregateForAdmin(reportsByUser, usersById) {
-  const totalsByUser = {}; // uid -> sum hours
-  const totalsByCategory = {}; // category -> sum hours
+function aggregateForAdmin(reportsByUser, usersById, filters) {
+  const month = filters?.month;
+  const year = filters?.year;
+  const allocate = !!filters?.allocateOthers;
 
-  Object.entries(reportsByUser || {}).forEach(([uid, items]) => {
-    Object.values(items || {}).forEach(r => {
-      const hours = Number(r?.hours || 0) || 0;
-      totalsByUser[uid] = (totalsByUser[uid] || 0) + hours;
-      const cat = r?.category || 'אחר';
-      totalsByCategory[cat] = (totalsByCategory[cat] || 0) + hours;
+  const totalsByResearcher = {}; // researcher/task -> hours
+  const totalsByUser = {}; // uid -> sum hours
+  let entriesCount = 0;
+  const usersWithHours = new Set();
+
+  Object.entries(reportsByUser || {}).forEach(([uid, byId]) => {
+    if (!byId) return;
+    Object.values(byId || {}).forEach(r => {
+      const d = r?.date ? new Date(r.date) : null;
+      if (!d || (d.getMonth() + 1) !== month || d.getFullYear() !== year) return;
+      const type = r?.type || 'daily';
+      const entries = Array.isArray(r?.entries) ? r.entries : [];
+      const active = Array.isArray(usersById?.[uid]?.activeResearchers) ? usersById[uid].activeResearchers : [];
+      entries.forEach(e => {
+        const hours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
+        if (!hours) return;
+        entriesCount += 1;
+        totalsByUser[uid] = (totalsByUser[uid] || 0) + hours;
+        usersWithHours.add(uid);
+        const name = e?.researcher || 'לא ידוע';
+        if (allocate && name === 'משימה אחרות') {
+          if (active.length > 0) {
+            const portion = hours / active.length;
+            active.forEach(n => { totalsByResearcher[n] = (totalsByResearcher[n] || 0) + portion; });
+          }
+        } else {
+          totalsByResearcher[name] = (totalsByResearcher[name] || 0) + hours;
+        }
+      });
     });
   });
 
   const usersLabels = Object.keys(totalsByUser).map(uid => fullName(usersById[uid]) || uid);
   const usersData = Object.keys(totalsByUser).map(uid => round2(totalsByUser[uid]));
+  const catLabels = Object.keys(totalsByResearcher);
+  const catData = catLabels.map(cat => round2(totalsByResearcher[cat]));
+  const totalHours = usersData.reduce((a, b) => a + b, 0);
 
-  const catLabels = Object.keys(totalsByCategory);
-  const catData = catLabels.map(cat => round2(totalsByCategory[cat]));
-
-  return { usersLabels, usersData, catLabels, catData };
+  return { usersLabels, usersData, catLabels, catData, totalHours, usersCount: usersWithHours.size, entriesCount };
 }
 
 function round2(n) { return Math.round(Number(n) * 100) / 100; }
 
 function renderChartsAndMaybeTables() {
   if (!isAdmin) return;
-  const { usersLabels, usersData, catLabels, catData } = aggregateForAdmin(state.reportsByUser, state.usersById);
-  renderBar(usersLabels, usersData);
-  renderPie(catLabels, catData);
+  const agg = aggregateForAdmin(state.reportsByUser, state.usersById, state.filters);
+  renderBar(agg.usersLabels, agg.usersData);
+  renderPie(agg.catLabels, agg.catData);
+  if (el.kpiHours) el.kpiHours.textContent = String(agg.totalHours || 0);
+  if (el.kpiUsersCount) el.kpiUsersCount.textContent = String(agg.usersCount || 0);
+  if (el.kpiEntriesCount) el.kpiEntriesCount.textContent = String(agg.entriesCount || 0);
 }
 
 function renderBar(labels, data) {
@@ -291,19 +351,28 @@ function renderPie(labels, data) {
   });
 }
 
-function buildAllReportsFlat(reportsByUser, usersById) {
+function buildAllReportsFlat(reportsByUser, usersById, filters) {
   const flat = [];
-  Object.entries(reportsByUser || {}).forEach(([uid, items]) => {
+  const month = filters?.month;
+  const year = filters?.year;
+  Object.entries(reportsByUser || {}).forEach(([uid, byId]) => {
     const user = usersById?.[uid] || {};
-    Object.entries(items || {}).forEach(([reportId, r]) => {
-      flat.push({
-        uid,
-        userName: fullName(user),
-        email: user?.email || '',
-        date: r?.date || '',
-        category: r?.category || '',
-        hours: Number(r?.hours || 0) || 0,
-        description: r?.description || ''
+    Object.entries(byId || {}).forEach(([reportId, r]) => {
+      const d = r?.date ? new Date(r.date) : null;
+      if (!d || (d.getMonth() + 1) !== month || d.getFullYear() !== year) return;
+      const type = r?.type || 'daily';
+      const entries = Array.isArray(r?.entries) ? r.entries : [];
+      entries.forEach(e => {
+        const hours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
+        flat.push({
+          uid,
+          userName: fullName(user),
+          email: user?.email || '',
+          date: r?.date || '',
+          researcher: e?.researcher || '',
+          hours,
+          description: e?.detail || ''
+        });
       });
     });
   });
@@ -335,15 +404,15 @@ function download(filename, content, type = 'text/csv;charset=utf-8') {
 
 el.btnExportAllCsv?.addEventListener('click', () => {
   if (!isAdmin) return;
-  const rows = buildAllReportsFlat(state.reportsByUser, state.usersById);
+  const rows = buildAllReportsFlat(state.reportsByUser, state.usersById, state.filters);
   const csv = toCsv(rows, [
     { key: 'uid', header: 'UID' },
     { key: 'userName', header: 'שם עובד' },
     { key: 'email', header: 'אימייל' },
     { key: 'date', header: 'תאריך' },
-    { key: 'category', header: 'קטגוריה' },
+    { key: 'researcher', header: 'חוקר/משימה' },
     { key: 'hours', header: 'שעות' },
-    { key: 'description', header: 'תיאור' },
+    { key: 'description', header: 'פרטים' },
   ]);
   download(`reports_all_${new Date().toISOString().slice(0,10)}.csv`, csv);
 });
@@ -351,9 +420,9 @@ el.btnExportAllCsv?.addEventListener('click', () => {
 el.btnExportSelfCsv?.addEventListener('click', () => {
   const csv = toCsv(state.selfReports, [
     { key: 'date', header: 'תאריך' },
-    { key: 'category', header: 'קטגוריה' },
+    { key: 'researcher', header: 'חוקר/משימה' },
     { key: 'hours', header: 'שעות' },
-    { key: 'description', header: 'תיאור' },
+    { key: 'description', header: 'פרטים' },
   ]);
   download(`my_reports_${new Date().toISOString().slice(0,10)}.csv`, csv);
 });
@@ -371,6 +440,10 @@ onAuthStateChanged(auth, async user => {
     // Admin view
     isAdmin = true;
     show(el.adminSection);
+    show(el.adminFilters);
+    initYearOptions();
+    syncFiltersUI();
+    renderAllAdminViews();
     hide(el.userSection);
     subscribeAsAdmin();
     if (location.hash !== '#/admin') {
@@ -380,6 +453,7 @@ onAuthStateChanged(auth, async user => {
     // Regular user view
     isAdmin = false;
     hide(el.adminSection);
+    hide(el.adminFilters);
     show(el.userSection);
     subscribeAsUser(user.uid);
     if (location.hash !== '#/me') {
@@ -403,3 +477,35 @@ function applyRoute() {
 
 window.addEventListener('hashchange', applyRoute);
 
+function initYearOptions() {
+  if (!el.filterYear) return;
+  const now = new Date().getFullYear();
+  el.filterYear.innerHTML = '';
+  for (let y = now - 2; y <= now + 1; y++) {
+    const opt = document.createElement('option');
+    opt.value = String(y);
+    opt.textContent = String(y);
+    if (y === state.filters.year) opt.selected = true;
+    el.filterYear.appendChild(opt);
+  }
+}
+
+function syncFiltersUI() {
+  if (el.filterMonth) el.filterMonth.value = String(state.filters.month);
+  if (el.filterYear) el.filterYear.value = String(state.filters.year);
+  if (el.allocateOthers) el.allocateOthers.checked = !!state.filters.allocateOthers;
+}
+
+el.applyFilters?.addEventListener('click', () => {
+  const month = Number(el.filterMonth?.value || state.filters.month);
+  const year = Number(el.filterYear?.value || state.filters.year);
+  const allocate = !!el.allocateOthers?.checked;
+  state.filters = { month, year, allocateOthers: allocate };
+  renderAdminReportsTable(state.reportsByUser, state.usersById);
+  renderChartsAndMaybeTables();
+});
+
+function renderAllAdminViews() {
+  renderAdminReportsTable(state.reportsByUser, state.usersById);
+  renderChartsAndMaybeTables();
+}
