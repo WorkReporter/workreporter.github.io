@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>לוח מנהלת - מערכת עובדים</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">📊</span>
+        <span class="title">לוח מנהלת</span>
+      </div>
+      <div class="auth">
+        <span id="user-info" class="user-info"></span>
+        <button id="signin-btn" class="btn primary">התחברות</button>
+        <button id="signout-btn" class="btn">התנתקות</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <section id="auth-section" class="card" hidden>
+        <h2>נדרש להתחבר</h2>
+        <p>התחברו כדי לגשת לנתונים.</p>
+        <div class="actions">
+          <button id="signin-btn-main" class="btn primary">התחברות באמצעות Google</button>
+        </div>
+      </section>
+
+      <section id="loading" class="card" hidden>
+        <div class="loader"></div>
+        <p>טוען נתונים...</p>
+      </section>
+
+      <section id="user-section" class="grid" hidden>
+        <div class="card">
+          <h2>הפרטים שלי</h2>
+          <table class="table" id="self-user-table">
+            <thead>
+              <tr>
+                <th>שם פרטי</th>
+                <th>שם משפחה</th>
+                <th>תפקיד</th>
+                <th>אימייל</th>
+                <th>נוצר בתאריך</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>הדיווחים שלי</h2>
+            <button id="export-self-csv" class="btn">הורד CSV</button>
+          </div>
+          <table class="table" id="self-reports-table">
+            <thead>
+              <tr>
+                <th>תאריך</th>
+                <th>קטגוריה</th>
+                <th>שעות</th>
+                <th>תיאור</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="admin-section" hidden>
+        <div class="grid">
+          <div class="card">
+            <div class="card-header">
+              <h2>רשימת עובדים</h2>
+              <button id="export-all-csv" class="btn">הורד CSV מלא</button>
+            </div>
+            <table class="table" id="users-table">
+              <thead>
+                <tr>
+                  <th>שם פרטי</th>
+                  <th>שם משפחה</th>
+                  <th>תפקיד</th>
+                  <th>אימייל</th>
+                  <th>נוצר בתאריך</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <h2>שעות לפי חוקרים</h2>
+            <canvas id="bar-hours-by-user" height="140"></canvas>
+          </div>
+
+          <div class="card">
+            <h2>התפלגות שעות לפי קטגוריות</h2>
+            <canvas id="pie-hours-by-category" height="140"></canvas>
+          </div>
+
+          <div class="card">
+            <h2>כל הדיווחים</h2>
+            <table class="table" id="reports-table">
+              <thead>
+                <tr>
+                  <th>עובד</th>
+                  <th>UID</th>
+                  <th>תאריך</th>
+                  <th>קטגוריה</th>
+                  <th>שעות</th>
+                  <th>תיאור</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>כל הזכויות שמורות</span>
+    </footer>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+  </html>
+
