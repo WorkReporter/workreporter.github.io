@@ -230,16 +230,25 @@
     }
     window.submitReport = submitReport;
 
+    function clearReportForm() {
+        const workEntries = document.getElementById('work-entries');
+        const weeklyEntries = document.getElementById('weekly-entries');
+        if (workEntries) workEntries.innerHTML = '';
+        if (weeklyEntries) weeklyEntries.innerHTML = '';
+        setInputValue('total-hours', 0);
+        setInputValue('total-days', 0);
+    }
+
     // ---------- UI: Daily/Weekly Entries ----------
     function addNewReport() {
         const today = new Date();
         setInputValue('report-date', formatDate(today));
         const dayOfWeek = today.getDay();
         
-        // Show weekly option only on Thursday (day 4) and Friday (day 5)
+        // Show weekly option only on Thursday (day 4)
         const weeklyToggle = document.querySelector('[data-type="weekly"]');
         if (weeklyToggle) {
-            if (dayOfWeek === 4 || dayOfWeek === 5) {
+            if (dayOfWeek === 4) {
                 weeklyToggle.style.display = 'block';
             } else {
                 weeklyToggle.style.display = 'none';
@@ -248,6 +257,8 @@
         
         selectReportType('daily');
         showScreen('daily-report');
+        // Ensure there is at least one daily entry by default
+        selectWorkStatus('worked');
     }
     window.addNewReport = addNewReport;
 
@@ -257,7 +268,11 @@
         if (sel) sel.classList.add('active');
         toggleHidden('daily-form', type !== 'daily');
         toggleHidden('weekly-form', type !== 'weekly');
-        if (type === 'weekly') setInputValue('report-week', getCurrentWeek());
+        if (type === 'weekly') {
+            setInputValue('report-week', getCurrentWeek());
+            const weeklyEntries = document.getElementById('weekly-entries');
+            if (weeklyEntries && weeklyEntries.children.length === 0) addWeeklyEntry();
+        }
     }
     window.selectReportType = selectReportType;
 
@@ -285,7 +300,8 @@
         if (!container) return;
         const entryDiv = document.createElement('div');
         entryDiv.className = 'work-entry';
-        const available = [...(activeResearchers || allResearchers || []), 'משימה אחרות', 'סמינר / קורס / הכשרה'];
+        const baseList = (Array.isArray(activeResearchers) && activeResearchers.length > 0) ? activeResearchers : allResearchers;
+        const available = [...(baseList || []), 'משימה אחרות', 'סמינר / קורס / הכשרה'];
         entryDiv.innerHTML = `
             ${container.children.length > 0 ? '<button class="remove-btn" onclick="removeEntry(this)">×</button>' : ''}
             <div class="form-group">
@@ -317,7 +333,8 @@
         if (!container) return;
         const entryDiv = document.createElement('div');
         entryDiv.className = 'work-entry';
-        const available = [...(activeResearchers || allResearchers || []), 'משימה אחרות', 'סמינר / קורס / הכשרה'];
+        const baseList = (Array.isArray(activeResearchers) && activeResearchers.length > 0) ? activeResearchers : allResearchers;
+        const available = [...(baseList || []), 'משימה אחרות', 'סמינר / קורס / הכשרה'];
         entryDiv.innerHTML = `
             ${container.children.length > 0 ? '<button class="remove-btn" onclick="removeEntry(this)">×</button>' : ''}
             <div class="form-group">
@@ -558,65 +575,49 @@
         const inputs = document.querySelectorAll('#user-profile-screen input');
         if (!inputs || inputs.length === 0) return;
         const isReadonly = inputs[0].hasAttribute('readonly');
-        if (isReadonly) {
-            inputs.forEach(input => {
-                if (input.type !== 'password' && input.type !== 'email') { input.removeAttribute('readonly'); input.style.backgroundColor = 'white'; }
-            });
-            document.querySelector('#user-profile-screen .btn').textContent = 'שמור';
-        } else {
-            const updated = { firstName: getInputValue('profile-first-name'), lastName: getInputValue('profile-last-name'), position: getInputValue('profile-position') };
-            updateUserProfile(currentUser.uid, updated).then(() => {
-                inputs.forEach(input => { input.setAttribute('readonly', true); input.style.backgroundColor = '#f9fafb'; });
-                document.querySelector('#user-profile-screen .btn').textContent = 'ערוך';
-                showPopup('הפרטים עודכנו בהצלחה!');
-            });
+        inputs.forEach(el => { if (isReadonly) el.removeAttribute('readonly'); else el.setAttribute('readonly', 'readonly'); });
+        const btn = document.querySelector('#user-profile-screen .btn');
+        if (btn) btn.textContent = isReadonly ? 'שמור' : 'ערוך';
+        if (!isReadonly) {
+            const data = { firstName: getInputValue('profile-first-name'), lastName: getInputValue('profile-last-name'), position: getInputValue('profile-position'), email: getInputValue('profile-email') };
+            if (currentUser) updateUserProfile(currentUser.uid, data).then(() => showPopup('הפרטים נשמרו'));
         }
     }
     window.editProfile = editProfile;
 
-    // ---------- Auth Forms ----------
-    function switchAuthTab(tabType) {
+    // ---------- Auth UI ----------
+    function switchAuthTab(tab) {
         document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-        document.querySelector(`[onclick="switchAuthTab('${tabType}')"]`)?.classList.add('active');
-        document.getElementById(`${tabType}-form`)?.classList.add('active');
-        setHTML('login-messages', ''); setHTML('register-messages', '');
-        document.getElementById('forgot-password-form')?.classList.remove('active');
+        document.querySelector(`#${tab}-form`).classList.add('active');
+        document.querySelector(`.auth-tab[onclick="switchAuthTab('${tab}')"]`).classList.add('active');
     }
     window.switchAuthTab = switchAuthTab;
 
-    function showForgotPassword() {
-        document.getElementById('login-form')?.classList.remove('active');
-        document.getElementById('forgot-password-form')?.classList.add('active');
-    }
+    function showForgotPassword() { document.getElementById('forgot-password-form').classList.add('active'); document.getElementById('login-form').classList.remove('active'); }
     window.showForgotPassword = showForgotPassword;
-
-    function backToLogin() {
-        document.getElementById('forgot-password-form')?.classList.remove('active');
-        document.getElementById('login-form')?.classList.add('active');
-    }
+    function backToLogin() { document.getElementById('forgot-password-form').classList.remove('active'); document.getElementById('login-form').classList.add('active'); }
     window.backToLogin = backToLogin;
 
-    function createUser(userData) {
-        return auth.createUserWithEmailAndPassword(userData.email, userData.password).then((cred) => {
+    function signInUser(email, password) {
+        return auth.signInWithEmailAndPassword(email, password);
+    }
+
+    function createUser(data) {
+        return auth.createUserWithEmailAndPassword(data.email, data.password).then((cred) => {
             const uid = cred.user.uid;
-            const profile = { firstName: userData.firstName, lastName: userData.lastName, position: userData.position, email: userData.email, createdAt: firebase.database.ServerValue.TIMESTAMP };
-            return database.ref('users/' + uid).set(profile);
+            return database.ref('users/' + uid).set({ firstName: data.firstName, lastName: data.lastName, position: data.position, email: data.email });
         });
     }
 
-    function signInUser(email, password) { return auth.signInWithEmailAndPassword(email, password); }
-    
     function translateErrorMessage(error) {
         const errorMessages = {
-            'auth/invalid-login-credentials': 'פרטי התחברות שגויים',
+            'auth/invalid-email': 'כתובת האימייל אינה חוקית',
+            'auth/user-disabled': 'המשתמש הושבת',
             'auth/user-not-found': 'משתמש לא נמצא',
             'auth/wrong-password': 'סיסמה שגויה',
-            'auth/invalid-email': 'כתובת אימייל לא תקינה',
             'auth/weak-password': 'סיסמה חלשה מדי',
-            'auth/email-already-in-use': 'כתובת אימייל כבר קיימת במערכת',
-            'auth/too-many-requests': 'יותר מדי ניסיונות התחברות, נסה שוב מאוחר יותר',
-            'auth/network-request-failed': 'בעיית חיבור לאינטרנט'
+            'auth/email-already-in-use': 'האימייל כבר רשום במערכת'
         };
         return errorMessages[error.code] || error.message;
     }
@@ -665,7 +666,7 @@
 
         // initial
         init();
-        setTimeout(() => { addWorkEntry(); }, 100);
+        // Do not auto-add entries here; entries are created when opening the report screen
+        // setTimeout(() => { addWorkEntry(); }, 100);
     });
 })();
-
