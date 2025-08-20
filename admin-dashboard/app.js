@@ -9,16 +9,17 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getDatabase, ref, get, onValue } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
-// TODO: Paste your Firebase config here. Do NOT include any admin email in client code.
 const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_AUTH_DOMAIN',
-  databaseURL: 'YOUR_DATABASE_URL',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_STORAGE_BUCKET',
-  messagingSenderId: 'YOUR_SENDER_ID',
-  appId: 'YOUR_APP_ID'
+  apiKey: "AIzaSyDpzAnHPl8trZDQwC-G5twRWSwdweko_T8",
+  authDomain: "work-report-volcani.firebaseapp.com",
+  projectId: "work-report-volcani",
+  storageBucket: "work-report-volcani.firebasestorage.app",
+  messagingSenderId: "569559789764",
+  appId: "1:569559789764:web:d11b9c0e43ff78a66dd991",
+  measurementId: "G-M5Z4R1FB40",
+  databaseURL: "https://work-report-volcani-default-rtdb.firebaseio.com/"
 };
+
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
