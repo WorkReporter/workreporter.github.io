@@ -51,11 +51,19 @@
                 ]).then(() => {
                     updateAdminUI();
                     updateNotifications();
-                    // If admin, land directly on admin screen; otherwise go to main
-                    showScreen(isAdmin ? 'admin' : 'main');
+                    // If admin, redirect to dedicated admin dashboard page; otherwise go to main
+                    if (isAdmin) {
+                        window.location.href = '/admin-dashboard/index.html';
+                    } else {
+                        showScreen('main');
+                    }
                 }).catch(() => {
-                    // Even on partial failures, route admins to admin screen for convenience
-                    showScreen(isAdmin ? 'admin' : 'main');
+                    // Even on partial failures, route admins to admin dashboard for convenience
+                    if (isAdmin) {
+                        window.location.href = '/admin-dashboard/index.html';
+                    } else {
+                        showScreen('main');
+                    }
                 });
             } else {
                 currentUser = null;
