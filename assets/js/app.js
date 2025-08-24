@@ -203,7 +203,9 @@
     function submitReport() {
         const reportDate = getInputValue('report-date');
         if (!reportDate) { alert('אנא הזן תאריך'); return; }
-        const d = new Date(reportDate);
+        // Create date in local timezone to avoid timezone issues
+        const [year, month, day] = reportDate.split('-').map(Number);
+        const d = new Date(year, month - 1, day);
         if (d.getDay() === 5 || d.getDay() === 6) { alert('לא ניתן לדווח עבודה בימי שישי ושבת'); return; }
 
         const isWeekly = document.getElementById('daily-form').classList.contains('hidden');
@@ -442,11 +444,15 @@
             const dateString = formatDate(date);
             if (date.toDateString() === today.toDateString()) div.classList.add('today');
             if (reports.some(r => r.date === dateString)) div.classList.add('has-report');
-            if (date.getDay() === 5 || date.getDay() === 6) { div.style.backgroundColor = '#f3f4f6'; div.style.color = '#9ca3af'; }
+            if (date.getDay() === 5 || date.getDay() === 6) {
+                div.style.background = 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)';
+                div.style.color = '#9ca3af';
+            }
             div.addEventListener('click', () => {
                 if (date.getDay() === 5 || date.getDay() === 6) return;
                 document.querySelectorAll('.calendar-day.selected').forEach(dv => dv.classList.remove('selected'));
-                div.classList.add('selected'); selectedDate = date;
+                div.classList.add('selected');
+                selectedDate = date;
             });
             grid.appendChild(div);
         }
@@ -461,8 +467,12 @@
         if (selectedDate < weekStart) {
             if (reports.some(r => r.date === formatDate(selectedDate))) { alert('לא ניתן לערוך דיווח קיים'); return; }
         }
-        setInputValue('report-date', formatDate(selectedDate));
+        // Ensure we're using the correct date format and set it properly
+        const formattedDate = formatDate(selectedDate);
+        setInputValue('report-date', formattedDate);
         showScreen('daily-report');
+        // Ensure there is at least one daily entry by default
+        selectWorkStatus('worked');
     }
     window.addCalendarReport = addCalendarReport;
 
@@ -479,11 +489,18 @@
         const month = parseInt(getInputValue('report-month'));
         const year = parseInt(getInputValue('report-year'));
         const resultsDiv = document.getElementById('report-results');
-        const monthReports = reports.filter(r => { const d = new Date(r.date); return d.getMonth() + 1 === month && d.getFullYear() === year; });
+        const monthReports = reports.filter(r => {
+            // Create date in local timezone to avoid timezone issues
+            const [yearStr, monthStr, dayStr] = r.date.split('-').map(Number);
+            const d = new Date(yearStr, monthStr - 1, dayStr);
+            return d.getMonth() + 1 === month && d.getFullYear() === year;
+        });
         if (monthReports.length === 0) { resultsDiv.innerHTML = '<div class="notification">לא נמצאו דיווחים לחודש שנבחר</div>'; return; }
         let html = '<h3>דוח חודשי</h3>'; let totalHours = 0; let totalDays = 0; const summary = {};
         monthReports.forEach(report => {
-            const d = new Date(report.date);
+            // Create date in local timezone to avoid timezone issues
+            const [yearStr, monthStr, dayStr] = report.date.split('-').map(Number);
+            const d = new Date(yearStr, monthStr - 1, dayStr);
             html += `<div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">`;
             html += `<h4>${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}</h4>`;
             if (report.type === 'daily') {
@@ -520,7 +537,8 @@
         const dayNames = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
         const missing = [];
         for (let i = 0; i < 5; i++) { // Mon-Fri
-            const checkDate = new Date(weekStart); checkDate.setDate(weekStart.getDate() + i);
+            const checkDate = new Date(weekStart);
+            checkDate.setDate(weekStart.getDate() + i);
             if (checkDate <= today) {
                 const dateString = formatDate(checkDate);
                 const hasDaily = reports.some(r => r.type === 'daily' && r.date === dateString);
@@ -638,7 +656,13 @@
     function setHTML(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
     function toggleHidden(id, isHidden) { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', isHidden); }
     function showPopup(message) { const popup = document.createElement('div'); popup.className = 'popup'; popup.innerHTML = `<div class="popup-content"><div class="success-message">${message}</div></div>`; document.body.appendChild(popup); setTimeout(() => document.body.removeChild(popup), 1500); }
-    function formatDate(date) { return date.toISOString().split('T')[0]; }
+    function formatDate(date) {
+        // Fix timezone issue by creating date in local timezone
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
     function getCurrentWeek() { const now = new Date(); const year = now.getFullYear(); const week = Math.ceil((((now - new Date(year, 0, 1)) / 86400000) + new Date(year, 0, 1).getDay() + 1) / 7); return `${year}-W${week.toString().padStart(2, '0')}`; }
     function getWeekStart(date) { const d = new Date(date); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); return new Date(d.setDate(diff)); }
     function initializeDates() { const today = new Date(); currentMonth = today.getMonth(); currentYear = today.getFullYear(); currentWeek = getCurrentWeek(); }
