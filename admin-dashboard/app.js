@@ -421,19 +421,55 @@ function download(filename, content, type = 'text/csv;charset=utf-8') {
   a.remove();
 }
 
+function buildResearcherTotals(reportsByUser, usersById, filters) {
+  const month = filters?.month;
+  const year = filters?.year;
+  const allocate = !!filters?.allocateOthers;
+  const totalsByResearcher = {};
+
+  Object.entries(reportsByUser || {}).forEach(([uid, byId]) => {
+    const user = usersById?.[uid] || {};
+    const active = Array.isArray(user?.activeResearchers) ? user.activeResearchers : [];
+    Object.values(byId || {}).forEach(r => {
+      const d = r?.date ? new Date(r.date) : null;
+      if (!d || (d.getMonth() + 1) !== month || d.getFullYear() !== year) return;
+      const type = r?.type || 'daily';
+      const entries = Array.isArray(r?.entries) ? r.entries : [];
+      entries.forEach(e => {
+        const baseHours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
+        if (!baseHours) return;
+        const name = e?.researcher || 'לא ידוע';
+        if (allocate && name === 'משימה אחרות' && active.length > 0) {
+          const portion = baseHours / active.length;
+          active.forEach(n => { totalsByResearcher[n] = (totalsByResearcher[n] || 0) + portion; });
+        } else {
+          totalsByResearcher[name] = (totalsByResearcher[name] || 0) + baseHours;
+        }
+      });
+    });
+  });
+
+  const rows = Object.keys(totalsByResearcher).map(name => ({
+    researcher: name,
+    totalHours: round2(totalsByResearcher[name]),
+    allocationApplied: allocate ? 'כן' : 'לא',
+  }));
+  // keep a stable order
+  rows.sort((a, b) => a.researcher.localeCompare(b.researcher));
+  return rows;
+}
+
 el.btnExportAllCsv?.addEventListener('click', () => {
   if (!isAdmin) return;
-  const rows = buildAllReportsFlat(state.reportsByUser, state.usersById, state.filters);
-  const csv = toCsv(rows, [
-    { key: 'uid', header: 'UID' },
-    { key: 'userName', header: 'שם עובד' },
-    { key: 'email', header: 'אימייל' },
-    { key: 'date', header: 'תאריך' },
+  // Build researcher totals honoring allocation flag
+  const totals = buildResearcherTotals(state.reportsByUser, state.usersById, state.filters);
+  const csv = toCsv(totals, [
     { key: 'researcher', header: 'חוקר/משימה' },
-    { key: 'hours', header: 'שעות' },
-    { key: 'description', header: 'פרטים' },
+    { key: 'totalHours', header: 'סה"כ שעות (חודש נבחר)' },
+    { key: 'allocationApplied', header: 'חלוקת "משימה אחרות"' },
   ]);
-  download(`reports_all_${new Date().toISOString().slice(0,10)}.csv`, csv);
+  const suffix = state.filters.allocateOthers ? 'with_allocation' : 'no_allocation';
+  download(`reports_totals_${suffix}_${new Date().toISOString().slice(0,10)}.csv`, csv);
 });
 
 el.btnExportSelfCsv?.addEventListener('click', () => {
