@@ -238,14 +238,50 @@
                 });
             }
         } else {
+            const today = new Date();
+            if (today.getDay() !== 4) { showError('דיווח שבועי זמין רק בימי חמישי'); return; }
             const week = getInputValue('report-week');
             reportData.week = week;
+            const weeklyEntries = [];
             document.querySelectorAll('#weekly-entries .work-entry').forEach(entry => {
                 const researcher = entry.querySelector('.researcher-select')?.value || '';
                 const days = parseFloat(entry.querySelector('.days-input')?.value || '0') || 0;
                 const detail = (entry.querySelector('textarea')?.value) || '';
-                if (researcher && days > 0) reportData.entries.push({ researcher, days, detail });
+                if (researcher && days > 0) weeklyEntries.push({ researcher, days, detail });
             });
+            if (weeklyEntries.length === 0) { showError('אנא הזן לפחות שורה אחת לדיווח שבועי'); return; }
+            // Compute Sunday of current week
+            const sunday = getSundayOfWeek(today);
+            // Build list of Sun..Thu dates
+            const dates = [];
+            for (let i = 0; i < 5; i++) { const d2 = new Date(sunday); d2.setDate(sunday.getDate() + i); dates.push(formatDate(d2)); }
+            // Conflict detection against existing daily reports
+            const conflicts = dates.filter(ds => reports.some(r => r.date === ds));
+            if (conflicts.length > 0) { showError('קיימים כבר דיווחים בימים: ' + conflicts.map(ds => ds.split('-').reverse().join('/')).join(', ')); return; }
+            // Prepare daily entries by distributing total weekly hours equally per working day
+            const perDayEntries = dates.map(() => []);
+            weeklyEntries.forEach(({ researcher, days, detail }) => {
+                const totalHours = days * 8;
+                if (totalHours <= 0) return;
+                const perDay = roundToHalf(totalHours / 5);
+                for (let i = 0; i < 5; i++) {
+                    if (perDay > 0) perDayEntries[i].push({ researcher, hours: perDay, detail });
+                }
+            });
+            // Build fan-out updates: write daily_* and also store the weekly summary
+            if (!currentUser) return;
+            const updates = {};
+            for (let i = 0; i < 5; i++) {
+                const dateStr = dates[i];
+                const dailyKey = `daily_${dateStr}`;
+                updates[`reports/${currentUser.uid}/${dailyKey}`] = { date: dateStr, type: 'daily', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: perDayEntries[i] };
+            }
+            updates[`reports/${currentUser.uid}/weekly_${reportData.week}`] = { week: reportData.week, type: 'weekly', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: weeklyEntries };
+            database.ref().update(updates).then(() => {
+                showPopup('הדיווח השבועי התווסף לימים א׳-ה׳ בהצלחה!');
+                setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
+            }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
+            return;
         }
 
         if (!currentUser) return;
@@ -685,6 +721,8 @@
     }
     function getCurrentWeek() { const now = new Date(); const year = now.getFullYear(); const week = Math.ceil((((now - new Date(year, 0, 1)) / 86400000) + new Date(year, 0, 1).getDay() + 1) / 7); return `${year}-W${week.toString().padStart(2, '0')}`; }
     function getWeekStart(date) { const d = new Date(date); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); return new Date(d.setDate(diff)); }
+    function getSundayOfWeek(date) { const d = new Date(date); const day = d.getDay(); const diff = d.getDate() - day; return new Date(d.setDate(diff)); }
+    function roundToHalf(num) { return Math.round(num * 2) / 2; }
     function initializeDates() { const today = new Date(); currentMonth = today.getMonth(); currentYear = today.getFullYear(); currentWeek = getCurrentWeek(); }
 
     // Expose for admin.js
