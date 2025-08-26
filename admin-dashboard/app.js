@@ -466,14 +466,30 @@ el.btnExportAllCsv?.addEventListener('click', () => {
   const month = Number(el.filterMonth?.value || state.filters.month);
   const year = Number(el.filterYear?.value || state.filters.year);
   const filters = { month, year, allocateOthers: allocateNow };
+
+  // Detailed section (per user, date, researcher, hours, description)
+  const detailedRows = buildAllReportsFlat(state.reportsByUser, state.usersById, filters);
+  const detailedCsv = toCsv(detailedRows, [
+    { key: 'uid', header: 'UID' },
+    { key: 'userName', header: 'שם עובד' },
+    { key: 'email', header: 'אימייל' },
+    { key: 'date', header: 'תאריך' },
+    { key: 'researcher', header: 'חוקר/משימה' },
+    { key: 'hours', header: 'שעות' },
+    { key: 'description', header: 'פרטים' },
+  ]);
+
+  // Separator and totals section
   const totals = buildResearcherTotals(state.reportsByUser, state.usersById, filters);
-  const csv = toCsv(totals, [
+  const totalsCsv = toCsv(totals, [
     { key: 'researcher', header: 'חוקר/משימה' },
     { key: 'totalHours', header: 'סה"כ שעות (חודש נבחר)' },
     { key: 'allocationApplied', header: 'חלוקת "משימה אחרות"' },
   ]);
+
+  const combined = detailedCsv + '\n\n----- סיכום לפי חוקר -----\n' + totalsCsv;
   const suffix = allocateNow ? 'with_allocation' : 'no_allocation';
-  download(`reports_totals_${suffix}_${new Date().toISOString().slice(0,10)}.csv`, csv);
+  download(`reports_full_${suffix}_${new Date().toISOString().slice(0,10)}.csv`, combined, 'text/csv;charset=utf-8');
 });
 
 el.btnExportSelfCsv?.addEventListener('click', () => {
