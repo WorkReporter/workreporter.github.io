@@ -1002,16 +1002,37 @@
                 font-size: 12px;
             }
             .calendar {
-                gap: 4px;
-                padding: 10px;
+                gap: 3px;
+                padding: 8px;
+                width: 100%;
+                max-width: 100%;
             }
             .calendar-day {
-                font-size: 12px;
-                aspect-ratio: 0.85;
+                font-size: 11px;
+                aspect-ratio: 0.72;
                 border-width: 1px;
             }
             .calendar-nav {
-                padding: 12px;
+                padding: 10px;
+            }
+        }
+        @media (max-width: 420px) {
+            .calendar {
+                gap: 2px;
+                padding: 6px;
+            }
+            .calendar-day {
+                font-size: 10px;
+                aspect-ratio: 0.66;
+            }
+            .calendar-nav button {
+                width: 36px;
+                height: 36px;
+                padding: 8px;
+                font-size: 16px;
+            }
+            #calendar-title {
+                font-size: 16px;
             }
         }
     </style>
