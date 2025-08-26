@@ -461,14 +461,18 @@ function buildResearcherTotals(reportsByUser, usersById, filters) {
 
 el.btnExportAllCsv?.addEventListener('click', () => {
   if (!isAdmin) return;
-  // Build researcher totals honoring allocation flag
-  const totals = buildResearcherTotals(state.reportsByUser, state.usersById, state.filters);
+  // Read current UI state to honor checkbox even if filters weren't applied
+  const allocateNow = !!el.allocateOthers?.checked;
+  const month = Number(el.filterMonth?.value || state.filters.month);
+  const year = Number(el.filterYear?.value || state.filters.year);
+  const filters = { month, year, allocateOthers: allocateNow };
+  const totals = buildResearcherTotals(state.reportsByUser, state.usersById, filters);
   const csv = toCsv(totals, [
     { key: 'researcher', header: 'חוקר/משימה' },
     { key: 'totalHours', header: 'סה"כ שעות (חודש נבחר)' },
     { key: 'allocationApplied', header: 'חלוקת "משימה אחרות"' },
   ]);
-  const suffix = state.filters.allocateOthers ? 'with_allocation' : 'no_allocation';
+  const suffix = allocateNow ? 'with_allocation' : 'no_allocation';
   download(`reports_totals_${suffix}_${new Date().toISOString().slice(0,10)}.csv`, csv);
 });
 
