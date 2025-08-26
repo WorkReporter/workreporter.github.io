@@ -106,7 +106,7 @@
         const btn = document.querySelector(`.nav-btn[onclick="showScreen('${screenName}')"]`);
         if (btn) btn.classList.add('active');
 
-        if (screenName === 'calendar') renderCalendar();
+        if (screenName === 'calendar') { renderCalendar(); const addBtnCalendar = document.querySelector('#calendar-screen .btn.add'); if (addBtnCalendar && addBtnCalendar.style) addBtnCalendar.style.display = ''; }
         if (screenName === 'reports') initializeReportScreen();
         if (screenName === 'active-researchers') renderResearchers();
         if (screenName === 'main') updateNotifications();
@@ -312,11 +312,13 @@
         if (status === 'no-work') {
             workEntries.innerHTML = '';
             workEntries.style.display = 'none';
-            document.querySelector('.btn.add')?.style && (document.querySelector('.btn.add').style.display = 'none');
+            const addBtnDaily = document.querySelector('#daily-report-screen .btn.add');
+            if (addBtnDaily && addBtnDaily.style) addBtnDaily.style.display = 'none';
             updateTotalHours();
         } else {
             workEntries.style.display = 'block';
-            document.querySelector('.btn.add')?.style && (document.querySelector('.btn.add').style.display = 'block');
+            const addBtnDaily = document.querySelector('#daily-report-screen .btn.add');
+            if (addBtnDaily && addBtnDaily.style) addBtnDaily.style.display = 'block';
             if (workEntries.children.length === 0) addWorkEntry();
         }
     }
