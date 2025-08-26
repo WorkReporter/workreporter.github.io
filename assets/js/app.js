@@ -106,7 +106,7 @@
         const btn = document.querySelector(`.nav-btn[onclick="showScreen('${screenName}')"]`);
         if (btn) btn.classList.add('active');
 
-        if (screenName === 'calendar') renderCalendar();
+        if (screenName === 'calendar') { renderCalendar(); const addBtnCalendar = document.querySelector('#calendar-screen .btn.add'); if (addBtnCalendar && addBtnCalendar.style) addBtnCalendar.style.display = ''; }
         if (screenName === 'reports') initializeReportScreen();
         if (screenName === 'active-researchers') renderResearchers();
         if (screenName === 'main') updateNotifications();
@@ -312,11 +312,13 @@
         if (status === 'no-work') {
             workEntries.innerHTML = '';
             workEntries.style.display = 'none';
-            document.querySelector('.btn.add')?.style && (document.querySelector('.btn.add').style.display = 'none');
+            const addBtnDaily = document.querySelector('#daily-report-screen .btn.add');
+            if (addBtnDaily && addBtnDaily.style) addBtnDaily.style.display = 'none';
             updateTotalHours();
         } else {
             workEntries.style.display = 'block';
-            document.querySelector('.btn.add')?.style && (document.querySelector('.btn.add').style.display = 'block');
+            const addBtnDaily = document.querySelector('#daily-report-screen .btn.add');
+            if (addBtnDaily && addBtnDaily.style) addBtnDaily.style.display = 'block';
             if (workEntries.children.length === 0) addWorkEntry();
         }
     }
@@ -672,7 +674,7 @@
     function getInputValue(id) { const el = document.getElementById(id); return el ? el.value : ''; }
     function setHTML(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
     function toggleHidden(id, isHidden) { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', isHidden); }
-    function showPopup(message, type = 'success') { const popup = document.createElement('div'); popup.className = 'popup'; const innerClass = type === 'error' ? 'error-message' : 'success-message'; popup.innerHTML = `<div class="popup-content"><div class="${innerClass}">${message}</div></div>`; document.body.appendChild(popup); setTimeout(() => { if (popup.parentNode) document.body.removeChild(popup); }, 1800); }
+    function showPopup(message, type = 'success') { const popup = document.createElement('div'); popup.className = 'popup'; popup.setAttribute('role', 'dialog'); popup.setAttribute('aria-live', 'assertive'); popup.setAttribute('aria-modal', 'true'); const innerClass = type === 'error' ? 'error-message' : 'success-message'; popup.innerHTML = `<div class="popup-content"><div class="${innerClass}">${message}</div></div>`; document.body.appendChild(popup); setTimeout(() => { if (popup.parentNode) document.body.removeChild(popup); }, 2000); }
     function showError(message) { showPopup(message, 'error'); }
     function formatDate(date) {
         // Fix timezone issue by creating date in local timezone
