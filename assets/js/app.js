@@ -672,7 +672,7 @@
     function getInputValue(id) { const el = document.getElementById(id); return el ? el.value : ''; }
     function setHTML(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
     function toggleHidden(id, isHidden) { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', isHidden); }
-    function showPopup(message, type = 'success') { const popup = document.createElement('div'); popup.className = 'popup'; const innerClass = type === 'error' ? 'error-message' : 'success-message'; popup.innerHTML = `<div class="popup-content"><div class="${innerClass}">${message}</div></div>`; document.body.appendChild(popup); setTimeout(() => { if (popup.parentNode) document.body.removeChild(popup); }, 1800); }
+    function showPopup(message, type = 'success') { const popup = document.createElement('div'); popup.className = 'popup'; popup.setAttribute('role', 'dialog'); popup.setAttribute('aria-live', 'assertive'); popup.setAttribute('aria-modal', 'true'); const innerClass = type === 'error' ? 'error-message' : 'success-message'; popup.innerHTML = `<div class="popup-content"><div class="${innerClass}">${message}</div></div>`; document.body.appendChild(popup); setTimeout(() => { if (popup.parentNode) document.body.removeChild(popup); }, 2000); }
     function showError(message) { showPopup(message, 'error'); }
     function formatDate(date) {
         // Fix timezone issue by creating date in local timezone
