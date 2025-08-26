@@ -353,24 +353,43 @@ function buildAllReportsFlat(reportsByUser, usersById, filters) {
   const flat = [];
   const month = filters?.month;
   const year = filters?.year;
+  const allocate = !!filters?.allocateOthers;
   Object.entries(reportsByUser || {}).forEach(([uid, byId]) => {
     const user = usersById?.[uid] || {};
+    const active = Array.isArray(user?.activeResearchers) ? user.activeResearchers : [];
     Object.entries(byId || {}).forEach(([reportId, r]) => {
       const d = r?.date ? new Date(r.date) : null;
       if (!d || (d.getMonth() + 1) !== month || d.getFullYear() !== year) return;
       const type = r?.type || 'daily';
       const entries = Array.isArray(r?.entries) ? r.entries : [];
       entries.forEach(e => {
-        const hours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
-        flat.push({
-          uid,
-          userName: fullName(user),
-          email: user?.email || '',
-          date: r?.date || '',
-          researcher: e?.researcher || '',
-          hours,
-          description: e?.detail || ''
-        });
+        const baseHours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
+        if (!baseHours) return;
+        const researcherName = e?.researcher || '';
+        if (allocate && researcherName === 'משימה אחרות' && active.length > 0) {
+          const portion = baseHours / active.length;
+          active.forEach(name => {
+            flat.push({
+              uid,
+              userName: fullName(user),
+              email: user?.email || '',
+              date: r?.date || '',
+              researcher: name,
+              hours: round2(portion),
+              description: e?.detail || ''
+            });
+          });
+        } else {
+          flat.push({
+            uid,
+            userName: fullName(user),
+            email: user?.email || '',
+            date: r?.date || '',
+            researcher: researcherName,
+            hours: round2(baseHours),
+            description: e?.detail || ''
+          });
+        }
       });
     });
   });

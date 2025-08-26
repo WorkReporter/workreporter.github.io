@@ -277,8 +277,8 @@
         if (weeklyToggle) {
             const allowed = (dayOfWeek === 4);
             weeklyToggle.style.opacity = allowed ? '' : '0.5';
-            weeklyToggle.style.pointerEvents = allowed ? '' : 'none';
             weeklyToggle.setAttribute('aria-disabled', allowed ? 'false' : 'true');
+            weeklyToggle.dataset.allowed = allowed ? '1' : '0';
             weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי';
         }
 
@@ -593,6 +593,13 @@
             div.innerHTML = `<input type="checkbox" id="${id}" ${checked}><label for="${id}">${name}</label>`;
             container.appendChild(div);
         });
+        // Add fixed, non-editable items at the end per spec
+        ['משימה אחרות', 'סמינר / קורס / הכשרה'].forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'researcher-item';
+            div.innerHTML = `<input type="checkbox" checked disabled><label>${item}</label>`;
+            container.appendChild(div);
+        });
     }
     window.renderResearchers = renderResearchers;
 
@@ -688,7 +695,8 @@
     document.addEventListener('DOMContentLoaded', function () {
         // toggles
         document.querySelectorAll('#report-type-toggle .toggle-option').forEach(option => option.addEventListener('click', function () {
-            if (this.getAttribute('aria-disabled') === 'true' || this.style.pointerEvents === 'none') return;
+            const allowed = this.dataset.allowed !== '0' && this.getAttribute('aria-disabled') !== 'true';
+            if (!allowed && this.dataset.type === 'weekly') { alert('לא ניתן למלא דיווח שבועי כעת'); return; }
             selectReportType(this.dataset.type);
         }));
         document.querySelectorAll('#work-status-toggle .toggle-option').forEach(option => option.addEventListener('click', function () { selectWorkStatus(this.dataset.status); }));
