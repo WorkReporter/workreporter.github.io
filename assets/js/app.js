@@ -335,6 +335,7 @@
             setInputValue('report-week', getCurrentWeek());
             const weeklyEntries = document.getElementById('weekly-entries');
             if (weeklyEntries && weeklyEntries.children.length === 0) addWeeklyEntry();
+            renderWeeklyDatesHint();
         }
     }
     window.selectReportType = selectReportType;
@@ -724,6 +725,16 @@
     function getSundayOfWeek(date) { const d = new Date(date); const day = d.getDay(); const diff = d.getDate() - day; return new Date(d.setDate(diff)); }
     function roundToHalf(num) { return Math.round(num * 2) / 2; }
     function initializeDates() { const today = new Date(); currentMonth = today.getMonth(); currentYear = today.getFullYear(); currentWeek = getCurrentWeek(); }
+    function renderWeeklyDatesHint() {
+        const hintEl = document.getElementById('weekly-dates-hint');
+        if (!hintEl) return;
+        const today = new Date();
+        const sunday = getSundayOfWeek(today);
+        const dates = [];
+        for (let i = 0; i < 5; i++) { const d = new Date(sunday); d.setDate(sunday.getDate() + i); dates.push(d); }
+        const txt = dates.map(d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`).join(' • ');
+        hintEl.textContent = `התאריכים לשבוע זה (א׳–ה׳): ${txt}`;
+    }
 
     // Expose for admin.js
     window.updateAdminUI = function () {
