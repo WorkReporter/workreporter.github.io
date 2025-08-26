@@ -28,6 +28,7 @@
     let currentYear = new Date().getFullYear();
     let selectedDate = null;
     let currentWeek = getCurrentWeek();
+    let activeResearchersRef = null; // live subscription ref for cleanup
 
     // Expose for admin module and UI
     window.getAppState = function () {
@@ -66,6 +67,8 @@
                     }
                 });
             } else {
+                // cleanup listeners on sign-out
+                if (activeResearchersRef) { activeResearchersRef.off(); activeResearchersRef = null; }
                 currentUser = null;
                 isAdmin = false;
                 reports = [];
@@ -114,6 +117,7 @@
 
     function logout() {
         auth.signOut().catch(() => {}).finally(() => {
+            if (activeResearchersRef) { activeResearchersRef.off(); activeResearchersRef = null; }
             currentUser = null;
             isAdmin = false;
             reports = [];
@@ -172,16 +176,27 @@
 
     function loadActiveResearchers(uid) {
         if (!uid) return Promise.resolve();
-        return database.ref('users/' + uid + '/activeResearchers').once('value').then(snap => {
-            const data = snap.val();
-            if (Array.isArray(data) && data.length > 0) {
-                activeResearchers = data;
-            } else {
-                // default: first 5 from global list
-                activeResearchers = (allResearchers || []).slice(0, 5);
-            }
-        }).catch(() => {
-            activeResearchers = (allResearchers || []).slice(0, 5);
+        // Clean previous listener if any
+        if (activeResearchersRef) { activeResearchersRef.off(); activeResearchersRef = null; }
+        activeResearchersRef = database.ref('users/' + uid + '/activeResearchers');
+        return new Promise((resolve) => {
+            activeResearchersRef.on('value', snap => {
+                const data = snap.val();
+                if (Array.isArray(data) && data.length > 0) {
+                    activeResearchers = data;
+                } else {
+                    // default: first 5 from global list
+                    activeResearchers = (allResearchers || []).slice(0, 5);
+                }
+                // If relevant screens are open, re-render
+                const isDailyReportOpen = !document.getElementById('daily-report-screen')?.classList.contains('hidden');
+                if (isDailyReportOpen) {
+                    // Re-render entries dropdowns: simplest is to no-op here; new entries will use updated list
+                }
+                const isActiveResearchersOpen = !document.getElementById('active-researchers-screen')?.classList.contains('hidden');
+                if (isActiveResearchersOpen) { renderResearchers(); }
+                resolve();
+            }, () => resolve());
         });
     }
 
@@ -257,14 +272,14 @@
         setInputValue('report-date', formatDate(today));
         const dayOfWeek = today.getDay();
 
-        // Show weekly option only on Thursday (day 4)
-        const weeklyToggle = document.querySelector('[data-type="weekly"]');
+        // Always show both options; disable weekly unless allowed (Thursday)
+        const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
         if (weeklyToggle) {
-            if (dayOfWeek === 4) {
-                weeklyToggle.style.display = 'block';
-            } else {
-                weeklyToggle.style.display = 'none';
-            }
+            const allowed = (dayOfWeek === 4);
+            weeklyToggle.style.opacity = allowed ? '' : '0.5';
+            weeklyToggle.style.pointerEvents = allowed ? '' : 'none';
+            weeklyToggle.setAttribute('aria-disabled', allowed ? 'false' : 'true');
+            weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי';
         }
 
         selectReportType('daily');
@@ -569,18 +584,13 @@
         const container = document.getElementById('researchers-list');
         if (!container) return;
         container.innerHTML = '';
-        (allResearchers || []).forEach(name => {
+        const list = Array.isArray(allResearchers) ? allResearchers : [];
+        list.forEach(name => {
             const div = document.createElement('div');
             div.className = 'researcher-item';
             const id = `researcher-${name}`;
             const checked = activeResearchers.includes(name) ? 'checked' : '';
             div.innerHTML = `<input type="checkbox" id="${id}" ${checked}><label for="${id}">${name}</label>`;
-            container.appendChild(div);
-        });
-        ['משימה אחרות', 'סמינר / קורס / הכשרה'].forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'researcher-item';
-            div.innerHTML = `<input type="checkbox" checked disabled><label>${item}</label>`;
             container.appendChild(div);
         });
     }
@@ -677,7 +687,10 @@
     // ---------- Event listeners ----------
     document.addEventListener('DOMContentLoaded', function () {
         // toggles
-        document.querySelectorAll('#report-type-toggle .toggle-option').forEach(option => option.addEventListener('click', function () { selectReportType(this.dataset.type); }));
+        document.querySelectorAll('#report-type-toggle .toggle-option').forEach(option => option.addEventListener('click', function () {
+            if (this.getAttribute('aria-disabled') === 'true' || this.style.pointerEvents === 'none') return;
+            selectReportType(this.dataset.type);
+        }));
         document.querySelectorAll('#work-status-toggle .toggle-option').forEach(option => option.addEventListener('click', function () { selectWorkStatus(this.dataset.status); }));
         // auth forms
         const signin = document.getElementById('signin-form');

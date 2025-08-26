@@ -27,7 +27,7 @@
       <section class="grid" id="admin-filters" hidden>
         <div class="card">
           <div class="card-header">
-            <h2>סינון נתונים</h2>
+            <h2><span class="icon">🔎</span> סינון נתונים</h2>
           </div>
           <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
             <div>
@@ -60,15 +60,15 @@
         </div>
 
         <div class="card" id="kpi-total-hours">
-          <div class="card-header"><h2>סה"כ שעות (חודש נבחר)</h2></div>
+          <div class="card-header"><h2><span class="icon">⏱️</span> סה"כ שעות (חודש נבחר)</h2></div>
           <div style="font-size:28px; font-weight:700;"> <span id="kpi-hours">0</span> </div>
         </div>
         <div class="card" id="kpi-users">
-          <div class="card-header"><h2>מספר עובדים</h2></div>
+          <div class="card-header"><h2><span class="icon">👥</span> מספר עובדים</h2></div>
           <div style="font-size:28px; font-weight:700;"> <span id="kpi-users-count">0</span> </div>
         </div>
         <div class="card" id="kpi-entries">
-          <div class="card-header"><h2>מספר רשומות דיווח</h2></div>
+          <div class="card-header"><h2><span class="icon">🧾</span> מספר רשומות דיווח</h2></div>
           <div style="font-size:28px; font-weight:700;"> <span id="kpi-entries-count">0</span> </div>
         </div>
       </section>
@@ -91,7 +91,7 @@
         <div class="grid">
           <div class="card">
             <div class="card-header">
-              <h2>רשימת עובדים</h2>
+              <h2><span class="icon">🧑‍💼</span> רשימת עובדים</h2>
               <button id="export-all-csv" class="btn">הורד CSV מלא</button>
             </div>
             <div class="table-wrap">
@@ -105,23 +105,23 @@
                     <th>נוצר בתאריך</th>
                   </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody><tr class="empty"><td colspan="5">אין נתונים להצגה</td></tr></tbody>
               </table>
             </div>
           </div>
 
           <div class="card">
-            <h2>שעות לפי חוקרים/משימות (חודש נבחר)</h2>
+            <h2><span class="icon">📈</span> שעות לפי חוקרים/משימות (חודש נבחר)</h2>
             <canvas id="bar-hours-by-user" height="140"></canvas>
           </div>
 
           <div class="card">
-            <h2>התפלגות שעות לפי חוקרים/משימות</h2>
+            <h2><span class="icon">🥧</span> התפלגות שעות לפי חוקרים/משימות</h2>
             <canvas id="pie-hours-by-category" height="140"></canvas>
           </div>
 
           <div class="card">
-            <h2>כל הדיווחים</h2>
+            <h2><span class="icon">📋</span> כל הדיווחים</h2>
             <div class="table-wrap">
               <table class="table" id="reports-table">
                 <thead>
@@ -133,7 +133,7 @@
                     <th>פרטים</th>
                   </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody><tr class="empty"><td colspan="5">אין דיווחים לטווח שנבחר</td></tr></tbody>
               </table>
             </div>
           </div>
