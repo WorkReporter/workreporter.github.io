@@ -217,11 +217,11 @@
 
     function submitReport() {
         const reportDate = getInputValue('report-date');
-        if (!reportDate) { alert('אנא הזן תאריך'); return; }
+        if (!reportDate) { showError('אנא הזן תאריך'); return; }
         // Create date in local timezone to avoid timezone issues
         const [year, month, day] = reportDate.split('-').map(Number);
         const d = new Date(year, month - 1, day);
-        if (d.getDay() === 5 || d.getDay() === 6) { alert('לא ניתן לדווח עבודה בימי שישי ושבת'); return; }
+        if (d.getDay() === 5 || d.getDay() === 6) { showError('לא ניתן לדווח עבודה בימי שישי ושבת'); return; }
 
         const isWeekly = document.getElementById('daily-form').classList.contains('hidden');
         const reportData = { date: reportDate, type: isWeekly ? 'weekly' : 'daily', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: [] };
@@ -253,7 +253,7 @@
         database.ref('reports/' + currentUser.uid + '/' + reportKey).set(reportData).then(() => {
             showPopup('הדיווח נוסף בהצלחה!');
             setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
-        }).catch((error) => alert('שגיאה בשמירת הדיווח: ' + error.message));
+        }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
     }
     window.submitReport = submitReport;
 
@@ -464,7 +464,7 @@
                 div.style.color = '#9ca3af';
             }
             div.addEventListener('click', () => {
-                if (date.getDay() === 5 || date.getDay() === 6) return;
+                if (date.getDay() === 5 || date.getDay() === 6) { showError('לא ניתן להוסיף דיווח לימי שישי ושבת'); return; }
                 document.querySelectorAll('.calendar-day.selected').forEach(dv => dv.classList.remove('selected'));
                 div.classList.add('selected');
                 selectedDate = date;
@@ -476,11 +476,11 @@
     window.nextMonth = function () { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); };
 
     function addCalendarReport() {
-        if (!selectedDate) { alert('אנא בחר תאריך'); return; }
+        if (!selectedDate) { showError('אנא בחר תאריך'); return; }
         const now = new Date();
         const weekStart = getWeekStart(now);
         if (selectedDate < weekStart) {
-            if (reports.some(r => r.date === formatDate(selectedDate))) { alert('לא ניתן לערוך דיווח קיים'); return; }
+            if (reports.some(r => r.date === formatDate(selectedDate))) { showError('לא ניתן לערוך דיווח קיים'); return; }
         }
         // Ensure we're using the correct date format and set it properly
         const formattedDate = formatDate(selectedDate);
@@ -672,7 +672,8 @@
     function getInputValue(id) { const el = document.getElementById(id); return el ? el.value : ''; }
     function setHTML(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
     function toggleHidden(id, isHidden) { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', isHidden); }
-    function showPopup(message) { const popup = document.createElement('div'); popup.className = 'popup'; popup.innerHTML = `<div class="popup-content"><div class="success-message">${message}</div></div>`; document.body.appendChild(popup); setTimeout(() => document.body.removeChild(popup), 1500); }
+    function showPopup(message, type = 'success') { const popup = document.createElement('div'); popup.className = 'popup'; const innerClass = type === 'error' ? 'error-message' : 'success-message'; popup.innerHTML = `<div class="popup-content"><div class="${innerClass}">${message}</div></div>`; document.body.appendChild(popup); setTimeout(() => { if (popup.parentNode) document.body.removeChild(popup); }, 1800); }
+    function showError(message) { showPopup(message, 'error'); }
     function formatDate(date) {
         // Fix timezone issue by creating date in local timezone
         const year = date.getFullYear();
@@ -696,7 +697,7 @@
         // toggles
         document.querySelectorAll('#report-type-toggle .toggle-option').forEach(option => option.addEventListener('click', function () {
             const allowed = this.dataset.allowed !== '0' && this.getAttribute('aria-disabled') !== 'true';
-            if (!allowed && this.dataset.type === 'weekly') { alert('לא ניתן למלא דיווח שבועי כעת'); return; }
+            if (!allowed && this.dataset.type === 'weekly') { showError('לא ניתן למלא דיווח שבועי כעת'); return; }
             selectReportType(this.dataset.type);
         }));
         document.querySelectorAll('#work-status-toggle .toggle-option').forEach(option => option.addEventListener('click', function () { selectWorkStatus(this.dataset.status); }));
