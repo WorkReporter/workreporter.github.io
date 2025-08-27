@@ -806,12 +806,34 @@
             signInUser(email, pwd).catch(err => setHTML('login-messages', `<div class="error-message">${translateErrorMessage(err)}</div>`));
         });
         const signup = document.getElementById('signup-form');
-        if (signup) signup.addEventListener('submit', function (e) {
+        if (signup) signup.addEventListener('submit', async function (e) {
             e.preventDefault();
+            if (this.dataset.loading === '1') return;
+            this.dataset.loading = '1';
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'נרשם...'; }
+            setHTML('register-messages', '');
+
             const data = { firstName: getInputValue('register-first-name'), lastName: getInputValue('register-last-name'), position: getInputValue('register-position'), email: getInputValue('register-email'), password: getInputValue('register-password') };
             const confirm = getInputValue('register-confirm-password');
-            if (data.password !== confirm) { setHTML('register-messages', '<div class="error-message">סיסמאות אינן תואמות</div>'); return; }
-            createUser(data).then(() => signInUser(data.email, data.password)).catch(err => setHTML('register-messages', `<div class="error-message">${translateErrorMessage(err)}</div>`));
+            if (data.password !== confirm) { setHTML('register-messages', '<div class="error-message">סיסמאות אינן תואמות</div>'); if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'הרשמה'; } this.dataset.loading = '0'; return; }
+
+            try {
+                const res = await createUser(data);
+                if (res && res.sentVerification) {
+                    setHTML('register-messages', '<div class="success-message">נשלח אליך מייל אימות. יש לאמת את הכתובת לפני התחברות. בדוק את תיבת הדואר והספאם.</div>');
+                    // optionally switch to login tab
+                    switchAuthTab('login');
+                } else {
+                    setHTML('register-messages', '<div class="success-message">ההרשמה הושלמה. אנא אמת את כתובת האימייל שנשלחה אליך.</div>');
+                    switchAuthTab('login');
+                }
+            } catch (err) {
+                setHTML('register-messages', `<div class="error-message">${translateErrorMessage(err)}</div>`);
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'הרשמה'; }
+                this.dataset.loading = '0';
+            }
         });
         const resetForm = document.getElementById('reset-password-form');
         if (resetForm) resetForm.addEventListener('submit', function (e) {
