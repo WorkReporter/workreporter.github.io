@@ -703,14 +703,39 @@
     function backToLogin() { document.getElementById('forgot-password-form').classList.remove('active'); document.getElementById('login-form').classList.add('active'); }
     window.backToLogin = backToLogin;
 
+    function isAllowedDomain(email) {
+        const pattern = /^[^@\s]+@volcani\.agri\.gov\.il$/i;
+        return pattern.test(String(email || ''));
+    }
+
     function signInUser(email, password) {
-        return auth.signInWithEmailAndPassword(email, password);
+        if (!isAllowedDomain(email)) {
+            const err = { code: 'auth/email-domain-not-allowed', message: 'כתובת האימייל חייבת להיות בדומיין volcani.agri.gov.il' };
+            return Promise.reject(err);
+        }
+        return auth.signInWithEmailAndPassword(email, password).then(async (cred) => {
+            if (!cred.user.emailVerified) {
+                try { await cred.user.sendEmailVerification(); } catch (_) {}
+                await auth.signOut().catch(() => {});
+                const err = { code: 'auth/email-not-verified', message: 'יש לאמת את כתובת האימייל לפני כניסה. נשלח אליך מייל אימות.' };
+                throw err;
+            }
+            return cred;
+        });
     }
 
     function createUser(data) {
-        return auth.createUserWithEmailAndPassword(data.email, data.password).then((cred) => {
+        if (!isAllowedDomain(data.email)) {
+            const err = { code: 'auth/email-domain-not-allowed', message: 'כתובת האימייל חייבת להיות בדומיין volcani.agri.gov.il' };
+            return Promise.reject(err);
+        }
+        return auth.createUserWithEmailAndPassword(data.email, data.password).then(async (cred) => {
+            try { await cred.user.sendEmailVerification(); } catch (_) {}
+            // Persist profile minimally; user will only be allowed after verifying email
             const uid = cred.user.uid;
-            return database.ref('users/' + uid).set({ firstName: data.firstName, lastName: data.lastName, position: data.position, email: data.email });
+            await database.ref('users/' + uid).set({ firstName: data.firstName, lastName: data.lastName, position: data.position, email: data.email, createdAt: new Date().toISOString() });
+            await auth.signOut().catch(() => {});
+            return { sentVerification: true };
         });
     }
 
@@ -721,7 +746,9 @@
             'auth/user-not-found': 'משתמש לא נמצא',
             'auth/wrong-password': 'סיסמה שגויה',
             'auth/weak-password': 'סיסמה חלשה מדי',
-            'auth/email-already-in-use': 'האימייל כבר רשום במערכת'
+            'auth/email-already-in-use': 'האימייל כבר רשום במערכת',
+            'auth/email-domain-not-allowed': 'רק מייל בדומיין volcani.agri.gov.il מורשה',
+            'auth/email-not-verified': 'נשלח אליך מייל אימות. יש לאמת לפני כניסה'
         };
         return errorMessages[error.code] || error.message;
     }
