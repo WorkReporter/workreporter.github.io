@@ -30,7 +30,7 @@
     }
 
     function aggregateMonthHoursWithAllocation(month, year) {
-        // For each user: split 'משימה אחרות' evenly across that user's activeResearchers
+        // For each user: split 'משימות אחרות' evenly across that user's activeResearchers
         // 'סמינר / קורס / הכשרה' stays separate under that label (admin overhead)
         const totals = {}; // researcherName -> hours
 
@@ -46,7 +46,7 @@
                 totals[entry.researcher] = (totals[entry.researcher] || 0) + hours;
                 return;
             }
-            if (entry.researcher === 'משימה אחרות') {
+            if (entry.researcher === 'משימות אחרות') {
                 const allocationTargets = Array.isArray(userActive) && userActive.length > 0 ? userActive : [];
                 if (allocationTargets.length === 0) return; // nothing to split
                 const hours = type === 'daily' ? (entry.hours || 0) : (entry.days || 0) * hoursPerDay;
