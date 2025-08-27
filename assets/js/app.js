@@ -1,7 +1,7 @@
 // Core app logic (auth, screens, reports, calendar, user flows)
 
 (function () {
-    const { firebaseConfig, adminEmail, hoursPerDay, defaultResearchers } = window.APP_CONFIG;
+    const { firebaseConfig, hoursPerDay, defaultResearchers } = window.APP_CONFIG;
 
     // Initialize Firebase (idempotent)
     if (!window._firebaseInitialized) {
@@ -41,7 +41,8 @@
         auth.onAuthStateChanged((user) => {
             if (user) {
                 currentUser = user;
-                isAdmin = String(user.email || '').toLowerCase() === String(adminEmail).toLowerCase();
+                // Detect admin without exposing email: try privileged read allowed only to admin by rules
+                isAdmin = false;
                 setAuthUIState(true);
                 initializeDates();
                 Promise.all([
@@ -49,17 +50,29 @@
                     loadUserProfile(user.uid),
                     loadActiveResearchers(user.uid),
                     loadReports(user.uid)
-                ]).then(() => {
+                ]).then(async () => {
+                    try {
+                        // admin check by attempting to read an admin-only path (e.g., users root)
+                        await window.database.ref('users').once('value');
+                        isAdmin = true;
+                    } catch (_) {
+                        isAdmin = false;
+                    }
                     updateAdminUI();
                     updateNotifications();
-                    // If admin, redirect to dedicated admin dashboard page; otherwise go to main
                     if (isAdmin) {
                         window.location.href = '/admin-dashboard/index.html';
                     } else {
                         showScreen('main');
                     }
-                }).catch(() => {
+                }).catch(async () => {
                     // Even on partial failures, route admins to admin dashboard for convenience
+                    try {
+                        await window.database.ref('users').once('value');
+                        isAdmin = true;
+                    } catch (_) {
+                        isAdmin = false;
+                    }
                     if (isAdmin) {
                         window.location.href = '/admin-dashboard/index.html';
                     } else {
@@ -112,6 +125,13 @@
         if (screenName === 'main') updateNotifications();
         if (screenName === 'admin') initializeAdminScreen();
     }
+
+    // Basic XSS protection utility available globally
+    window.escapeHtml = function (unsafe) {
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(String(unsafe ?? '')));
+        return div.innerHTML;
+    };
 
     window.showScreen = showScreen;
 
@@ -683,14 +703,39 @@
     function backToLogin() { document.getElementById('forgot-password-form').classList.remove('active'); document.getElementById('login-form').classList.add('active'); }
     window.backToLogin = backToLogin;
 
+    function isAllowedDomain(email) {
+        const pattern = /^[^@\s]+@volcani\.agri\.gov\.il$/i;
+        return pattern.test(String(email || ''));
+    }
+
     function signInUser(email, password) {
-        return auth.signInWithEmailAndPassword(email, password);
+        if (!isAllowedDomain(email)) {
+            const err = { code: 'auth/email-domain-not-allowed', message: 'כתובת האימייל חייבת להיות בדומיין volcani.agri.gov.il' };
+            return Promise.reject(err);
+        }
+        return auth.signInWithEmailAndPassword(email, password).then(async (cred) => {
+            if (!cred.user.emailVerified) {
+                try { await cred.user.sendEmailVerification(); } catch (_) {}
+                await auth.signOut().catch(() => {});
+                const err = { code: 'auth/email-not-verified', message: 'יש לאמת את כתובת האימייל לפני כניסה. נשלח אליך מייל אימות.' };
+                throw err;
+            }
+            return cred;
+        });
     }
 
     function createUser(data) {
-        return auth.createUserWithEmailAndPassword(data.email, data.password).then((cred) => {
+        if (!isAllowedDomain(data.email)) {
+            const err = { code: 'auth/email-domain-not-allowed', message: 'כתובת האימייל חייבת להיות בדומיין volcani.agri.gov.il' };
+            return Promise.reject(err);
+        }
+        return auth.createUserWithEmailAndPassword(data.email, data.password).then(async (cred) => {
+            try { await cred.user.sendEmailVerification(); } catch (_) {}
+            // Persist profile minimally; user will only be allowed after verifying email
             const uid = cred.user.uid;
-            return database.ref('users/' + uid).set({ firstName: data.firstName, lastName: data.lastName, position: data.position, email: data.email });
+            await database.ref('users/' + uid).set({ firstName: data.firstName, lastName: data.lastName, position: data.position, email: data.email, createdAt: new Date().toISOString() });
+            await auth.signOut().catch(() => {});
+            return { sentVerification: true };
         });
     }
 
@@ -701,7 +746,9 @@
             'auth/user-not-found': 'משתמש לא נמצא',
             'auth/wrong-password': 'סיסמה שגויה',
             'auth/weak-password': 'סיסמה חלשה מדי',
-            'auth/email-already-in-use': 'האימייל כבר רשום במערכת'
+            'auth/email-already-in-use': 'האימייל כבר רשום במערכת',
+            'auth/email-domain-not-allowed': 'רק מייל בדומיין volcani.agri.gov.il מורשה',
+            'auth/email-not-verified': 'נשלח אליך מייל אימות. יש לאמת לפני כניסה'
         };
         return errorMessages[error.code] || error.message;
     }

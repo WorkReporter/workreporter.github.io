@@ -11,8 +11,6 @@ window.APP_CONFIG = {
         databaseURL: "https://work-report-volcani-default-rtdb.firebaseio.com/"
     },
     hoursPerDay: 8,
-    // Single admin email as requested
-    adminEmail: 'salzer@volcani.agri.gov.il',
     // Default global researchers list (seed)
     defaultResearchers: [
         "יעל זלצר",
