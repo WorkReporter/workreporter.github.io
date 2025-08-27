@@ -276,7 +276,7 @@ function aggregateForAdmin(reportsByUser, usersById, filters) {
         totalsByUser[uid] = (totalsByUser[uid] || 0) + hours;
         usersWithHours.add(uid);
         const name = e?.researcher || 'לא ידוע';
-        if (allocate && name === 'משימה אחרות') {
+        if (allocate && name === 'משימות אחרות') {
           if (active.length > 0) {
             const portion = hours / active.length;
             active.forEach(n => { totalsByResearcher[n] = (totalsByResearcher[n] || 0) + portion; });
@@ -366,7 +366,7 @@ function buildAllReportsFlat(reportsByUser, usersById, filters) {
         const baseHours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
         if (!baseHours) return;
         const researcherName = e?.researcher || '';
-        if (allocate && researcherName === 'משימה אחרות' && active.length > 0) {
+        if (allocate && researcherName === 'משימות אחרות' && active.length > 0) {
           const portion = baseHours / active.length;
           active.forEach(name => {
             flat.push({
@@ -439,7 +439,7 @@ function buildResearcherTotals(reportsByUser, usersById, filters) {
         const baseHours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
         if (!baseHours) return;
         const name = e?.researcher || 'לא ידוע';
-        if (allocate && name === 'משימה אחרות' && active.length > 0) {
+        if (allocate && name === 'משימות אחרות' && active.length > 0) {
           const portion = baseHours / active.length;
           active.forEach(n => { totalsByResearcher[n] = (totalsByResearcher[n] || 0) + portion; });
         } else {
@@ -484,7 +484,7 @@ el.btnExportAllCsv?.addEventListener('click', () => {
   const totalsCsv = toCsv(totals, [
     { key: 'researcher', header: 'חוקר/משימה' },
     { key: 'totalHours', header: 'סה"כ שעות (חודש נבחר)' },
-    { key: 'allocationApplied', header: 'חלוקת "משימה אחרות"' },
+    { key: 'allocationApplied', header: 'חלוקת "משימות אחרות"' },
   ]);
 
   const combined = detailedCsv + '\n\n----- סיכום לפי חוקר -----\n' + totalsCsv;
