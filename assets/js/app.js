@@ -402,9 +402,8 @@
         entryDiv.innerHTML = `
             ${container.children.length > 0 ? '<button class="remove-btn" onclick="removeEntry(this)">×</button>' : ''}
             <div class="form-group">
-                <label>חוקר/משימה:</label>
+                <label>בחר חוקר/משימה:</label>
                 <select class="researcher-select" onchange="toggleDetailField(this)">
-                    <option value="">בחר חוקר/משימה</option>
                     ${available.map(r => `<option value="${r}">${r}</option>`).join('')}
                 </select>
             </div>
@@ -437,7 +436,6 @@
             <div class="form-group">
                 <label>חוקר/פרויקט:</label>
                 <select class="researcher-select" onchange="toggleDetailField(this)">
-                    <option value="">בחר חוקר/פרויקט</option>
                     ${available.map(r => `<option value="${r}">${r}</option>`).join('')}
                 </select>
             </div>
@@ -462,7 +460,7 @@
         const available = [...(baseList || []), 'משימות אחרות', 'סמינר / קורס / הכשרה'];
         document.querySelectorAll('.researcher-select').forEach(sel => {
             const current = sel.value || '';
-            sel.innerHTML = ['<option value="">בחר חוקר/משימה</option>', ...available.map(r => `<option value="${r}">${r}</option>`)].join('');
+            sel.innerHTML = [...available.map(r => `<option value="${r}">${r}</option>`)].join('');
             if (current && available.includes(current)) sel.value = current;
         });
     }
