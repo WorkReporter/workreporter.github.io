@@ -8,6 +8,10 @@
         firebase.initializeApp(firebaseConfig);
         window._firebaseInitialized = true;
     }
+    // Email verification disabled per user request; keep domain restriction only
+
+    async function sendVerificationSafe() { /* no-op */ }
+
 
     // Expose auth and database to other modules
     const auth = firebase.auth();
@@ -38,7 +42,7 @@
 
     // ---------- Auth Flow ----------
     function init() {
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
                 // Detect admin without exposing email: try privileged read allowed only to admin by rules
@@ -60,6 +64,15 @@
                     }
                     updateAdminUI();
                     updateNotifications();
+                    // After first verified login, ensure profile doc exists
+                    if (currentUser && currentUser.uid) {
+                        const userRef = database.ref('users/' + currentUser.uid);
+                        const snap = await userRef.once('value');
+                        if (!snap.exists()) {
+                            const email = currentUser.email || '';
+                            await userRef.set({ firstName: '', lastName: '', position: '', email, createdAt: new Date().toISOString() }).catch(() => {});
+                        }
+                    }
                     if (isAdmin) {
                         window.location.href = '/admin-dashboard/index.html';
                     } else {
@@ -210,9 +223,7 @@
                 }
                 // If relevant screens are open, re-render
                 const isDailyReportOpen = !document.getElementById('daily-report-screen')?.classList.contains('hidden');
-                if (isDailyReportOpen) {
-                    // Re-render entries dropdowns: simplest is to no-op here; new entries will use updated list
-                }
+                if (isDailyReportOpen) { refreshResearcherDropdowns(); }
                 const isActiveResearchersOpen = !document.getElementById('active-researchers-screen')?.classList.contains('hidden');
                 if (isActiveResearchersOpen) { renderResearchers(); }
                 resolve();
@@ -445,6 +456,17 @@
         container.appendChild(entryDiv);
         updateTotalDays();
     }
+
+    function refreshResearcherDropdowns() {
+        const baseList = (Array.isArray(activeResearchers) && activeResearchers.length > 0) ? activeResearchers : allResearchers;
+        const available = [...(baseList || []), 'משימה אחרות', 'סמינר / קורס / הכשרה'];
+        document.querySelectorAll('.researcher-select').forEach(sel => {
+            const current = sel.value || '';
+            sel.innerHTML = ['<option value="">בחר חוקר/משימה</option>', ...available.map(r => `<option value="${r}">${r}</option>`)].join('');
+            if (current && available.includes(current)) sel.value = current;
+        });
+    }
+    window.refreshResearcherDropdowns = refreshResearcherDropdowns;
     window.addWeeklyEntry = addWeeklyEntry;
 
     function toggleDetailField(selectElement) {
@@ -663,13 +685,26 @@
     window.renderResearchers = renderResearchers;
 
     function saveResearchers() {
+        // Update local state immediately from checkboxes
         activeResearchers = [];
         document.querySelectorAll('#researchers-list input[type="checkbox"]:checked:not([disabled])').forEach(cb => {
             const name = cb.id.replace('researcher-', '');
             activeResearchers.push(name);
         });
+
+        // Immediately refresh dropdowns in open report forms (so removals reflect instantly)
+        refreshResearcherDropdowns();
+
+        // Persist to database; server listener will also update state
         if (currentUser) {
-            database.ref('users/' + currentUser.uid + '/activeResearchers').set(activeResearchers).then(() => showPopup('החוקרים הפעילים נשמרו בהצלחה'));
+            database.ref('users/' + currentUser.uid + '/activeResearchers')
+                .set(activeResearchers)
+                .then(() => {
+                    showPopup('החוקרים הפעילים נשמרו בהצלחה');
+                    // Extra safety: refresh again after confirmation
+                    refreshResearcherDropdowns();
+                })
+                .catch(() => {});
         }
     }
     window.saveResearchers = saveResearchers;
@@ -689,6 +724,18 @@
     }
     window.editProfile = editProfile;
 
+    function updateActiveSelectionFromUI() {
+        const container = document.getElementById('researchers-list');
+        if (!container) return;
+        const selected = [];
+        container.querySelectorAll('input[type="checkbox"]:checked:not([disabled])').forEach(cb => {
+            const name = cb.id.replace('researcher-', '');
+            selected.push(name);
+        });
+        activeResearchers = selected;
+        refreshResearcherDropdowns();
+    }
+
     // ---------- Auth UI ----------
     function switchAuthTab(tab) {
         document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
@@ -703,6 +750,34 @@
     function backToLogin() { document.getElementById('forgot-password-form').classList.remove('active'); document.getElementById('login-form').classList.add('active'); }
     window.backToLogin = backToLogin;
 
+    // Process email action links (verifyEmail) when opened via handleCodeInApp
+    async function processEmailActionLink() {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const mode = params.get('mode');
+            const oobCode = params.get('oobCode');
+            if (mode === 'verifyEmail' && oobCode) {
+                // Show login screen message placeholder
+                showScreen('login');
+                setHTML('login-messages', '<div class="success-message">מאמת את כתובת האימייל שלך...</div>');
+                try {
+                    await auth.applyActionCode(oobCode);
+                    setHTML('login-messages', '<div class="success-message">האימייל אומת בהצלחה. ניתן להתחבר עכשיו.</div>');
+                } catch (e) {
+                    setHTML('login-messages', `<div class="error-message">${translateErrorMessage({ code: 'auth/invalid-action-code', message: e && e.message || 'קישור אימות לא תקין' })}</div>`);
+                } finally {
+                    // Clean URL
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('mode');
+                    url.searchParams.delete('oobCode');
+                    url.searchParams.delete('apiKey');
+                    url.searchParams.delete('lang');
+                    window.history.replaceState({}, document.title, url.toString());
+                }
+            }
+        } catch (_) {}
+    }
+
     function isAllowedDomain(email) {
         const pattern = /^[^@\s]+@volcani\.agri\.gov\.il$/i;
         return pattern.test(String(email || ''));
@@ -713,15 +788,7 @@
             const err = { code: 'auth/email-domain-not-allowed', message: 'כתובת האימייל חייבת להיות בדומיין volcani.agri.gov.il' };
             return Promise.reject(err);
         }
-        return auth.signInWithEmailAndPassword(email, password).then(async (cred) => {
-            if (!cred.user.emailVerified) {
-                try { await cred.user.sendEmailVerification(); } catch (_) {}
-                await auth.signOut().catch(() => {});
-                const err = { code: 'auth/email-not-verified', message: 'יש לאמת את כתובת האימייל לפני כניסה. נשלח אליך מייל אימות.' };
-                throw err;
-            }
-            return cred;
-        });
+        return auth.signInWithEmailAndPassword(email, password);
     }
 
     function createUser(data) {
@@ -730,14 +797,25 @@
             return Promise.reject(err);
         }
         return auth.createUserWithEmailAndPassword(data.email, data.password).then(async (cred) => {
-            try { await cred.user.sendEmailVerification(); } catch (_) {}
-            // Persist profile minimally; user will only be allowed after verifying email
             const uid = cred.user.uid;
-            await database.ref('users/' + uid).set({ firstName: data.firstName, lastName: data.lastName, position: data.position, email: data.email, createdAt: new Date().toISOString() });
-            await auth.signOut().catch(() => {});
-            return { sentVerification: true };
+            await database.ref('users/' + uid).set({ firstName: data.firstName, lastName: data.lastName, position: data.position, email: data.email, createdAt: new Date().toISOString() }).catch(() => {});
+            return cred;
         });
     }
+
+    // Allow resending verification from login screen
+    window.resendVerificationFromLogin = async function () {
+        const email = getInputValue('login-email');
+        const password = getInputValue('login-password');
+        if (!email || !password) { setHTML('login-messages', '<div class="error-message">הזן אימייל וסיסמה כדי לשלוח אימות מחדש</div>'); return; }
+        if (!isAllowedDomain(email)) { setHTML('login-messages', '<div class="error-message">כתובת האימייל חייבת להיות בדומיין volcani.agri.gov.il</div>'); return; }
+        try {
+            const cred = await auth.signInWithEmailAndPassword(email, password);
+            setHTML('login-messages', '<div class="success-message">התחברת בהצלחה</div>');
+        } catch (err) {
+            setHTML('login-messages', `<div class=\"error-message\">${translateErrorMessage(err)}</div>`);
+        }
+    };
 
     function translateErrorMessage(error) {
         const errorMessages = {
@@ -748,7 +826,7 @@
             'auth/weak-password': 'סיסמה חלשה מדי',
             'auth/email-already-in-use': 'האימייל כבר רשום במערכת',
             'auth/email-domain-not-allowed': 'רק מייל בדומיין volcani.agri.gov.il מורשה',
-            'auth/email-not-verified': 'נשלח אליך מייל אימות. יש לאמת לפני כניסה'
+            'auth/too-many-requests': 'יותר מדי ניסיונות. נסה שוב מאוחר יותר'
         };
         return errorMessages[error.code] || error.message;
     }
@@ -805,6 +883,12 @@
             e.preventDefault(); const email = getInputValue('login-email'); const pwd = getInputValue('login-password');
             signInUser(email, pwd).catch(err => setHTML('login-messages', `<div class="error-message">${translateErrorMessage(err)}</div>`));
         });
+        const resendBtn = document.getElementById('resend-verification-btn');
+        if (resendBtn) resendBtn.addEventListener('click', function () {
+            if (this.dataset.loading === '1') return; this.dataset.loading = '1';
+            this.disabled = true;
+            window.resendVerificationFromLogin().finally(() => { this.disabled = false; this.dataset.loading = '0'; });
+        });
         const signup = document.getElementById('signup-form');
         if (signup) signup.addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -840,8 +924,17 @@
             e.preventDefault(); const email = getInputValue('reset-email'); auth.sendPasswordResetEmail(email).then(() => setHTML('forgot-password-messages', '<div class="success-message">קישור לשחזור סיסמה נשלח למייל שלך</div>')).catch(err => setHTML('forgot-password-messages', `<div class="error-message">${translateErrorMessage(err)}</div>`));
         });
 
+        // live update dropdowns on checkbox toggle in active researchers screen
+        const researchersList = document.getElementById('researchers-list');
+        if (researchersList) researchersList.addEventListener('change', function (e) {
+            if (e.target && e.target.matches('input[type="checkbox"]')) {
+                updateActiveSelectionFromUI();
+            }
+        });
+
         // initial
         init();
+        processEmailActionLink();
         // Do not auto-add entries here; entries are created when opening the report screen
         // setTimeout(() => { addWorkEntry(); }, 100);
     });
