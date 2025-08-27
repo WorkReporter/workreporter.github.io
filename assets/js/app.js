@@ -1,7 +1,7 @@
 // Core app logic (auth, screens, reports, calendar, user flows)
 
 (function () {
-    const { firebaseConfig, adminEmail, hoursPerDay, defaultResearchers } = window.APP_CONFIG;
+    const { firebaseConfig, hoursPerDay, defaultResearchers } = window.APP_CONFIG;
 
     // Initialize Firebase (idempotent)
     if (!window._firebaseInitialized) {
@@ -41,7 +41,8 @@
         auth.onAuthStateChanged((user) => {
             if (user) {
                 currentUser = user;
-                isAdmin = String(user.email || '').toLowerCase() === String(adminEmail).toLowerCase();
+                // Detect admin without exposing email: try privileged read allowed only to admin by rules
+                isAdmin = false;
                 setAuthUIState(true);
                 initializeDates();
                 Promise.all([
@@ -49,17 +50,29 @@
                     loadUserProfile(user.uid),
                     loadActiveResearchers(user.uid),
                     loadReports(user.uid)
-                ]).then(() => {
+                ]).then(async () => {
+                    try {
+                        // admin check by attempting to read an admin-only path (e.g., users root)
+                        await window.database.ref('users').once('value');
+                        isAdmin = true;
+                    } catch (_) {
+                        isAdmin = false;
+                    }
                     updateAdminUI();
                     updateNotifications();
-                    // If admin, redirect to dedicated admin dashboard page; otherwise go to main
                     if (isAdmin) {
                         window.location.href = '/admin-dashboard/index.html';
                     } else {
                         showScreen('main');
                     }
-                }).catch(() => {
+                }).catch(async () => {
                     // Even on partial failures, route admins to admin dashboard for convenience
+                    try {
+                        await window.database.ref('users').once('value');
+                        isAdmin = true;
+                    } catch (_) {
+                        isAdmin = false;
+                    }
                     if (isAdmin) {
                         window.location.href = '/admin-dashboard/index.html';
                     } else {
@@ -112,6 +125,13 @@
         if (screenName === 'main') updateNotifications();
         if (screenName === 'admin') initializeAdminScreen();
     }
+
+    // Basic XSS protection utility available globally
+    window.escapeHtml = function (unsafe) {
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(String(unsafe ?? '')));
+        return div.innerHTML;
+    };
 
     window.showScreen = showScreen;
 

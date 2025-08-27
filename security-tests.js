@@ -7,7 +7,6 @@ console.log('🔒 מתחיל בדיקות אבטחה...');
 console.log('\n📋 בדיקה 1: חשיפת מידע רגיש');
 console.log('APP_CONFIG:', window.APP_CONFIG);
 console.log('Firebase Config:', window.APP_CONFIG?.firebaseConfig);
-console.log('Admin Email:', window.APP_CONFIG?.adminEmail);
 console.log('Current User:', window.auth?.currentUser);
 
 // ===== בדיקה 2: גישה למסד הנתונים =====
@@ -120,7 +119,7 @@ if (window.auth) {
             console.log('✅ משתמש מחובר:', user.email);
             console.log('User ID:', user.uid);
             console.log('Email Verified:', user.emailVerified);
-            console.log('Is Admin:', user.email === window.APP_CONFIG?.adminEmail);
+            console.log('Is Admin (by privileged read):', typeof window.getAppState === 'function' ? !!window.getAppState().isAdmin : 'unknown');
         } else {
             console.log('❌ אין משתמש מחובר');
         }

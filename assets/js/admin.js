@@ -1,13 +1,13 @@
 // Admin-only analytics and CSV, including allocation logic
 (function () {
-    const { hoursPerDay, adminEmail } = window.APP_CONFIG;
+    const { hoursPerDay } = window.APP_CONFIG;
     let adminChart = null;
     let allReportsByUser = null;
     let activeByUser = null; // { uid: [activeResearchers] }
 
     function isAdminUser() {
         const state = window.getAppState ? window.getAppState() : {};
-        return state.currentUser && String(state.currentUser.email || '').toLowerCase() === String(adminEmail).toLowerCase();
+        return !!(state && state.isAdmin);
     }
 
     function loadAllReportsForAdmin() {
