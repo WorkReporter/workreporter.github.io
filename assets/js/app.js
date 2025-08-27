@@ -398,7 +398,7 @@
         const entryDiv = document.createElement('div');
         entryDiv.className = 'work-entry';
         const baseList = (Array.isArray(activeResearchers) && activeResearchers.length > 0) ? activeResearchers : allResearchers;
-        const available = [...(baseList || []), 'משימה אחרות', 'סמינר / קורס / הכשרה'];
+        const available = [...(baseList || []), 'משימות אחרות', 'סמינר / קורס / הכשרה'];
         entryDiv.innerHTML = `
             ${container.children.length > 0 ? '<button class="remove-btn" onclick="removeEntry(this)">×</button>' : ''}
             <div class="form-group">
@@ -431,7 +431,7 @@
         const entryDiv = document.createElement('div');
         entryDiv.className = 'work-entry';
         const baseList = (Array.isArray(activeResearchers) && activeResearchers.length > 0) ? activeResearchers : allResearchers;
-        const available = [...(baseList || []), 'משימה אחרות', 'סמינר / קורס / הכשרה'];
+        const available = [...(baseList || []), 'משימות אחרות', 'סמינר / קורס / הכשרה'];
         entryDiv.innerHTML = `
             ${container.children.length > 0 ? '<button class="remove-btn" onclick="removeEntry(this)">×</button>' : ''}
             <div class="form-group">
@@ -459,7 +459,7 @@
 
     function refreshResearcherDropdowns() {
         const baseList = (Array.isArray(activeResearchers) && activeResearchers.length > 0) ? activeResearchers : allResearchers;
-        const available = [...(baseList || []), 'משימה אחרות', 'סמינר / קורס / הכשרה'];
+        const available = [...(baseList || []), 'משימות אחרות', 'סמינר / קורס / הכשרה'];
         document.querySelectorAll('.researcher-select').forEach(sel => {
             const current = sel.value || '';
             sel.innerHTML = ['<option value="">בחר חוקר/משימה</option>', ...available.map(r => `<option value="${r}">${r}</option>`)].join('');
@@ -473,7 +473,7 @@
         const entry = selectElement.closest('.work-entry');
         const detailField = entry.querySelector('.detail-field');
         const val = selectElement.value;
-        if (val === 'משימה אחרות' || val === 'סמינר / קורס / הכשרה') {
+        if (val === 'משימות אחרות' || val === 'סמינר / קורס / הכשרה') {
             detailField.style.display = 'block';
         } else { detailField.style.display = 'none'; }
     }
@@ -675,7 +675,7 @@
             container.appendChild(div);
         });
         // Add fixed, non-editable items at the end per spec
-        ['משימה אחרות', 'סמינר / קורס / הכשרה'].forEach(item => {
+        ['משימות אחרות', 'סמינר / קורס / הכשרה'].forEach(item => {
             const div = document.createElement('div');
             div.className = 'researcher-item';
             div.innerHTML = `<input type="checkbox" checked disabled><label>${item}</label>`;
