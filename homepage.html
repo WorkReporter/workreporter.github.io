@@ -1141,13 +1141,14 @@
         </div>
     </div>
 
-    <div class="navigation" style="display:none;">
-        <button class="nav-btn" onclick="showScreen('reports')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">insights</span>דוחות</button>
-        <button class="nav-btn" onclick="showScreen('calendar')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">calendar_month</span>יומן</button>
-        <button class="nav-btn active" onclick="showScreen('main')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">home</span>בית</button>
-        <button class="nav-btn" onclick="showScreen('active-researchers')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">group</span>חוקרים פעילים</button>
-        <button id="admin-nav-btn" class="nav-btn" onclick="showScreen('admin')" style="display:none;"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">admin_panel_settings</span>ממשק מנהל</button>
-    </div>
+            <div class="navigation" style="display:none;">
+            <button class="nav-btn" onclick="showScreen('reports')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">insights</span>דוחות</button>
+            <button class="nav-btn" onclick="showScreen('calendar')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">calendar_month</span>יומן</button>
+            <button class="nav-btn active" onclick="showScreen('main')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">home</span>בית</button>
+            <button class="nav-btn" onclick="showScreen('active-researchers')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">group</span>חוקרים פעילים</button>
+            <button class="nav-btn" onclick="showScreen('about')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">info</span>אודות</button>
+            <button id="admin-nav-btn" class="nav-btn" onclick="showScreen('admin')" style="display:none;"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">admin_panel_settings</span>ממשק מנהל</button>
+        </div>
 
     <div id="login-screen" class="auth-container">
         <h2 style="text-align: center; margin-bottom: 30px;">כניסה למערכת</h2>
@@ -1219,6 +1220,72 @@
         <h2 style="text-align: center; margin-bottom: 30px;">חוקרים פעילים</h2>
         <div class="researchers-list" id="researchers-list"></div>
         <button class="btn" onclick="saveResearchers()">שמור</button>
+    </div>
+
+    <div id="about-screen" class="container hidden">
+        <h2 style="text-align: center; margin-bottom: 30px;">אודות המערכת</h2>
+        <div class="about-content" style="max-width: 800px; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h3 style="color: #1e3a8a; margin-bottom: 10px;">מערכת דיווח שעות - וולקני</h3>
+                <p style="color: #6b7280; font-size: 16px;">מערכת מתקדמת לניהול דיווחי שעות עבודה</p>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <h4 style="color: #374151; margin-bottom: 15px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">פיתוח, תכנון ואיפיון</h4>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 16px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="material-symbols-outlined" style="color: #1e3a8a;">person</span>
+                        <span><strong>ד"ר יעל זלצר</strong></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="material-symbols-outlined" style="color: #1e3a8a;">person</span>
+                        <span><strong>נוי שרף</strong></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="material-symbols-outlined" style="color: #1e3a8a;">person</span>
+                        <span><strong>יהודה הלר</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <h4 style="color: #374151; margin-bottom: 15px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">תכונות המערכת</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <span class="material-symbols-outlined" style="color: #059669; margin-top: 2px;">schedule</span>
+                        <div>
+                            <strong>דיווח יומי ושבועי</strong>
+                            <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">תמיכה בדיווח יומי מפורט ודיווח שבועי מרוכז</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <span class="material-symbols-outlined" style="color: #059669; margin-top: 2px;">analytics</span>
+                        <div>
+                            <strong>דוחות מתקדמים</strong>
+                            <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">יצירת דוחות חודשיים וניתוח נתונים</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <span class="material-symbols-outlined" style="color: #059669; margin-top: 2px;">group</span>
+                        <div>
+                            <strong>ניהול חוקרים</strong>
+                            <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">מערכת ניהול חוקרים פעילים ורשימות עבודה</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <span class="material-symbols-outlined" style="color: #059669; margin-top: 2px;">admin_panel_settings</span>
+                        <div>
+                            <strong>ממשק מנהל</strong>
+                            <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">כלי ניהול מתקדמים למנהלי המערכת</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 14px;">© 2024 מערכת דיווח שעות - וולקני. כל הזכויות שמורות.</p>
+            </div>
+        </div>
     </div>
 
     <div id="calendar-screen" class="container hidden">
@@ -1348,7 +1415,7 @@
             <div class="total-display"><strong>סה"כ שעות: <span id="total-hours">0</span></strong></div>
         </div>
         <div id="weekly-form" class="hidden">
-            <div class="form-group"><label>שבוע:</label><input type="week" id="report-week" readonly></div>
+            <div class="form-group"><label>טווח תאריכים:</label><input type="text" id="report-week" readonly style="background-color: #f9fafb;"></div>
             <div id="weekly-dates-hint" style="margin: 8px 0 16px; color:#6b7280; font-size: 14px;"></div>
             <div id="weekly-entries"></div>
             <button class="btn add" onclick="addWeeklyEntry()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add</span>הוסף שורה</button>
