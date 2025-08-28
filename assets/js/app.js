@@ -266,7 +266,7 @@
 
         if (!isWeekly) {
             // Block daily submission only if the selected date's week has weekly-derived daily entries
-            const refDate = reportDate ? new Date(reportDate) : new Date();
+            const refDate = reportDate ? parseDateFromInput(reportDate) : new Date();
             const sunday = getSundayOfWeek(refDate);
             if (hasWeeklyFanoutForWeek(sunday)) { showError('קיים דיווח שבועי לשבוע זה. לא ניתן לשמור דיווח יומי.'); isSubmitting = false; return; }
             const workStatus = document.querySelector('#work-status-toggle .toggle-option.active')?.dataset.status || 'worked';
@@ -381,7 +381,7 @@
 
         // Block daily if weekly already exists (fan-out) for selected week's date
         const dateVal = getInputValue('report-date');
-        const refDate = dateVal ? new Date(dateVal) : today;
+        const refDate = dateVal ? parseDateFromInput(dateVal) : today;
         const sunday = getSundayOfWeek(refDate);
         if (hasWeeklyFanoutForWeek(sunday)) {
             // Force weekly type and show info
@@ -406,7 +406,7 @@
         toggleHidden('weekly-form', type !== 'weekly');
         // Determine the reference date (selected in form) for week-conflict checks
         const dateInputVal = getInputValue('report-date');
-        const refDate = dateInputVal ? new Date(dateInputVal) : new Date();
+        const refDate = dateInputVal ? parseDateFromInput(dateInputVal) : new Date();
         const sundayOfRef = getSundayOfWeek(refDate);
         if (type === 'weekly') {
             // Block weekly if there are any daily reports already in that week
@@ -930,6 +930,11 @@
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
+    }
+    function parseDateFromInput(yyyyMmDd) {
+        // Parse input as local date to avoid timezone shifts
+        const [y, m, d] = String(yyyyMmDd).split('-').map(Number);
+        return new Date(y, (m || 1) - 1, d || 1);
     }
     function getCurrentWeek() { 
         const now = new Date(); 
