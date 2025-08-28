@@ -379,8 +379,10 @@
             weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי';
         }
 
-        // Block daily if weekly already exists (fan-out) for current week
-        const sunday = getSundayOfWeek(today);
+        // Block daily if weekly already exists (fan-out) for selected week's date
+        const dateVal = getInputValue('report-date');
+        const refDate = dateVal ? new Date(dateVal) : today;
+        const sunday = getSundayOfWeek(refDate);
         if (hasWeeklyFanoutForWeek(sunday)) {
             // Force weekly type and show info
             selectReportType('weekly');
@@ -388,6 +390,8 @@
         } else {
             selectReportType('daily');
         }
+        const titleEl = document.getElementById('report-screen-title');
+        if (titleEl) titleEl.textContent = 'דיווח חדש';
         showScreen('daily-report');
         // Ensure there is at least one daily entry by default
         selectWorkStatus('worked');
@@ -400,22 +404,35 @@
         if (sel) sel.classList.add('active');
         toggleHidden('daily-form', type !== 'daily');
         toggleHidden('weekly-form', type !== 'weekly');
+        // Determine the reference date (selected in form) for week-conflict checks
+        const dateInputVal = getInputValue('report-date');
+        const refDate = dateInputVal ? new Date(dateInputVal) : new Date();
+        const sundayOfRef = getSundayOfWeek(refDate);
         if (type === 'weekly') {
+            // Block weekly if there are any daily reports already in that week
+            if (hasAnyDailyInWeek(sundayOfRef)) {
+                showError('קיימים דיווחים יומיים בשבוע זה. לא ניתן לשמור דיווח שבועי.');
+                toggleHidden('weekly-form', true);
+                toggleHidden('daily-form', false);
+                const selDaily = document.querySelector('#report-type-toggle .toggle-option[data-type="daily"]');
+                document.querySelectorAll('#report-type-toggle .toggle-option').forEach(o => o.classList.remove('active'));
+                if (selDaily) selDaily.classList.add('active');
+                return;
+            }
             setInputValue('report-week', getCurrentWeek());
             const weeklyEntries = document.getElementById('weekly-entries');
             if (weeklyEntries && weeklyEntries.children.length === 0) addWeeklyEntry();
             renderWeeklyDatesHint();
         } else if (type === 'daily') {
-            // Prevent daily if week already has weekly fan-out
-            const today = new Date();
-            const sunday = getSundayOfWeek(today);
-            if (hasWeeklyFanoutForWeek(sunday)) {
+            // Prevent daily if this week already has weekly fan-out
+            if (hasWeeklyFanoutForWeek(sundayOfRef)) {
                 showError('כבר קיים דיווח שבועי לשבוע זה. בחר דיווח שבועי.');
                 toggleHidden('daily-form', true);
                 toggleHidden('weekly-form', false);
                 const selWeekly = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
                 document.querySelectorAll('#report-type-toggle .toggle-option').forEach(o => o.classList.remove('active'));
                 if (selWeekly) selWeekly.classList.add('active');
+                return;
             }
         }
     }
@@ -622,7 +639,11 @@
         if (selectedDate >= sundayPrev && selectedDate <= thursdayPrev) {
             if (reports.some(r => r.type === 'daily' && r.date === dateStr)) { showError('לא ניתן לערוך דיווח קיים בשבוע קודם'); return; }
         }
-        // If in current week and there is an existing report, it is allowed (עריכה של אותו שבוע)
+        // Set title: editing allowed only in current week (Sun–Thu)
+        const inCurrentWeek = selectedDate >= sundayCurrent && selectedDate <= thursdayCurrent;
+        const hasDaily = reports.some(r => r.type === 'daily' && r.date === dateStr);
+        const titleEl = document.getElementById('report-screen-title');
+        if (titleEl) titleEl.textContent = (inCurrentWeek && hasDaily) ? 'עריכת דיווח קיים' : 'דיווח חדש';
         // Ensure we're using the correct date format and set it properly
         const formattedDate = formatDate(selectedDate);
         setInputValue('report-date', formattedDate);
@@ -938,6 +959,10 @@
     function hasWeeklyFanoutForWeek(sundayDate) {
         const dates = getWeekDatesFromSunday(sundayDate);
         return dates.some(ds => reports.some(r => r.type === 'daily' && r.date === ds && r.weeklyDerived === true));
+    }
+    function hasAnyDailyInWeek(sundayDate) {
+        const dates = getWeekDatesFromSunday(sundayDate);
+        return dates.some(ds => reports.some(r => r.type === 'daily' && r.date === ds));
     }
     function initializeDates() { const today = new Date(); currentMonth = today.getMonth(); currentYear = today.getFullYear(); currentWeek = getCurrentWeek(); }
     function renderWeeklyDatesHint() {
