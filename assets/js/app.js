@@ -602,13 +602,18 @@
     function addCalendarReport() {
         if (!selectedDate) { showError('אנא בחר תאריך'); return; }
         const now = new Date();
-        const weekStart = getSundayOfWeek(now);
-        if (selectedDate < weekStart) {
-            if (reports.some(r => r.date === formatDate(selectedDate))) { showError('לא ניתן לערוך דיווח קיים'); return; }
-            // Block adding for שבוע קודם (לא אותו שבוע)
-            showError('לא ניתן להוסיף דיווח לשבוע קודם');
-            return;
+        const sundayCurrent = getSundayOfWeek(now);
+        const thursdayCurrent = new Date(sundayCurrent); thursdayCurrent.setDate(sundayCurrent.getDate() + 4);
+        const sundayPrev = new Date(sundayCurrent); sundayPrev.setDate(sundayCurrent.getDate() - 7);
+        const thursdayPrev = new Date(sundayPrev); thursdayPrev.setDate(sundayPrev.getDate() + 4);
+        const dateStr = formatDate(selectedDate);
+        // Older than previous week -> block
+        if (selectedDate < sundayPrev) { showError('לא ניתן להוסיף/לערוך מעבר לשבוע אחורה'); return; }
+        // If in previous week: allow only if no existing daily report (no edit)
+        if (selectedDate >= sundayPrev && selectedDate <= thursdayPrev) {
+            if (reports.some(r => r.type === 'daily' && r.date === dateStr)) { showError('לא ניתן לערוך דיווח קיים בשבוע קודם'); return; }
         }
+        // If in current week and there is an existing report, it is allowed (עריכה של אותו שבוע)
         // Ensure we're using the correct date format and set it properly
         const formattedDate = formatDate(selectedDate);
         setInputValue('report-date', formattedDate);
