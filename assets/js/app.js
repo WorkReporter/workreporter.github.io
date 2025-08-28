@@ -522,7 +522,11 @@
             const date = new Date(currentYear, currentMonth, day);
             const dateString = formatDate(date);
             if (date.toDateString() === today.toDateString()) div.classList.add('today');
-            if (reports.some(r => r.date === dateString)) div.classList.add('has-report');
+            // Mark day if there is a daily report or it is covered by a weekly report (Sun–Thu)
+            const hasDailyReport = reports.some(r => r.type === 'daily' && r.date === dateString);
+            const isWeekday = date.getDay() >= 0 && date.getDay() <= 4; // Sun–Thu
+            const coveredByWeekly = isWeekday && reports.some(r => r.type === 'weekly' && r.weekStart && r.weekEnd && (dateString >= r.weekStart) && (dateString <= r.weekEnd));
+            if (hasDailyReport || coveredByWeekly) div.classList.add('has-report');
             if (date.getDay() === 5 || date.getDay() === 6) {
                 div.style.background = 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)';
                 div.style.color = '#9ca3af';
