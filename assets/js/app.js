@@ -25,6 +25,8 @@
     // App state
     let currentUser = null;
     let isAdmin = false;
+    let reportsRef = null; // track live reports subscription
+    let isSubmitting = false; // prevent double submissions
     let activeResearchers = [];
     let allResearchers = [];
     let reports = [];
@@ -235,7 +237,10 @@
     function loadReports(uid) {
         if (!uid) return Promise.resolve();
         return new Promise((resolve) => {
-            database.ref('reports/' + uid).on('value', (snapshot) => {
+            // Detach previous listener to avoid duplicate callbacks
+            if (reportsRef) { reportsRef.off(); reportsRef = null; }
+            reportsRef = database.ref('reports/' + uid);
+            reportsRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 reports = data ? Object.values(data) : [];
                 if (!document.getElementById('calendar-screen')?.classList.contains('hidden')) {
@@ -247,6 +252,8 @@
     }
 
     function submitReport() {
+        if (isSubmitting) return;
+        isSubmitting = true;
         const reportDate = getInputValue('report-date');
         if (!reportDate) { showError('אנא הזן תאריך'); return; }
         // Create date in local timezone to avoid timezone issues
@@ -314,7 +321,8 @@
             database.ref().update(updates).then(() => {
                 showPopup('הדיווח השבועי הומר לדיווחים יומיים באופן שווה בין א׳–ה׳');
                 setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
-            }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
+            }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message))
+            .finally(() => { isSubmitting = false; const btn = document.querySelector('#daily-report-screen .btn.add, #weekly-form .btn.add'); if (btn) btn.disabled = false; });
             return;
         }
 
@@ -323,7 +331,8 @@
         database.ref('reports/' + currentUser.uid + '/' + reportKey).set(reportData).then(() => {
             showPopup('הדיווח נוסף בהצלחה!');
             setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
-        }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
+        }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message))
+        .finally(() => { isSubmitting = false; const btn = document.querySelector('#daily-report-screen .btn.add'); if (btn) btn.disabled = false; });
     }
     window.submitReport = submitReport;
 
