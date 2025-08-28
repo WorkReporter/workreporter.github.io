@@ -272,12 +272,17 @@
             const workStatus = document.querySelector('#work-status-toggle .toggle-option.active')?.dataset.status || 'worked';
             reportData.workStatus = workStatus;
             if (workStatus === 'worked') {
+                let hasInvalidDetail = false;
                 document.querySelectorAll('#work-entries .work-entry').forEach(entry => {
                     const researcher = entry.querySelector('.researcher-select')?.value || '';
                     const hours = parseFloat(entry.querySelector('.hours-input')?.value || '0') || 0;
-                    const detail = (entry.querySelector('textarea')?.value) || '';
+                    const detailEl = entry.querySelector('textarea');
+                    const detail = (detailEl?.value) || '';
+                    const requiresDetail = (researcher === 'משימות אחרות' || researcher === 'סמינר / קורס / הכשרה');
+                    if (requiresDetail && !detail.trim()) { hasInvalidDetail = true; }
                     if (researcher && hours > 0) reportData.entries.push({ researcher, hours, detail });
                 });
+                if (hasInvalidDetail) { showError('יש למלא שדה "פרט:" עבור משימות אחרות/סמינר'); isSubmitting = false; return; }
                 // Validate at least one entry with hours
                 const totalHours = (reportData.entries || []).reduce((s, e) => s + (Number(e.hours) || 0), 0);
                 if (totalHours <= 0) { showError('יש להזין לפחות דיווח אחד עם שעות'); isSubmitting = false; return; }
@@ -291,9 +296,13 @@
             document.querySelectorAll('#weekly-entries .work-entry').forEach(entry => {
                 const researcher = entry.querySelector('.researcher-select')?.value || '';
                 const days = parseFloat(entry.querySelector('.days-input')?.value || '0') || 0;
-                const detail = (entry.querySelector('textarea')?.value) || '';
+                const detailEl = entry.querySelector('textarea');
+                const detail = (detailEl?.value) || '';
+                const requiresDetail = (researcher === 'משימות אחרות' || researcher === 'סמינר / קורס / הכשרה');
+                if (requiresDetail && !detail.trim()) { weeklyEntries.push({ researcher: '__INVALID__', days: 0, detail: '' }); return; }
                 if (researcher && days > 0) weeklyEntries.push({ researcher, days, detail });
             });
+            if (weeklyEntries.some(e => e.researcher === '__INVALID__')) { showError('יש למלא שדה "פרט:" עבור משימות אחרות/סמינר'); isSubmitting = false; return; }
             if (weeklyEntries.length === 0) { showError('אנא הזן לפחות שורה אחת לדיווח שבועי'); isSubmitting = false; return; }
             const totalDaysEntered = weeklyEntries.reduce((s, e) => s + (Number(e.days) || 0), 0);
             if (totalDaysEntered <= 0) { showError('יש להזין לפחות יום אחד בדיווח שבועי'); isSubmitting = false; return; }
@@ -687,8 +696,6 @@
         const today = new Date();
         const weekStart = getSundayOfWeek(today);
         const dayNames = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-        // If there is a weekly report for this week, do not show missing
-        const weeklyCovered = reports.some(r => r.type === 'weekly' && (r.week === getCurrentWeek() || (r.weekStart && r.weekEnd && `${r.weekStart.split('-').reverse().join('/') } - ${r.weekEnd.split('-').reverse().join('/')}` === getCurrentWeek())));
         const missing = [];
         for (let i = 0; i < 5; i++) { // Sun-Thu
             const checkDate = new Date(weekStart);
@@ -696,11 +703,11 @@
             if (checkDate <= today) {
                 const dateString = formatDate(checkDate);
                 const hasDaily = reports.some(r => r.type === 'daily' && r.date === dateString);
-                if (!hasDaily && !weeklyCovered) missing.push(checkDate);
+                if (!hasDaily) missing.push(checkDate);
             }
         }
-        // Cap to 4 messages, reset each Sunday implicitly as we compute per current week
-        const limited = missing.slice(0, 4);
+        // Cap to 5 messages (Sun–Thu), reset each Sunday implicitly as we compute per current week
+        const limited = missing.slice(0, 5);
         if (limited.length > 0) {
             let html = '<div class="missing-reports-container">';
             html += '<h4 style="color: #dc2626; margin-bottom: 10px;">הודעות - דיווחים חסרים השבוע</h4>';
