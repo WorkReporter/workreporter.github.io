@@ -645,30 +645,32 @@
 
     function addCalendarReport() {
         if (!selectedDate) { showError('אנא בחר תאריך'); return; }
-        const now = new Date();
-        const sundayCurrent = getSundayOfWeek(now);
+        // Normalize dates to local date (00:00) to avoid timezone edge issues
+        const todayLocal = parseDateFromInput(formatDate(new Date()));
+        const selectedLocal = parseDateFromInput(formatDate(selectedDate));
+        const sundayCurrent = getSundayOfWeek(todayLocal);
         const thursdayCurrent = new Date(sundayCurrent); thursdayCurrent.setDate(sundayCurrent.getDate() + 4);
         const sundayPrev = new Date(sundayCurrent); sundayPrev.setDate(sundayCurrent.getDate() - 7);
         const thursdayPrev = new Date(sundayPrev); thursdayPrev.setDate(sundayPrev.getDate() + 4);
-        const dateStr = formatDate(selectedDate);
+        const dateStr = formatDate(selectedLocal);
         // Older than previous week -> block
-        if (selectedDate < sundayPrev) { showError('לא ניתן להוסיף/לערוך מעבר לשבוע אחורה'); return; }
+        if (selectedLocal.getTime() < sundayPrev.getTime()) { showError('לא ניתן להוסיף/לערוך מעבר לשבוע אחורה'); return; }
         // If in previous week: allow only if no existing daily report (no edit)
-        if (selectedDate >= sundayPrev && selectedDate <= thursdayPrev) {
+        if (selectedLocal.getTime() >= sundayPrev.getTime() && selectedLocal.getTime() <= thursdayPrev.getTime()) {
             if (reports.some(r => r.type === 'daily' && r.date === dateStr)) { showError('לא ניתן לערוך דיווח קיים בשבוע קודם'); return; }
         }
         // Set title: editing allowed only in current week (Sun–Thu)
-        const inCurrentWeek = selectedDate >= sundayCurrent && selectedDate <= thursdayCurrent;
+        const inCurrentWeek = selectedLocal.getTime() >= sundayCurrent.getTime() && selectedLocal.getTime() <= thursdayCurrent.getTime();
         const hasDaily = reports.some(r => r.type === 'daily' && r.date === dateStr);
         const titleEl = document.getElementById('report-screen-title');
         if (titleEl) titleEl.textContent = (inCurrentWeek && hasDaily) ? 'עריכת דיווח קיים' : 'דיווח חדש';
         // Ensure we're using the correct date format and set it properly
-        const formattedDate = formatDate(selectedDate);
+        const formattedDate = formatDate(selectedLocal);
         setInputValue('report-date', formattedDate);
         showScreen('daily-report');
         // If weekly tab is currently active, update weekly range to selected date's week
         const weeklyActive = !!document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"].active');
-        if (weeklyActive) { setWeeklyRangeFromDate(selectedDate); renderWeeklyDatesHint(); }
+        if (weeklyActive) { setWeeklyRangeFromDate(selectedLocal); renderWeeklyDatesHint(); }
         // Ensure there is at least one daily entry by default
         selectWorkStatus('worked');
     }
