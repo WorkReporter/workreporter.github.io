@@ -630,6 +630,18 @@
     }
     window.previousMonth = function () { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar(); };
     window.nextMonth = function () { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); };
+    
+    // Quick action: open report form for a specific date from notifications
+    window.startReportForDate = function (yyyyMmDd) {
+        try {
+            selectedDate = parseDateFromInput(yyyyMmDd);
+            addCalendarReport();
+        } catch (_) {
+            setInputValue('report-date', yyyyMmDd);
+            showScreen('daily-report');
+            selectWorkStatus('worked');
+        }
+    };
 
     function addCalendarReport() {
         if (!selectedDate) { showError('אנא בחר תאריך'); return; }
@@ -744,10 +756,12 @@
             limited.forEach(d => {
                 const dayName = dayNames[d.getDay()];
                 const dateStr = `${d.getDate()}/${d.getMonth() + 1}`;
+                const iso = formatDate(d);
                 html += `<div class="missing-report-item">
                     <span class="missing-day">${dayName}</span>
                     <span class="missing-date">${dateStr}</span>
                     <span class="missing-status">חסר דיווח</span>
+                    <button type="button" class="btn" style="padding:6px 10px; font-size:12px; margin-right:8px;" onclick="startReportForDate('${iso}')">הוסף דיווח</button>
                 </div>`;
             });
             html += '</div>';
