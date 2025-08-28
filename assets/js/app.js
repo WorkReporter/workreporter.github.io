@@ -265,6 +265,10 @@
         const reportData = { date: reportDate, type: isWeekly ? 'weekly' : 'daily', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: [] };
 
         if (!isWeekly) {
+            // Block daily submission if this week has weekly-derived daily entries
+            const today = new Date();
+            const sunday = getSundayOfWeek(today);
+            if (hasWeeklyFanoutForWeek(sunday)) { showError('קיים דיווח שבועי לשבוע זה. לא ניתן לשמור דיווח יומי.'); isSubmitting = false; return; }
             const workStatus = document.querySelector('#work-status-toggle .toggle-option.active')?.dataset.status || 'worked';
             reportData.workStatus = workStatus;
             if (workStatus === 'worked') {
@@ -316,7 +320,7 @@
             for (let i = 0; i < 5; i++) {
                 const dateStr = dates[i];
                 const dailyKey = `daily_${dateStr}`;
-                updates[`reports/${currentUser.uid}/${dailyKey}`] = { date: dateStr, type: 'daily', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: perDayEntries[i] };
+                updates[`reports/${currentUser.uid}/${dailyKey}`] = { date: dateStr, type: 'daily', weeklyDerived: true, timestamp: firebase.database.ServerValue.TIMESTAMP, entries: perDayEntries[i] };
             }
             database.ref().update(updates).then(() => {
                 showPopup('הדיווח השבועי הומר לדיווחים יומיים באופן שווה בין א׳–ה׳');
@@ -361,7 +365,15 @@
             weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי';
         }
 
-        selectReportType('daily');
+        // Block daily if weekly already exists (fan-out) for current week
+        const sunday = getSundayOfWeek(today);
+        if (hasWeeklyFanoutForWeek(sunday)) {
+            // Force weekly type and show info
+            selectReportType('weekly');
+            showError('קיים דיווח שבועי לשבוע זה. לא ניתן להוסיף דיווח יומי.');
+        } else {
+            selectReportType('daily');
+        }
         showScreen('daily-report');
         // Ensure there is at least one daily entry by default
         selectWorkStatus('worked');
@@ -379,6 +391,18 @@
             const weeklyEntries = document.getElementById('weekly-entries');
             if (weeklyEntries && weeklyEntries.children.length === 0) addWeeklyEntry();
             renderWeeklyDatesHint();
+        } else if (type === 'daily') {
+            // Prevent daily if week already has weekly fan-out
+            const today = new Date();
+            const sunday = getSundayOfWeek(today);
+            if (hasWeeklyFanoutForWeek(sunday)) {
+                showError('כבר קיים דיווח שבועי לשבוע זה. בחר דיווח שבועי.');
+                toggleHidden('daily-form', true);
+                toggleHidden('weekly-form', false);
+                const selWeekly = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
+                document.querySelectorAll('#report-type-toggle .toggle-option').forEach(o => o.classList.remove('active'));
+                if (selWeekly) selWeekly.classList.add('active');
+            }
         }
     }
     window.selectReportType = selectReportType;
@@ -886,6 +910,15 @@
     function getWeekStart(date) { const d = new Date(date); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); return new Date(d.setDate(diff)); }
     function getSundayOfWeek(date) { const d = new Date(date); const day = d.getDay(); const diff = d.getDate() - day; return new Date(d.setDate(diff)); }
     function roundToHalf(num) { return Math.round(num * 2) / 2; }
+    function getWeekDatesFromSunday(sundayDate) {
+        const dates = [];
+        for (let i = 0; i < 5; i++) { const d = new Date(sundayDate); d.setDate(sundayDate.getDate() + i); dates.push(formatDate(d)); }
+        return dates;
+    }
+    function hasWeeklyFanoutForWeek(sundayDate) {
+        const dates = getWeekDatesFromSunday(sundayDate);
+        return dates.some(ds => reports.some(r => r.type === 'daily' && r.date === ds && r.weeklyDerived === true));
+    }
     function initializeDates() { const today = new Date(); currentMonth = today.getMonth(); currentYear = today.getFullYear(); currentWeek = getCurrentWeek(); }
     function renderWeeklyDatesHint() {
         const hintEl = document.getElementById('weekly-dates-hint');
