@@ -278,6 +278,9 @@
                     const detail = (entry.querySelector('textarea')?.value) || '';
                     if (researcher && hours > 0) reportData.entries.push({ researcher, hours, detail });
                 });
+                // Validate at least one entry with hours
+                const totalHours = (reportData.entries || []).reduce((s, e) => s + (Number(e.hours) || 0), 0);
+                if (totalHours <= 0) { showError('יש להזין לפחות דיווח אחד עם שעות'); isSubmitting = false; return; }
             }
         } else {
             const today = new Date();
@@ -291,7 +294,9 @@
                 const detail = (entry.querySelector('textarea')?.value) || '';
                 if (researcher && days > 0) weeklyEntries.push({ researcher, days, detail });
             });
-            if (weeklyEntries.length === 0) { showError('אנא הזן לפחות שורה אחת לדיווח שבועי'); return; }
+            if (weeklyEntries.length === 0) { showError('אנא הזן לפחות שורה אחת לדיווח שבועי'); isSubmitting = false; return; }
+            const totalDaysEntered = weeklyEntries.reduce((s, e) => s + (Number(e.days) || 0), 0);
+            if (totalDaysEntered <= 0) { showError('יש להזין לפחות יום אחד בדיווח שבועי'); isSubmitting = false; return; }
             // Compute range for storage and filtering
             const sunday = getSundayOfWeek(today);
             const thursday = new Date(sunday); thursday.setDate(sunday.getDate() + 4);
@@ -597,9 +602,12 @@
     function addCalendarReport() {
         if (!selectedDate) { showError('אנא בחר תאריך'); return; }
         const now = new Date();
-        const weekStart = getWeekStart(now);
+        const weekStart = getSundayOfWeek(now);
         if (selectedDate < weekStart) {
             if (reports.some(r => r.date === formatDate(selectedDate))) { showError('לא ניתן לערוך דיווח קיים'); return; }
+            // Block adding for שבוע קודם (לא אותו שבוע)
+            showError('לא ניתן להוסיף דיווח לשבוע קודם');
+            return;
         }
         // Ensure we're using the correct date format and set it properly
         const formattedDate = formatDate(selectedDate);
