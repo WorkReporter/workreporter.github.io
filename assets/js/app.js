@@ -761,7 +761,7 @@
                     <span class="missing-day">${dayName}</span>
                     <span class="missing-date">${dateStr}</span>
                     <span class="missing-status">חסר דיווח</span>
-                    <button type="button" class="missing-action-btn" onclick="startReportForDate('${iso}')" aria-label="הוסף דיווח" title="הוסף דיווח">+</button>
+                    <button type="button" class="missing-action-btn" onclick="startReportForDate('${iso}')" aria-label="הוסף דיווח" title="הוסף דיווח">הוסף</button>
                 </div>`;
             });
             html += '</div>';
