@@ -291,7 +291,12 @@
             const today = new Date();
             if (today.getDay() !== 4) { showError('דיווח שבועי זמין רק בימי חמישי'); return; }
             const week = getInputValue('report-week');
-            reportData.week = week;
+            // Use selected week's start/end instead of current week
+            const hiddenStart = document.getElementById('report-week-start');
+            const weekStartDate = hiddenStart && hiddenStart.value ? parseDateFromInput(hiddenStart.value) : getSundayOfWeek(new Date());
+            const thursday = new Date(weekStartDate); thursday.setDate(weekStartDate.getDate() + 4);
+            const weekLabel = `${String(weekStartDate.getDate()).padStart(2,'0')}/${String(weekStartDate.getMonth()+1).padStart(2,'0')}/${weekStartDate.getFullYear()} - ${String(thursday.getDate()).padStart(2,'0')}/${String(thursday.getMonth()+1).padStart(2,'0')}/${thursday.getFullYear()}`;
+            reportData.week = weekLabel;
             const weeklyEntries = [];
             document.querySelectorAll('#weekly-entries .work-entry').forEach(entry => {
                 const researcher = entry.querySelector('.researcher-select')?.value || '';
@@ -307,15 +312,15 @@
             const totalDaysEntered = weeklyEntries.reduce((s, e) => s + (Number(e.days) || 0), 0);
             if (totalDaysEntered <= 0) { showError('יש להזין לפחות יום אחד בדיווח שבועי'); isSubmitting = false; return; }
             // Compute range for storage and filtering
-            const sunday = getSundayOfWeek(today);
-            const thursday = new Date(sunday); thursday.setDate(sunday.getDate() + 4);
+            const sunday = weekStartDate;
+            const thursday2 = new Date(weekStartDate); thursday2.setDate(weekStartDate.getDate() + 4);
             reportData.weekStart = formatDate(sunday);
-            reportData.weekEnd = formatDate(thursday);
+            reportData.weekEnd = formatDate(thursday2);
             if (!currentUser) return;
-            const weeklyKey = `weekly_${getCurrentWeekForStorage()}`;
+            const weeklyKey = `weekly_${formatDate(weekStartDate)}_${formatDate(thursday2)}`;
             // Build daily fan-out distributed evenly across Sun–Thu
             const dates = [];
-            for (let i = 0; i < 5; i++) { const d2 = new Date(sunday); d2.setDate(sunday.getDate() + i); dates.push(formatDate(d2)); }
+            for (let i = 0; i < 5; i++) { const d2 = new Date(weekStartDate); d2.setDate(weekStartDate.getDate() + i); dates.push(formatDate(d2)); }
             const perDayEntries = dates.map(() => []);
             weeklyEntries.forEach(({ researcher, days, detail }) => {
                 const totalHours = Math.max(0, (Number(days) || 0) * (window.APP_CONFIG?.hoursPerDay || 8));
@@ -419,7 +424,8 @@
                 if (selDaily) selDaily.classList.add('active');
                 return;
             }
-            setInputValue('report-week', getCurrentWeek());
+            // Set weekly range based on the selected date's week
+            setWeeklyRangeFromDate(refDate);
             const weeklyEntries = document.getElementById('weekly-entries');
             if (weeklyEntries && weeklyEntries.children.length === 0) addWeeklyEntry();
             renderWeeklyDatesHint();
@@ -970,11 +976,23 @@
         return dates.some(ds => reports.some(r => r.type === 'daily' && r.date === ds));
     }
     function initializeDates() { const today = new Date(); currentMonth = today.getMonth(); currentYear = today.getFullYear(); currentWeek = getCurrentWeek(); }
+    function setWeeklyRangeFromDate(anyDate) {
+        const sunday = getSundayOfWeek(anyDate);
+        const thursday = new Date(sunday);
+        thursday.setDate(sunday.getDate() + 4);
+        const startText = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
+        const endText = `${String(thursday.getDate()).padStart(2,'0')}/${String(thursday.getMonth()+1).padStart(2,'0')}/${thursday.getFullYear()}`;
+        setInputValue('report-week', `${startText} - ${endText}`);
+        const hiddenStart = document.getElementById('report-week-start');
+        if (hiddenStart) hiddenStart.value = formatDate(sunday);
+    }
+
     function renderWeeklyDatesHint() {
         const hintEl = document.getElementById('weekly-dates-hint');
         if (!hintEl) return;
-        const today = new Date();
-        const sunday = getSundayOfWeek(today);
+        const hiddenStart = document.getElementById('report-week-start');
+        const start = hiddenStart && hiddenStart.value ? parseDateFromInput(hiddenStart.value) : new Date();
+        const sunday = getSundayOfWeek(start);
         const thursday = new Date(sunday);
         thursday.setDate(sunday.getDate() + 4);
         const startDate = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
