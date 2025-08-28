@@ -281,35 +281,20 @@
                 if (researcher && days > 0) weeklyEntries.push({ researcher, days, detail });
             });
             if (weeklyEntries.length === 0) { showError('אנא הזן לפחות שורה אחת לדיווח שבועי'); return; }
-            // Compute Sunday of current week
+            // Compute range for storage and filtering
             const sunday = getSundayOfWeek(today);
-            // Build list of Sun..Thu dates
-            const dates = [];
-            for (let i = 0; i < 5; i++) { const d2 = new Date(sunday); d2.setDate(sunday.getDate() + i); dates.push(formatDate(d2)); }
-            // Conflict detection against existing daily reports
-            const conflicts = dates.filter(ds => reports.some(r => r.date === ds));
-            if (conflicts.length > 0) { showError('קיימים כבר דיווחים בימים: ' + conflicts.map(ds => ds.split('-').reverse().join('/')).join(', ')); return; }
-            // Prepare daily entries by distributing total weekly hours equally per working day
-            const perDayEntries = dates.map(() => []);
-            weeklyEntries.forEach(({ researcher, days, detail }) => {
-                const totalHours = days * 8;
-                if (totalHours <= 0) return;
-                const perDay = roundToHalf(totalHours / 5);
-                for (let i = 0; i < 5; i++) {
-                    if (perDay > 0) perDayEntries[i].push({ researcher, hours: perDay, detail });
-                }
-            });
-            // Build fan-out updates: write daily_* and also store the weekly summary
+            const thursday = new Date(sunday); thursday.setDate(sunday.getDate() + 4);
+            reportData.weekStart = formatDate(sunday);
+            reportData.weekEnd = formatDate(thursday);
             if (!currentUser) return;
-            const updates = {};
-            for (let i = 0; i < 5; i++) {
-                const dateStr = dates[i];
-                const dailyKey = `daily_${dateStr}`;
-                updates[`reports/${currentUser.uid}/${dailyKey}`] = { date: dateStr, type: 'daily', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: perDayEntries[i] };
-            }
-            updates[`reports/${currentUser.uid}/weekly_${getCurrentWeekForStorage()}`] = { week: reportData.week, type: 'weekly', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: weeklyEntries };
-            database.ref().update(updates).then(() => {
-                showPopup('הדיווח השבועי התווסף לימים א׳-ה׳ בהצלחה!');
+            const weeklyKey = `weekly_${getCurrentWeekForStorage()}`;
+            database.ref('reports/' + currentUser.uid + '/' + weeklyKey).set({
+                ...reportData,
+                entries: weeklyEntries,
+                type: 'weekly',
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                showPopup('הדיווח השבועי נשמר בהצלחה!');
                 setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
             }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
             return;
@@ -584,37 +569,46 @@
         const year = parseInt(getInputValue('report-year'));
         const resultsDiv = document.getElementById('report-results');
         const monthReports = reports.filter(r => {
-            // Create date in local timezone to avoid timezone issues
-            const [yearStr, monthStr, dayStr] = r.date.split('-').map(Number);
-            const d = new Date(yearStr, monthStr - 1, dayStr);
-            return d.getMonth() + 1 === month && d.getFullYear() === year;
+            if (r.type === 'daily' && r.date) {
+                const [y, m, d] = r.date.split('-').map(Number);
+                const dt = new Date(y, m - 1, d);
+                return dt.getMonth() + 1 === month && dt.getFullYear() === year;
+            }
+            if (r.type === 'weekly' && r.weekEnd) {
+                const [y, m, d] = r.weekEnd.split('-').map(Number);
+                const dt = new Date(y, m - 1, d);
+                return dt.getMonth() + 1 === month && dt.getFullYear() === year;
+            }
+            return false;
         });
         if (monthReports.length === 0) { resultsDiv.innerHTML = '<div class="notification">לא נמצאו דיווחים לחודש שנבחר</div>'; return; }
         let html = '<h3>דוח חודשי</h3>'; let totalHours = 0; let totalDays = 0; const summary = {};
         monthReports.forEach(report => {
-            // Create date in local timezone to avoid timezone issues
-            const [yearStr, monthStr, dayStr] = report.date.split('-').map(Number);
-            const d = new Date(yearStr, monthStr - 1, dayStr);
-            html += `<div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">`;
-            html += `<h4>${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}</h4>`;
-            if (report.type === 'daily') {
+            html += `<div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">`;
+            if (report.type === 'daily' && report.date) {
+                const [yearStr, monthStr, dayStr] = report.date.split('-').map(Number);
+                const d = new Date(yearStr, monthStr - 1, dayStr);
+                html += `<h4><span class="material-symbols-outlined" style="vertical-align: middle; color:#2563eb; margin-left:6px;">calendar_today</span>${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}</h4>`;
                 if (report.workStatus === 'no-work') { html += '<p>לא עבד</p>'; } else {
                     (report.entries || []).forEach(e => {
-                        html += `<p>${e.researcher}: ${e.hours} שעות${e.detail ? ' - ' + e.detail : ''}</p>`;
+                        html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#059669; margin-left:6px;">schedule</span>${e.researcher}: ${e.hours} שעות${e.detail ? ' - ' + e.detail : ''}</p>`;
                         totalHours += e.hours; summary[e.researcher] = summary[e.researcher] || { hours: 0, days: 0 }; summary[e.researcher].hours += e.hours;
                     });
                 }
-            } else {
+            } else if (report.type === 'weekly') {
+                const rangeLabel = report.week || `${(report.weekStart || '').split('-').reverse().join('/')} - ${(report.weekEnd || '').split('-').reverse().join('/')}`;
+                html += `<h4><span class="material-symbols-outlined" style="vertical-align: middle; color:#7c3aed; margin-left:6px;">event</span>${rangeLabel}</h4>`;
                 (report.entries || []).forEach(e => {
-                    html += `<p>${e.researcher}: ${e.days} ימים${e.detail ? ' - ' + e.detail : ''}</p>`;
-                    totalDays += e.days; summary[e.researcher] = summary[e.researcher] || { hours: 0, days: 0 }; summary[e.researcher].days += e.days;
+                    const hours = (Number(e.days || 0) || 0) * (window.APP_CONFIG?.hoursPerDay || 8);
+                    html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#059669; margin-left:6px;">schedule</span>${e.researcher}: ${e.days} ימים (${hours} שעות)${e.detail ? ' - ' + e.detail : ''}</p>`;
+                    totalDays += e.days; totalHours += hours; summary[e.researcher] = summary[e.researcher] || { hours: 0, days: 0 }; summary[e.researcher].days += e.days; summary[e.researcher].hours += hours;
                 });
             }
             html += '</div>';
         });
-        html += '<div style="margin-top: 30px; padding: 20px; background-color: #f9fafb; border-radius: 5px;">';
-        html += `<h3>סיכום חודשי</h3><p><strong>סה"כ שעות: ${totalHours}</strong></p><p><strong>סה"כ ימים: ${totalDays}</strong></p><h4>פילוח לפי חוקר/פרויקט:</h4>`;
-        Object.entries(summary).forEach(([name, s]) => { html += `<p>${name}: ${s.hours > 0 ? s.hours + ' שעות ' : ''}${s.days > 0 ? s.days + ' ימים' : ''}</p>`; });
+        html += '<div style="margin-top: 30px; padding: 20px; background-color: #f9fafb; border-radius: 8px; border:1px dashed #e5e7eb;">';
+        html += `<h3><span class="material-symbols-outlined" style="vertical-align: middle; color:#2563eb; margin-left:6px;">insights</span>סיכום חודשי</h3><p><strong>סה"כ שעות: ${totalHours}</strong></p><p><strong>סה"כ ימים: ${totalDays}</strong></p><h4 style="margin-top:12px;">פילוח לפי חוקר/פרויקט:</h4>`;
+        Object.entries(summary).forEach(([name, s]) => { html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#6b7280; margin-left:6px;">person</span>${name}: ${s.hours > 0 ? s.hours + ' שעות ' : ''}${s.days > 0 ? s.days + ' ימים' : ''}</p>`; });
         html += '</div>';
         resultsDiv.innerHTML = html;
     }
@@ -627,23 +621,25 @@
         if (!missingDiv || !notificationsDiv) return;
         missingDiv.innerHTML = ''; notificationsDiv.innerHTML = '';
         const today = new Date();
-        const weekStart = getWeekStart(today);
+        const weekStart = getSundayOfWeek(today);
         const dayNames = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+        // If there is a weekly report for this week, do not show missing
+        const weeklyCovered = reports.some(r => r.type === 'weekly' && (r.week === getCurrentWeek() || (r.weekStart && r.weekEnd && `${r.weekStart.split('-').reverse().join('/') } - ${r.weekEnd.split('-').reverse().join('/')}` === getCurrentWeek())));
         const missing = [];
-        for (let i = 0; i < 5; i++) { // Mon-Fri
+        for (let i = 0; i < 5; i++) { // Sun-Thu
             const checkDate = new Date(weekStart);
             checkDate.setDate(weekStart.getDate() + i);
             if (checkDate <= today) {
                 const dateString = formatDate(checkDate);
                 const hasDaily = reports.some(r => r.type === 'daily' && r.date === dateString);
-                if (!hasDaily) missing.push(checkDate);
+                if (!hasDaily && !weeklyCovered) missing.push(checkDate);
             }
         }
         // Cap to 4 messages, reset each Sunday implicitly as we compute per current week
         const limited = missing.slice(0, 4);
         if (limited.length > 0) {
             let html = '<div class="missing-reports-container">';
-            html += '<h4 style="color: #dc2626; margin-bottom: 10px;">📋 דיווחים חסרים השבוע:</h4>';
+            html += '<h4 style="color: #dc2626; margin-bottom: 10px;">הודעות - דיווחים חסרים השבוע</h4>';
             limited.forEach(d => {
                 const dayName = dayNames[d.getDay()];
                 const dateStr = `${d.getDate()}/${d.getMonth() + 1}`;
