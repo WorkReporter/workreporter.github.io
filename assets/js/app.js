@@ -120,7 +120,7 @@
         if (!currentUser && screenName !== 'login') {
             screenName = 'login';
         }
-        const screens = ['login', 'main', 'user-profile', 'active-researchers', 'calendar', 'reports', 'daily-report', 'admin'];
+        const screens = ['login', 'main', 'user-profile', 'active-researchers', 'calendar', 'reports', 'daily-report', 'admin', 'about'];
         screens.forEach(screen => {
             const el = document.getElementById(screen + '-screen');
             if (el) el.classList.add('hidden');
@@ -307,7 +307,7 @@
                 const dailyKey = `daily_${dateStr}`;
                 updates[`reports/${currentUser.uid}/${dailyKey}`] = { date: dateStr, type: 'daily', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: perDayEntries[i] };
             }
-            updates[`reports/${currentUser.uid}/weekly_${reportData.week}`] = { week: reportData.week, type: 'weekly', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: weeklyEntries };
+            updates[`reports/${currentUser.uid}/weekly_${getCurrentWeekForStorage()}`] = { week: reportData.week, type: 'weekly', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: weeklyEntries };
             database.ref().update(updates).then(() => {
                 showPopup('הדיווח השבועי התווסף לימים א׳-ה׳ בהצלחה!');
                 setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
@@ -316,7 +316,7 @@
         }
 
         if (!currentUser) return;
-        const reportKey = isWeekly ? `weekly_${reportData.week}` : `daily_${reportData.date}`;
+        const reportKey = isWeekly ? `weekly_${getCurrentWeekForStorage()}` : `daily_${reportData.date}`;
         database.ref('reports/' + currentUser.uid + '/' + reportKey).set(reportData).then(() => {
             showPopup('הדיווח נוסף בהצלחה!');
             setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
@@ -843,7 +843,23 @@
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
-    function getCurrentWeek() { const now = new Date(); const year = now.getFullYear(); const week = Math.ceil((((now - new Date(year, 0, 1)) / 86400000) + new Date(year, 0, 1).getDay() + 1) / 7); return `${year}-W${week.toString().padStart(2, '0')}`; }
+    function getCurrentWeek() { 
+        const now = new Date(); 
+        const sunday = getSundayOfWeek(now);
+        const thursday = new Date(sunday);
+        thursday.setDate(sunday.getDate() + 4);
+        const startDate = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
+        const endDate = `${String(thursday.getDate()).padStart(2,'0')}/${String(thursday.getMonth()+1).padStart(2,'0')}/${thursday.getFullYear()}`;
+        return `${startDate} - ${endDate}`;
+    }
+    
+    function getCurrentWeekForStorage() { 
+        const now = new Date(); 
+        const sunday = getSundayOfWeek(now);
+        const thursday = new Date(sunday);
+        thursday.setDate(sunday.getDate() + 4);
+        return `${formatDate(sunday)}_${formatDate(thursday)}`;
+    }
     function getWeekStart(date) { const d = new Date(date); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); return new Date(d.setDate(diff)); }
     function getSundayOfWeek(date) { const d = new Date(date); const day = d.getDay(); const diff = d.getDate() - day; return new Date(d.setDate(diff)); }
     function roundToHalf(num) { return Math.round(num * 2) / 2; }
@@ -853,10 +869,11 @@
         if (!hintEl) return;
         const today = new Date();
         const sunday = getSundayOfWeek(today);
-        const dates = [];
-        for (let i = 0; i < 5; i++) { const d = new Date(sunday); d.setDate(sunday.getDate() + i); dates.push(d); }
-        const txt = dates.map(d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`).join(' • ');
-        hintEl.textContent = `התאריכים לשבוע זה (א׳–ה׳): ${txt}`;
+        const thursday = new Date(sunday);
+        thursday.setDate(sunday.getDate() + 4);
+        const startDate = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
+        const endDate = `${String(thursday.getDate()).padStart(2,'0')}/${String(thursday.getMonth()+1).padStart(2,'0')}/${thursday.getFullYear()}`;
+        hintEl.textContent = `טווח התאריכים: ${startDate} - ${endDate} (א׳–ה׳)`;
     }
 
     // Expose for admin.js
