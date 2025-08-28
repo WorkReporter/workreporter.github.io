@@ -762,6 +762,34 @@
             border-radius: 6px;
         }
 
+        .missing-action-btn {
+            padding: 6px 10px;
+            font-size: 12px;
+            border: 1px solid #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            color: #1e40af;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .missing-action-btn:hover {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(59,130,246,0.2);
+        }
+
+        .missing-action-btn:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        @media (max-width: 480px) {
+            .missing-report-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .missing-action-btn { width: 100%; text-align: center; }
+        }
+
         .calendar {
             display: grid;
             grid-template-columns: repeat(7, 1fr);

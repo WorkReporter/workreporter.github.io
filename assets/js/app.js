@@ -761,7 +761,7 @@
                     <span class="missing-day">${dayName}</span>
                     <span class="missing-date">${dateStr}</span>
                     <span class="missing-status">חסר דיווח</span>
-                    <button type="button" class="btn" style="padding:6px 10px; font-size:12px; margin-right:8px;" onclick="startReportForDate('${iso}')">הוסף דיווח</button>
+                    <button type="button" class="missing-action-btn" onclick="startReportForDate('${iso}')">הוסף דיווח</button>
                 </div>`;
             });
             html += '</div>';
