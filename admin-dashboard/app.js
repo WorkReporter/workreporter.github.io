@@ -148,9 +148,10 @@ function subscribeAsUser(uid) {
     Object.entries(byId).forEach(([reportId, r]) => {
       const date = r?.date || '';
       const type = r?.type || 'daily';
+      if (type === 'weekly') return; // Avoid double counting; weekly is fan-out to daily
       const entries = Array.isArray(r?.entries) ? r.entries : [];
       entries.forEach((e, idx) => {
-        const hours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
+        const hours = (Number(e?.hours || 0) || 0);
         flat.push({ id: `${reportId}#${idx}`, uid, date, researcher: e?.researcher || '', hours, description: e?.detail || '' });
       });
     });
@@ -267,10 +268,11 @@ function aggregateForAdmin(reportsByUser, usersById, filters) {
       const d = r?.date ? new Date(r.date) : null;
       if (!d || (d.getMonth() + 1) !== month || d.getFullYear() !== year) return;
       const type = r?.type || 'daily';
+      if (type === 'weekly') return; // skip weekly summaries to prevent double count
       const entries = Array.isArray(r?.entries) ? r.entries : [];
       const active = Array.isArray(usersById?.[uid]?.activeResearchers) ? usersById[uid].activeResearchers : [];
       entries.forEach(e => {
-        const hours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
+        const hours = (Number(e?.hours || 0) || 0);
         if (!hours) return;
         entriesCount += 1;
         totalsByUser[uid] = (totalsByUser[uid] || 0) + hours;
@@ -361,9 +363,10 @@ function buildAllReportsFlat(reportsByUser, usersById, filters) {
       const d = r?.date ? new Date(r.date) : null;
       if (!d || (d.getMonth() + 1) !== month || d.getFullYear() !== year) return;
       const type = r?.type || 'daily';
+      if (type === 'weekly') return; // skip weekly
       const entries = Array.isArray(r?.entries) ? r.entries : [];
       entries.forEach(e => {
-        const baseHours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
+        const baseHours = (Number(e?.hours || 0) || 0);
         if (!baseHours) return;
         const researcherName = e?.researcher || '';
         if (allocate && researcherName === 'משימות אחרות' && active.length > 0) {
@@ -434,9 +437,10 @@ function buildResearcherTotals(reportsByUser, usersById, filters) {
       const d = r?.date ? new Date(r.date) : null;
       if (!d || (d.getMonth() + 1) !== month || d.getFullYear() !== year) return;
       const type = r?.type || 'daily';
+      if (type === 'weekly') return; // skip weekly
       const entries = Array.isArray(r?.entries) ? r.entries : [];
       entries.forEach(e => {
-        const baseHours = type === 'weekly' ? (Number(e?.days || 0) || 0) * HOURS_PER_DAY : (Number(e?.hours || 0) || 0);
+        const baseHours = (Number(e?.hours || 0) || 0);
         if (!baseHours) return;
         const name = e?.researcher || 'לא ידוע';
         if (allocate && name === 'משימות אחרות' && active.length > 0) {

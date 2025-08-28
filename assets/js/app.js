@@ -597,18 +597,12 @@
         const month = parseInt(getInputValue('report-month'));
         const year = parseInt(getInputValue('report-year'));
         const resultsDiv = document.getElementById('report-results');
+        // Show only daily entries to prevent double counting (weekly is fan-out)
         const monthReports = reports.filter(r => {
-            if (r.type === 'daily' && r.date) {
-                const [y, m, d] = r.date.split('-').map(Number);
-                const dt = new Date(y, m - 1, d);
-                return dt.getMonth() + 1 === month && dt.getFullYear() === year;
-            }
-            if (r.type === 'weekly' && r.weekEnd) {
-                const [y, m, d] = r.weekEnd.split('-').map(Number);
-                const dt = new Date(y, m - 1, d);
-                return dt.getMonth() + 1 === month && dt.getFullYear() === year;
-            }
-            return false;
+            if (r.type !== 'daily' || !r.date) return false;
+            const [y, m, d] = r.date.split('-').map(Number);
+            const dt = new Date(y, m - 1, d);
+            return dt.getMonth() + 1 === month && dt.getFullYear() === year;
         });
         if (monthReports.length === 0) { resultsDiv.innerHTML = '<div class="notification">לא נמצאו דיווחים לחודש שנבחר</div>'; return; }
         let html = '<h3>דוח חודשי</h3>'; let totalHours = 0; let totalDays = 0; const summary = {};
