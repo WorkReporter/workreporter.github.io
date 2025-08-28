@@ -293,25 +293,14 @@
             for (let i = 0; i < 5; i++) { const d2 = new Date(sunday); d2.setDate(sunday.getDate() + i); dates.push(formatDate(d2)); }
             const perDayEntries = dates.map(() => []);
             weeklyEntries.forEach(({ researcher, days, detail }) => {
-                const hoursPerDayBase = (Number(days) || 0) * (window.APP_CONFIG?.hoursPerDay || 8) / 5;
-                let accumulated = 0;
+                const totalHours = Math.max(0, (Number(days) || 0) * (window.APP_CONFIG?.hoursPerDay || 8));
+                const totalHalfUnits = Math.round(totalHours * 2); // number of 0.5h units
+                const baseUnitsPerDay = Math.floor(totalHalfUnits / 5);
+                let remainderUnits = totalHalfUnits - baseUnitsPerDay * 5;
                 for (let i = 0; i < 5; i++) {
-                    let hours;
-                    if (i < 4) {
-                        hours = roundToHalf(hoursPerDayBase);
-                        accumulated += hours;
-                    } else {
-                        // Last day absorbs the remainder to ensure exact total
-                        const totalHours = (Number(days) || 0) * (window.APP_CONFIG?.hoursPerDay || 8);
-                        hours = Math.max(0, totalHours - accumulated);
-                        // Round last day to 0.5 to match UI granularity while preserving total as close as possible
-                        hours = Math.round(hours * 2) / 2;
-                        // Adjust tiny rounding drift
-                        const drift = (accumulated + hours) - totalHours;
-                        if (Math.abs(drift) >= 0.5) {
-                            hours -= Math.sign(drift) * 0.5;
-                        }
-                    }
+                    let units = baseUnitsPerDay;
+                    if (remainderUnits > 0) { units += 1; remainderUnits -= 1; }
+                    const hours = units / 2; // back to hours granularity of 0.5
                     if (hours > 0) perDayEntries[i].push({ researcher, hours, detail });
                 }
             });
