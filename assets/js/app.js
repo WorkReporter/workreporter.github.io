@@ -265,9 +265,9 @@
         const reportData = { date: reportDate, type: isWeekly ? 'weekly' : 'daily', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: [] };
 
         if (!isWeekly) {
-            // Block daily submission if this week has weekly-derived daily entries
-            const today = new Date();
-            const sunday = getSundayOfWeek(today);
+            // Block daily submission only if the selected date's week has weekly-derived daily entries
+            const refDate = reportDate ? new Date(reportDate) : new Date();
+            const sunday = getSundayOfWeek(refDate);
             if (hasWeeklyFanoutForWeek(sunday)) { showError('קיים דיווח שבועי לשבוע זה. לא ניתן לשמור דיווח יומי.'); isSubmitting = false; return; }
             const workStatus = document.querySelector('#work-status-toggle .toggle-option.active')?.dataset.status || 'worked';
             reportData.workStatus = workStatus;
