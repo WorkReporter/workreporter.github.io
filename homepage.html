@@ -762,6 +762,38 @@
             border-radius: 6px;
         }
 
+        .missing-action-btn {
+            height: 22px;
+            padding: 2px 8px;
+            font-size: 12px;
+            line-height: 1;
+            border: 1px solid #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            color: #1e40af;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .missing-action-btn:hover {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(59,130,246,0.2);
+        }
+
+        .missing-action-btn:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        @media (max-width: 480px) {
+            .missing-report-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+        }
+
         .calendar {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -1399,7 +1431,7 @@
     </div>
 
     <div id="daily-report-screen" class="container hidden">
-        <h2 style="text-align: center; margin-bottom: 30px;">דיווח חדש</h2>
+        <h2 id="report-screen-title" style="text-align: center; margin-bottom: 30px;">דיווח חדש</h2>
         <div class="toggle-btn" id="report-type-toggle">
             <div class="toggle-option active" data-type="daily">יומי</div>
             <div class="toggle-option" data-type="weekly">שבועי</div>
@@ -1416,6 +1448,7 @@
         </div>
         <div id="weekly-form" class="hidden">
             <div class="form-group"><label>טווח תאריכים:</label><input type="text" id="report-week" readonly style="background-color: #f9fafb;"></div>
+            <input type="hidden" id="report-week-start">
             <div id="weekly-dates-hint" style="margin: 8px 0 16px; color:#6b7280; font-size: 14px;"></div>
             <div id="weekly-entries"></div>
             <button class="btn add" onclick="addWeeklyEntry()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add</span>הוסף שורה</button>
