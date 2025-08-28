@@ -591,6 +591,8 @@
         yearSelect.innerHTML = '';
         for (let y = nowY - 2; y <= nowY + 1; y++) { const opt = document.createElement('option'); opt.value = y; opt.textContent = y; if (y === nowY) opt.selected = true; yearSelect.appendChild(opt); }
         document.getElementById('report-month').value = (new Date().getMonth() + 1);
+        // Auto-generate on open so user sees fresh daily reports immediately
+        try { generateReport(); } catch (_) {}
     }
 
     function generateReport() {
