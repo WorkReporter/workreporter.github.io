@@ -1003,12 +1003,7 @@
         hintEl.textContent = `טווח התאריכים: ${startDate} - ${endDate} (א׳–ה׳)`;
     }
 
-    // Refresh button: force weekly range to current week
-    window.refreshWeeklyToCurrentWeek = function () {
-        const today = new Date();
-        setWeeklyRangeFromDate(today);
-        renderWeeklyDatesHint();
-    };
+    // removed refreshWeeklyToCurrentWeek button handler as the UI updates automatically
 
     // Expose for admin.js
     window.updateAdminUI = function () {

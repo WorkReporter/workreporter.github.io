@@ -1415,12 +1415,7 @@
             <div class="total-display"><strong>סה"כ שעות: <span id="total-hours">0</span></strong></div>
         </div>
         <div id="weekly-form" class="hidden">
-            <div class="form-group"><label>טווח תאריכים:</label>
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <input type="text" id="report-week" readonly style="background-color: #f9fafb; flex:1;">
-                    <button type="button" class="btn secondary" onclick="refreshWeeklyToCurrentWeek()" title="רענן לשבוע הנוכחי" aria-label="רענן לשבוע הנוכחי" style="white-space:nowrap;">רענן לשבוע נוכחי</button>
-                </div>
-            </div>
+            <div class="form-group"><label>טווח תאריכים:</label><input type="text" id="report-week" readonly style="background-color: #f9fafb;"></div>
             <input type="hidden" id="report-week-start">
             <div id="weekly-dates-hint" style="margin: 8px 0 16px; color:#6b7280; font-size: 14px;"></div>
             <div id="weekly-entries"></div>
