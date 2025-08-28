@@ -288,13 +288,38 @@
             reportData.weekEnd = formatDate(thursday);
             if (!currentUser) return;
             const weeklyKey = `weekly_${getCurrentWeekForStorage()}`;
-            database.ref('reports/' + currentUser.uid + '/' + weeklyKey).set({
+            // Build daily fan-out with exact 8h per full day and fractional remainder on Thursday
+            const dates = [];
+            for (let i = 0; i < 5; i++) { const d2 = new Date(sunday); d2.setDate(sunday.getDate() + i); dates.push(formatDate(d2)); }
+            const perDayEntries = dates.map(() => []);
+            weeklyEntries.forEach(({ researcher, days, detail }) => {
+                const totalHours = (Number(days) || 0) * (window.APP_CONFIG?.hoursPerDay || 8);
+                const fullDays = Math.floor(totalHours / (window.APP_CONFIG?.hoursPerDay || 8));
+                const remainder = totalHours - fullDays * (window.APP_CONFIG?.hoursPerDay || 8);
+                // Distribute full 8h per day across Sun..Thu
+                for (let i = 0; i < Math.min(fullDays, 5); i++) {
+                    perDayEntries[i].push({ researcher, hours: (window.APP_CONFIG?.hoursPerDay || 8), detail });
+                }
+                // Put any remainder on Thursday
+                if (remainder > 0 && fullDays < 5) {
+                    perDayEntries[4].push({ researcher, hours: remainder, detail });
+                }
+            });
+            // Prepare updates: overwrite this week's daily_* docs, plus weekly summary
+            const updates = {};
+            for (let i = 0; i < 5; i++) {
+                const dateStr = dates[i];
+                const dailyKey = `daily_${dateStr}`;
+                updates[`reports/${currentUser.uid}/${dailyKey}`] = { date: dateStr, type: 'daily', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: perDayEntries[i] };
+            }
+            updates[`reports/${currentUser.uid}/${weeklyKey}`] = {
                 ...reportData,
                 entries: weeklyEntries,
                 type: 'weekly',
                 timestamp: firebase.database.ServerValue.TIMESTAMP
-            }).then(() => {
-                showPopup('הדיווח השבועי נשמר בהצלחה!');
+            };
+            database.ref().update(updates).then(() => {
+                showPopup('הדיווח השבועי עודכן ונרשם לימי א׳–ה׳ (8 שעות ליום)');
                 setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
             }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
             return;
