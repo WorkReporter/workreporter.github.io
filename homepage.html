@@ -763,15 +763,19 @@
         }
 
         .missing-action-btn {
-            padding: 6px 10px;
-            font-size: 12px;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            font-size: 0;
             border: 1px solid #3b82f6;
             background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
             color: #1e40af;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
-            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .missing-action-btn:hover {
@@ -787,7 +791,6 @@
 
         @media (max-width: 480px) {
             .missing-report-item { flex-direction: column; align-items: flex-start; gap: 8px; }
-            .missing-action-btn { width: 100%; text-align: center; }
         }
 
         .calendar {
