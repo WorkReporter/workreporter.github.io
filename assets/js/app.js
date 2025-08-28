@@ -654,6 +654,9 @@
         const formattedDate = formatDate(selectedDate);
         setInputValue('report-date', formattedDate);
         showScreen('daily-report');
+        // If weekly tab is currently active, update weekly range to selected date's week
+        const weeklyActive = !!document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"].active');
+        if (weeklyActive) { setWeeklyRangeFromDate(selectedDate); renderWeeklyDatesHint(); }
         // Ensure there is at least one daily entry by default
         selectWorkStatus('worked');
     }
@@ -1076,5 +1079,16 @@
         processEmailActionLink();
         // Do not auto-add entries here; entries are created when opening the report screen
         // setTimeout(() => { addWorkEntry(); }, 100);
+
+        // Keep weekly range in sync with selected date
+        const dateInput = document.getElementById('report-date');
+        if (dateInput) {
+            dateInput.addEventListener('change', function () {
+                const val = getInputValue('report-date');
+                const ref = val ? parseDateFromInput(val) : new Date();
+                const weeklyActive = !!document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"].active');
+                if (weeklyActive) { setWeeklyRangeFromDate(ref); renderWeeklyDatesHint(); }
+            });
+        }
     });
 })();
