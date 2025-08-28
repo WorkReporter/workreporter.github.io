@@ -1003,6 +1003,13 @@
         hintEl.textContent = `טווח התאריכים: ${startDate} - ${endDate} (א׳–ה׳)`;
     }
 
+    // Refresh button: force weekly range to current week
+    window.refreshWeeklyToCurrentWeek = function () {
+        const today = new Date();
+        setWeeklyRangeFromDate(today);
+        renderWeeklyDatesHint();
+    };
+
     // Expose for admin.js
     window.updateAdminUI = function () {
         const adminNavBtn = document.getElementById('admin-nav-btn');
