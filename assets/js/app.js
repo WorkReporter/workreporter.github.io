@@ -779,7 +779,7 @@
 
     function signInUser(email, password) {
         if (!isAllowedDomain(email)) {
-            const err = { code: 'auth/email-domain-not-allowed', message: 'כתובת האימייל חייבת להיות בדומיין volcani.agri.gov.il' };
+            const err = { code: 'auth/email-domain-not-allowed', message: 'כתובת האימייל חייבת להיות בדומיין של המכון' };
             return Promise.reject(err);
         }
         return auth.signInWithEmailAndPassword(email, password);
@@ -787,7 +787,7 @@
 
     function createUser(data) {
         if (!isAllowedDomain(data.email)) {
-            const err = { code: 'auth/email-domain-not-allowed', message: 'כתובת האימייל חייבת להיות בדומיין volcani.agri.gov.il' };
+            const err = { code: 'auth/email-domain-not-allowed', message: 'כתובת האימייל חייבת להיות בדומיין של המכון' };
             return Promise.reject(err);
         }
         return auth.createUserWithEmailAndPassword(data.email, data.password).then(async (cred) => {
@@ -802,7 +802,7 @@
         const email = getInputValue('login-email');
         const password = getInputValue('login-password');
         if (!email || !password) { setHTML('login-messages', '<div class="error-message">הזן אימייל וסיסמה כדי לשלוח אימות מחדש</div>'); return; }
-        if (!isAllowedDomain(email)) { setHTML('login-messages', '<div class="error-message">כתובת האימייל חייבת להיות בדומיין volcani.agri.gov.il</div>'); return; }
+        if (!isAllowedDomain(email)) { setHTML('login-messages', '<div class="error-message">כתובת האימייל חייבת להיות בדומיין של המכון</div>'); return; }
         try {
             const cred = await auth.signInWithEmailAndPassword(email, password);
             setHTML('login-messages', '<div class="success-message">התחברת בהצלחה</div>');
@@ -819,7 +819,7 @@
             'auth/wrong-password': 'סיסמה שגויה',
             'auth/weak-password': 'סיסמה חלשה מדי',
             'auth/email-already-in-use': 'האימייל כבר רשום במערכת',
-            'auth/email-domain-not-allowed': 'רק מייל בדומיין volcani.agri.gov.il מורשה',
+            'auth/email-domain-not-allowed': 'רק מייל בדומיין של המכון מורשה',
             'auth/too-many-requests': 'יותר מדי ניסיונות. נסה שוב מאוחר יותר'
         };
         return errorMessages[error.code] || error.message;
