@@ -246,20 +246,122 @@
         });
     }
 
+    // ---------- Report Validation Functions (דרישה: הגבלות זמן לדיווח) ----------
+
+    /**
+     * בודק אם תאריך נמצא באותו השבוע של היום
+     * @param {Date} date התאריך לבדיקה
+     * @returns {boolean} האם התאריך באותו השבוע
+     */
+    function isInCurrentWeek(date) {
+        const today = new Date();
+        const currentWeekStart = getSundayOfWeek(today);
+        const currentWeekEnd = new Date(currentWeekStart);
+        currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
+
+        return date >= currentWeekStart && date <= currentWeekEnd;
+    }
+
+    /**
+     * בודק אם תאריך נמצא בשבוע הקודם
+     * @param {Date} date התאריך לבדיקה
+     * @returns {boolean} האם התאריך בשבוע הקודם
+     */
+    function isInPreviousWeek(date) {
+        const today = new Date();
+        const currentWeekStart = getSundayOfWeek(today);
+        const previousWeekStart = new Date(currentWeekStart);
+        previousWeekStart.setDate(currentWeekStart.getDate() - 7);
+        const previousWeekEnd = new Date(previousWeekStart);
+        previousWeekEnd.setDate(previousWeekStart.getDate() + 6);
+
+        return date >= previousWeekStart && date <= previousWeekEnd;
+    }
+
+    /**
+     * בודק אם מותר ליצור דיווח חדש לתאריך נתון
+     * דרישה: לתת להוסיף דיווח חדש שבוע אחורה אבל לא יותר
+     * @param {Date} date התאריך לבדיקה
+     * @returns {Object} תוצאה עם allowed (boolean) ו message (string)
+     */
+    function canCreateNewReport(date) {
+        if (isInCurrentWeek(date)) {
+            return { allowed: true, message: '' };
+        }
+
+        if (isInPreviousWeek(date)) {
+            return { allowed: true, message: 'דיווח לשבוע קודם - ניתן רק להוסיף דיווח חדש' };
+        }
+
+        return {
+            allowed: false,
+            message: 'לא ניתן לדווח יותר משבוע אחורה'
+        };
+    }
+
+    /**
+     * בודק אם מותר לערוך דיווח קיים
+     * דרישה: עריכת דיווחים רק של אותו שבוע
+     * @param {Date} date התאריך של הדיווח
+     * @returns {Object} תוצאה עם allowed (boolean) ו message (string)
+     */
+    function canEditExistingReport(date) {
+        if (isInCurrentWeek(date)) {
+            return { allowed: true, message: '' };
+        }
+
+        return {
+            allowed: false,
+            message: 'לא ניתן לערוך דיווח קיים מעבר לאותו שבוע'
+        };
+    }
+
     function submitReport() {
         const reportDate = getInputValue('report-date');
         if (!reportDate) { showError('אנא הזן תאריך'); return; }
+
         // Create date in local timezone to avoid timezone issues
         const [year, month, day] = reportDate.split('-').map(Number);
-        const d = new Date(year, month - 1, day);
-        if (d.getDay() === 5 || d.getDay() === 6) { showError('לא ניתן לדווח עבודה בימי שישי ושבת'); return; }
+        const selectedDate = new Date(year, month - 1, day);
+
+        // דרישה: לא לאפשר דיווח עבודה בימי שישי שבת
+        if (selectedDate.getDay() === 5 || selectedDate.getDay() === 6) {
+            showError('לא ניתן לדווח עבודה בימי שישי ושבת');
+            return;
+        }
+
+        // בדיקה אם יש דיווח קיים לתאריך הזה
+        const existingReport = reports.find(r => r.date === reportDate);
+
+        if (existingReport) {
+            // דרישה: עריכת דיווחים רק של אותו שבוע
+            const editValidation = canEditExistingReport(selectedDate);
+            if (!editValidation.allowed) {
+                showError(editValidation.message);
+                return;
+            }
+        } else {
+            // דרישה: לא לאפשר דיווח יותר משבוע אחורה
+            const createValidation = canCreateNewReport(selectedDate);
+            if (!createValidation.allowed) {
+                showError(createValidation.message);
+                return;
+            }
+        }
 
         const isWeekly = document.getElementById('daily-form').classList.contains('hidden');
-        const reportData = { date: reportDate, type: isWeekly ? 'weekly' : 'daily', timestamp: firebase.database.ServerValue.TIMESTAMP, entries: [] };
+        const reportData = {
+            date: reportDate,
+            type: isWeekly ? 'weekly' : 'daily',
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+            entries: []
+        };
 
         if (!isWeekly) {
+            // דרישה: דיווח יומי-שעתי
             const workStatus = document.querySelector('#work-status-toggle .toggle-option.active')?.dataset.status || 'worked';
             reportData.workStatus = workStatus;
+
             if (workStatus === 'worked') {
                 document.querySelectorAll('#work-entries .work-entry').forEach(entry => {
                     const researcher = entry.querySelector('.researcher-select')?.value || '';
@@ -269,24 +371,38 @@
                 });
             }
         } else {
+            // דרישה: דיווח שבועי - הגעה אליו ביום ה' בלבד
             const today = new Date();
-            if (today.getDay() !== 4) { showError('דיווח שבועי זמין רק בימי חמישי'); return; }
+            if (today.getDay() !== 4) {
+                showError('דיווח שבועי זמין רק בימי חמישי');
+                return;
+            }
+
             const week = getInputValue('report-week');
             reportData.week = week;
             const weeklyEntries = [];
+
             document.querySelectorAll('#weekly-entries .work-entry').forEach(entry => {
                 const researcher = entry.querySelector('.researcher-select')?.value || '';
                 const days = parseFloat(entry.querySelector('.days-input')?.value || '0') || 0;
                 const detail = (entry.querySelector('textarea')?.value) || '';
                 if (researcher && days > 0) weeklyEntries.push({ researcher, days, detail });
             });
-            if (weeklyEntries.length === 0) { showError('אנא הזן לפחות שורה אחת לדיווח שבועי'); return; }
+
+            if (weeklyEntries.length === 0) {
+                showError('אנא הזן לפחות שורה אחת לדיווח שבועי');
+                return;
+            }
+
             // Compute range for storage and filtering
             const sunday = getSundayOfWeek(today);
-            const thursday = new Date(sunday); thursday.setDate(sunday.getDate() + 4);
+            const thursday = new Date(sunday);
+            thursday.setDate(sunday.getDate() + 4);
             reportData.weekStart = formatDate(sunday);
             reportData.weekEnd = formatDate(thursday);
+
             if (!currentUser) return;
+
             const weeklyKey = `weekly_${getCurrentWeekForStorage()}`;
             database.ref('reports/' + currentUser.uid + '/' + weeklyKey).set({
                 ...reportData,
@@ -295,7 +411,11 @@
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             }).then(() => {
                 showPopup('הדיווח השבועי נשמר בהצלחה!');
-                setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
+                setTimeout(() => {
+                    showScreen('main');
+                    clearReportForm();
+                    loadReports(currentUser.uid);
+                }, 1200);
             }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
             return;
         }
@@ -540,18 +660,55 @@
     window.nextMonth = function () { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); };
 
     function addCalendarReport() {
-        if (!selectedDate) { showError('אנא בחר תאריך'); return; }
-        const now = new Date();
-        const weekStart = getWeekStart(now);
-        if (selectedDate < weekStart) {
-            if (reports.some(r => r.date === formatDate(selectedDate))) { showError('לא ניתן לערוך דיווח קיים'); return; }
+        if (!selectedDate) {
+            showError('אנא בחר תאריך');
+            return;
         }
-        // Ensure we're using the correct date format and set it properly
+
+        // דרישה: בדיקה מקדימה אם התאריך חוקי לדיווח
+        const existingReport = reports.find(r => r.date === formatDate(selectedDate));
+
+        if (existingReport) {
+            // יש דיווח קיים - בודק אם ניתן לערוך
+            const editValidation = canEditExistingReport(selectedDate);
+            if (!editValidation.allowed) {
+                showError(editValidation.message);
+                return;
+            }
+        } else {
+            // אין דיווח - בודק אם ניתן ליצור חדש
+            const createValidation = canCreateNewReport(selectedDate);
+            if (!createValidation.allowed) {
+                showError(createValidation.message);
+                return;
+            }
+            // הודעה אם זה שבוע קודם
+            if (createValidation.message) {
+                showPopup(createValidation.message, 'info');
+            }
+        }
+
+        // Set the selected date in the form
         const formattedDate = formatDate(selectedDate);
         setInputValue('report-date', formattedDate);
+
+        // דרישה: כפתור הוסף דיווח - בין הימים א'-ד' מסך דיווח חדש יומי, ביום ה' יומי/שבועי
+        const today = new Date();
+
+        // Configure report type options based on day
+        const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
+        if (weeklyToggle) {
+            const isThursday = (today.getDay() === 4);
+            const allowed = isThursday;
+            weeklyToggle.style.opacity = allowed ? '' : '0.5';
+            weeklyToggle.setAttribute('aria-disabled', allowed ? 'false' : 'true');
+            weeklyToggle.dataset.allowed = allowed ? '1' : '0';
+            weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי';
+        }
+
         showScreen('daily-report');
-        // Ensure there is at least one daily entry by default
-        selectWorkStatus('worked');
+        selectReportType('daily'); // Always start with daily
+        selectWorkStatus('worked'); // Default to worked
     }
     window.addCalendarReport = addCalendarReport;
 
@@ -623,9 +780,11 @@
         const today = new Date();
         const weekStart = getSundayOfWeek(today);
         const dayNames = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+
         // If there is a weekly report for this week, do not show missing
         const weeklyCovered = reports.some(r => r.type === 'weekly' && (r.week === getCurrentWeek() || (r.weekStart && r.weekEnd && `${r.weekStart.split('-').reverse().join('/') } - ${r.weekEnd.split('-').reverse().join('/')}` === getCurrentWeek())));
         const missing = [];
+
         for (let i = 0; i < 5; i++) { // Sun-Thu
             const checkDate = new Date(weekStart);
             checkDate.setDate(weekStart.getDate() + i);
@@ -635,6 +794,7 @@
                 if (!hasDaily && !weeklyCovered) missing.push(checkDate);
             }
         }
+
         // Cap to 4 messages, reset each Sunday implicitly as we compute per current week
         const limited = missing.slice(0, 4);
         if (limited.length > 0) {
@@ -643,16 +803,78 @@
             limited.forEach(d => {
                 const dayName = dayNames[d.getDay()];
                 const dateStr = `${d.getDate()}/${d.getMonth() + 1}`;
+                const formattedDate = formatDate(d);
                 html += `<div class="missing-report-item">
-                    <span class="missing-day">${dayName}</span>
-                    <span class="missing-date">${dateStr}</span>
-                    <span class="missing-status">חסר דיווח</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="missing-day">${dayName}</span>
+                        <span class="missing-date">${dateStr}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="missing-status">חסר דיווח</span>
+                        <button class="add-missing-report-btn" onclick="addReportForDate('${formattedDate}')" title="הוסף דיווח ל${dayName} ${dateStr}">
+                            <span class="material-symbols-outlined">add_circle</span>
+                        </button>
+                    </div>
                 </div>`;
             });
             html += '</div>';
             missingDiv.innerHTML = html;
         }
     }
+
+    /**
+     * פונקציה להוספת דיווח לתאריך ספציפי מההודעות
+     * דרישה: כפתור הוסף דיווח בהודעות הדיווחים החסרים
+     * @param {string} dateString תאריך בפורמט YYYY-MM-DD
+     */
+    function addReportForDate(dateString) {
+        const [year, month, day] = dateString.split('-').map(Number);
+        const targetDate = new Date(year, month - 1, day);
+
+        // בדיקה אם התאריך חוקי לדיווח
+        const existingReport = reports.find(r => r.date === dateString);
+
+        if (existingReport) {
+            // יש דיווח קיים - בודק אם ניתן לערוך
+            const editValidation = canEditExistingReport(targetDate);
+            if (!editValidation.allowed) {
+                showError(editValidation.message);
+                return;
+            }
+        } else {
+            // אין דיווח - בודק אם ניתן ליצור חדש
+            const createValidation = canCreateNewReport(targetDate);
+            if (!createValidation.allowed) {
+                showError(createValidation.message);
+                return;
+            }
+        }
+
+        // Set the target date in the form
+        setInputValue('report-date', dateString);
+
+        // דרישה: כפתור הוסף דיווח - בין הימים א'-ד' מסך דיווח חדש יומי, ביום ה' יומי/שבועי
+        const today = new Date();
+        const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
+        if (weeklyToggle) {
+            const isThursday = (today.getDay() === 4);
+            const allowed = isThursday;
+            weeklyToggle.style.opacity = allowed ? '' : '0.5';
+            weeklyToggle.setAttribute('aria-disabled', allowed ? 'false' : 'true');
+            weeklyToggle.dataset.allowed = allowed ? '1' : '0';
+            weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי';
+        }
+
+        showScreen('daily-report');
+        selectReportType('daily'); // Always start with daily
+        selectWorkStatus('worked'); // Default to worked
+
+        // הודעת אישור על התאריך שנבחר
+        const dayName = dayNames[targetDate.getDay()];
+        const displayDate = `${targetDate.getDate()}/${targetDate.getMonth() + 1}`;
+        showPopup(`נפתח דיווח ליום ${dayName} ${displayDate}`, 'info');
+    }
+    window.addReportForDate = addReportForDate;
 
     // ---------- Researchers UI ----------
     function renderResearchers() {
@@ -830,7 +1052,32 @@
     function getInputValue(id) { const el = document.getElementById(id); return el ? el.value : ''; }
     function setHTML(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
     function toggleHidden(id, isHidden) { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', isHidden); }
-    function showPopup(message, type = 'success') { const popup = document.createElement('div'); popup.className = 'popup'; popup.setAttribute('role', 'dialog'); popup.setAttribute('aria-live', 'assertive'); popup.setAttribute('aria-modal', 'true'); const innerClass = type === 'error' ? 'error-message' : 'success-message'; popup.innerHTML = `<div class="popup-content"><div class="${innerClass}">${message}</div></div>`; document.body.appendChild(popup); setTimeout(() => { if (popup.parentNode) document.body.removeChild(popup); }, 2000); }
+    function showPopup(message, type = 'success') {
+        const popup = document.createElement('div');
+        popup.className = 'popup';
+        popup.setAttribute('role', 'dialog');
+        popup.setAttribute('aria-live', 'assertive');
+        popup.setAttribute('aria-modal', 'true');
+
+        let innerClass;
+        switch(type) {
+            case 'error':
+                innerClass = 'error-message';
+                break;
+            case 'info':
+                innerClass = 'info-message';
+                break;
+            default:
+                innerClass = 'success-message';
+                break;
+        }
+
+        popup.innerHTML = `<div class="popup-content"><div class="${innerClass}">${message}</div></div>`;
+        document.body.appendChild(popup);
+        setTimeout(() => {
+            if (popup.parentNode) document.body.removeChild(popup);
+        }, 3000);
+    }
     function showError(message) { showPopup(message, 'error'); }
     function formatDate(date) {
         // Fix timezone issue by creating date in local timezone

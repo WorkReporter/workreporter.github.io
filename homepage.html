@@ -451,6 +451,18 @@
             border-right: 4px solid #166534;
         }
 
+        .info-message {
+            background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);
+            border: 1px solid #81d4fa;
+            color: #01579b;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(1, 87, 155, 0.1);
+            border-right: 4px solid #01579b;
+        }
+
         #forgot-password-form {
             display: none;
         }
@@ -715,37 +727,31 @@
             box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
         }
 
+        /* === Missing Reports Styling (דרישה: הודעות על דיווחים חסרים) === */
         .missing-reports-container {
             background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            border: 1px solid #fecaca;
-            border-radius: 15px;
+            border: 2px solid #fca5a5;
+            border-radius: 12px;
             padding: 20px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
         }
 
         .missing-report-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 15px;
+            justify-content: space-between;
+            padding: 12px 15px;
             margin: 8px 0;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border-radius: 12px;
-            border-right: 4px solid #dc2626;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-        }
-
-        .missing-report-item:hover {
-            transform: translateX(-5px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #fef7f7 100%);
+            border: 1px solid #fda4af;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.08);
         }
 
         .missing-day {
             font-weight: 600;
-            color: #374151;
+            color: #dc2626;
         }
 
         .missing-date {
@@ -754,32 +760,113 @@
         }
 
         .missing-status {
-            color: #dc2626;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
             font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* כפתור הוסף דיווח בהודעות החסרות (דרישה: כפתור בכל שורה להוסף דיווח) */
+        .add-missing-report-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+            color: white;
+        }
+
+        .add-missing-report-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+
+        .add-missing-report-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .add-missing-report-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+        }
+
+        .add-missing-report-btn:active:focus {
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3), 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .add-missing-report-btn .material-symbols-outlined {
+            font-size: 18px;
+        }
+
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .popup-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .popup .success-message {
+            color: #059669;
             font-weight: 600;
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            padding: 4px 8px;
-            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .popup .error-message {
+            color: #dc2626;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .popup .info-message {
+            color: #0369a1;
+            font-weight: 600;
+            font-size: 16px;
         }
 
         .calendar {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
-            margin: 25px 0;
+            gap: 5px;
+            padding: 15px;
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
 
         .calendar-header {
-            text-align: center;
-            padding: 15px;
             background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-            font-weight: 600;
             color: white;
-            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            border-radius: 8px;
             box-shadow: 0 2px 8px rgba(30, 58, 138, 0.3);
         }
 
