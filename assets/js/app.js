@@ -258,8 +258,13 @@
         const currentWeekStart = getSundayOfWeek(today);
         const currentWeekEnd = new Date(currentWeekStart);
         currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
+        // Reset time to avoid time comparison issues
+        const checkDate = new Date(date);
+        checkDate.setHours(0, 0, 0, 0);
+        currentWeekStart.setHours(0, 0, 0, 0);
+        currentWeekEnd.setHours(23, 59, 59, 999);
 
-        return date >= currentWeekStart && date <= currentWeekEnd;
+        return checkDate >= currentWeekStart && checkDate <= currentWeekEnd;
     }
 
     /**
@@ -275,7 +280,13 @@
         const previousWeekEnd = new Date(previousWeekStart);
         previousWeekEnd.setDate(previousWeekStart.getDate() + 6);
 
-        return date >= previousWeekStart && date <= previousWeekEnd;
+        // Reset time to avoid time comparison issues
+        const checkDate = new Date(date);
+        checkDate.setHours(0, 0, 0, 0);
+        previousWeekStart.setHours(0, 0, 0, 0);
+        previousWeekEnd.setHours(23, 59, 59, 999);
+
+        return checkDate >= previousWeekStart && checkDate <= previousWeekEnd;
     }
 
     /**
@@ -285,19 +296,41 @@
      * @returns {Object} תוצאה עם allowed (boolean) ו message (string)
      */
     function canCreateNewReport(date) {
+        // DEBUG: הוספת לוגים לבדיקה
+        const today = new Date();
+        console.log('DEBUG canCreateNewReport:');
+        console.log('  Today:', today.toDateString());
+        console.log('  Date to check:', date.toDateString());
+
+        const currentWeekStart = getSundayOfWeek(today);
+        const currentWeekEnd = new Date(currentWeekStart);
+        currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
+
+        const previousWeekStart = new Date(currentWeekStart);
+        previousWeekStart.setDate(currentWeekStart.getDate() - 7);
+        const previousWeekEnd = new Date(previousWeekStart);
+        previousWeekEnd.setDate(previousWeekStart.getDate() + 6);
+
+        console.log('  Current week:', currentWeekStart.toDateString(), '-', currentWeekEnd.toDateString());
+        console.log('  Previous week:', previousWeekStart.toDateString(), '-', previousWeekEnd.toDateString());
+
         // Allow reporting for current week (Sunday-Thursday)
-        if (isInCurrentWeek(date)) {
+        const inCurrentWeek = isInCurrentWeek(date);
+        console.log('  In current week?', inCurrentWeek);
+        if (inCurrentWeek) {
             return { allowed: true, message: '' };
         }
 
         // Allow reporting for previous week (Sunday-Thursday) - NEW REPORTS ONLY
-        if (isInPreviousWeek(date)) {
+        const inPreviousWeek = isInPreviousWeek(date);
+        console.log('  In previous week?', inPreviousWeek);
+        if (inPreviousWeek) {
             return { allowed: true, message: 'דיווח לשבוע קודם - ניתן רק להוסיף דיווח חדש' };
         }
 
         // For any other dates - not allowed
-        const today = new Date();
         const daysDiff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+        console.log('  Days difference:', daysDiff);
 
         if (daysDiff < 0) {
             return {
@@ -844,6 +877,7 @@
     function addReportForDate(dateString) {
         const [year, month, day] = dateString.split('-').map(Number);
         const targetDate = new Date(year, month - 1, day);
+        const dayNames = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
 
         // בדיקה אם התאריך חוקי לדיווח
         const existingReport = reports.find(r => r.date === dateString);
