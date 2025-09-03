@@ -285,12 +285,25 @@
      * @returns {Object} תוצאה עם allowed (boolean) ו message (string)
      */
     function canCreateNewReport(date) {
+        // Allow reporting for current week (Sunday-Thursday)
         if (isInCurrentWeek(date)) {
             return { allowed: true, message: '' };
         }
 
+        // Allow reporting for previous week (Sunday-Thursday) - NEW REPORTS ONLY
         if (isInPreviousWeek(date)) {
             return { allowed: true, message: 'דיווח לשבוע קודם - ניתן רק להוסיף דיווח חדש' };
+        }
+
+        // For any other dates - not allowed
+        const today = new Date();
+        const daysDiff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+
+        if (daysDiff < 0) {
+            return {
+                allowed: false,
+                message: 'לא ניתן לדווח על תאריכים עתידיים'
+            };
         }
 
         return {
@@ -301,18 +314,19 @@
 
     /**
      * בודק אם מותר לערוך דיווח קיים
-     * דרישה: עריכת דיווחים רק של אותו שבוע
+     * דרישה: עריכת דיווחים רק של אותו שבוע (השבוע הנוכחי)
      * @param {Date} date התאריך של הדיווח
      * @returns {Object} תוצאה עם allowed (boolean) ו message (string)
      */
     function canEditExistingReport(date) {
+        // Only allow editing reports from current week
         if (isInCurrentWeek(date)) {
             return { allowed: true, message: '' };
         }
 
         return {
             allowed: false,
-            message: 'לא ניתן לערוך דיווח קיים מעבר לאותו שבוע'
+            message: 'לא ניתן לערוך דיווח קיים מהשבוע הקודם - רק ליצור חדש'
         };
     }
 
@@ -1104,7 +1118,13 @@
         return `${formatDate(sunday)}_${formatDate(thursday)}`;
     }
     function getWeekStart(date) { const d = new Date(date); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1); return new Date(d.setDate(diff)); }
-    function getSundayOfWeek(date) { const d = new Date(date); const day = d.getDay(); const diff = d.getDate() - day; return new Date(d.setDate(diff)); }
+    function getSundayOfWeek(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const sunday = new Date(d);
+        sunday.setDate(d.getDate() - day);
+        return sunday;
+    }
     function roundToHalf(num) { return Math.round(num * 2) / 2; }
     function initializeDates() { const today = new Date(); currentMonth = today.getMonth(); currentYear = today.getFullYear(); currentWeek = getCurrentWeek(); }
     function renderWeeklyDatesHint() {
