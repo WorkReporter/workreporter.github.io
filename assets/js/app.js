@@ -262,9 +262,65 @@
         const checkDate = new Date(date);
         checkDate.setHours(0, 0, 0, 0);
         currentWeekStart.setHours(0, 0, 0, 0);
-        currentWeekEnd.setHours(23, 59, 59, 999);
-
+        currentWeekEnd.setHours(0, 0, 0, 0);
         return checkDate >= currentWeekStart && checkDate <= currentWeekEnd;
+    }
+
+    /**
+     * בודק אם תאריך מכוסה על ידי דיווח שבועי
+     * @param {string} dateString התאריך בפורמט YYYY-MM-DD
+     * @param {Array} reports רשימת הדיווחים
+     * @returns {boolean} האם התאריך מכוסה על ידי דיווח שבועי
+     */
+    function isDateCoveredByWeeklyReport(dateString, reports) {
+        const checkDate = new Date(dateString);
+        checkDate.setHours(0, 0, 0, 0);
+
+        return reports.some(report => {
+            if (report.type !== 'weekly') return false;
+
+            // Parse the weekly report date range from the key or stored data
+            let weekStart, weekEnd;
+
+            // Try to get dates from the report key (format: weekly_YYYY-MM-DD_YYYY-MM-DD)
+            if (report.key && report.key.startsWith('weekly_')) {
+                const datesPart = report.key.replace('weekly_', '');
+                const [startStr, endStr] = datesPart.split('_');
+                if (startStr && endStr) {
+                    weekStart = new Date(startStr);
+                    weekEnd = new Date(endStr);
+                }
+            }
+
+            // If we couldn't get dates from key, try from stored weekStart/weekEnd
+            if (!weekStart && report.weekStart) {
+                weekStart = new Date(report.weekStart);
+            }
+            if (!weekEnd && report.weekEnd) {
+                weekEnd = new Date(report.weekEnd);
+            }
+
+            // If still no dates, try to parse from week field (format: "DD/MM/YYYY - DD/MM/YYYY")
+            if (!weekStart && report.week) {
+                const weekParts = report.week.split(' - ');
+                if (weekParts.length === 2) {
+                    const [startPart, endPart] = weekParts;
+                    const [startDay, startMonth, startYear] = startPart.split('/');
+                    const [endDay, endMonth, endYear] = endPart.split('/');
+                    weekStart = new Date(startYear, startMonth - 1, startDay);
+                    weekEnd = new Date(endYear, endMonth - 1, endDay);
+                }
+            }
+
+            if (!weekStart || !weekEnd) return false;
+
+            // Reset time to avoid time comparison issues
+            weekStart.setHours(0, 0, 0, 0);
+            weekEnd.setHours(23, 59, 59, 999);
+
+            // Check if the date falls within the weekly report range (Sunday to Thursday)
+            return checkDate >= weekStart && checkDate <= weekEnd;
+        });
     }
 
     /**
@@ -371,7 +427,7 @@
         const [year, month, day] = reportDate.split('-').map(Number);
         const selectedDate = new Date(year, month - 1, day);
 
-        // דרישה: לא לאפשר דיווח עבודה בימי שישי שבת
+        // דרישה: לא לאפשר דיוח עבודה בימי שישי שבת
         if (selectedDate.getDay() === 5 || selectedDate.getDay() === 6) {
             showError('לא ניתן לדווח עבודה בימי שישי ושבת');
             return;
@@ -689,7 +745,12 @@
             const date = new Date(currentYear, currentMonth, day);
             const dateString = formatDate(date);
             if (date.toDateString() === today.toDateString()) div.classList.add('today');
-            if (reports.some(r => r.date === dateString)) div.classList.add('has-report');
+
+            // Check if this date has a daily report OR is covered by a weekly report
+            const hasDailyReport = reports.some(r => r.date === dateString);
+            const coveredByWeeklyReport = isDateCoveredByWeeklyReport(dateString, reports);
+            if (hasDailyReport || coveredByWeeklyReport) div.classList.add('has-report');
+
             if (date.getDay() === 5 || date.getDay() === 6) {
                 div.style.background = 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)';
                 div.style.color = '#9ca3af';
