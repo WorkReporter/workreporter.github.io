@@ -324,6 +324,26 @@
     }
 
     /**
+     * בודק אם יש דיווח יומי באותו שבוע של התאריך הנתון
+     * @param {string} dateString התאריך בפורמט YYYY-MM-DD
+     * @param {Array} reports רשימת הדיווחים
+     * @returns {boolean} האם יש דיווח יומי באותו שבוע
+     */
+    function hasDailyReportInSameWeek(dateString, reports) {
+        const checkDate = new Date(dateString);
+        const sunday = getSundayOfWeek(checkDate);
+        const thursday = new Date(sunday);
+        thursday.setDate(sunday.getDate() + 4);
+
+        return reports.some(report => {
+            if (report.type !== 'daily' || !report.date) return false;
+            
+            const reportDate = new Date(report.date);
+            return reportDate >= sunday && reportDate <= thursday;
+        });
+    }
+
+    /**
      * בודק אם תאריך נמצא בשבוע הקודם
      * @param {Date} date התאריך לבדיקה
      * @returns {boolean} האם התאריך בשבוע הקודם
@@ -453,6 +473,22 @@
         }
 
         const isWeekly = document.getElementById('daily-form').classList.contains('hidden');
+        
+        // Check for conflicting report types in the same week
+        if (isWeekly) {
+            // Check if there are daily reports in the same week
+            if (hasDailyReportInSameWeek(reportDate, reports)) {
+                showError('לא ניתן לעשות דיווח שבועי - יש כבר דיווח יומי באותו שבוע');
+                return;
+            }
+        } else {
+            // Check if there is a weekly report covering this date
+            if (isDateCoveredByWeeklyReport(reportDate, reports)) {
+                showError('לא ניתן לעשות דיווח יומי - יש כבר דיווח שבועי באותו שבוע');
+                return;
+            }
+        }
+        
         const reportData = {
             date: reportDate,
             type: isWeekly ? 'weekly' : 'daily',
@@ -497,8 +533,9 @@
                 return;
             }
 
-            // Compute range for storage and filtering
-            const sunday = getSundayOfWeek(today);
+            // Compute range for storage and filtering based on selected date
+            const selectedDateForWeek = new Date(reportDate);
+            const sunday = getSundayOfWeek(selectedDateForWeek);
             const thursday = new Date(sunday);
             thursday.setDate(sunday.getDate() + 4);
             reportData.weekStart = formatDate(sunday);
@@ -506,7 +543,7 @@
 
             if (!currentUser) return;
 
-            const weeklyKey = `weekly_${getCurrentWeekForStorage()}`;
+            const weeklyKey = `weekly_${getCurrentWeekForStorage(reportDate)}`;
             database.ref('reports/' + currentUser.uid + '/' + weeklyKey).set({
                 ...reportData,
                 entries: weeklyEntries,
@@ -524,7 +561,7 @@
         }
 
         if (!currentUser) return;
-        const reportKey = isWeekly ? `weekly_${getCurrentWeekForStorage()}` : `daily_${reportData.date}`;
+        const reportKey = isWeekly ? `weekly_${getCurrentWeekForStorage(reportDate)}` : `daily_${reportData.date}`;
         database.ref('reports/' + currentUser.uid + '/' + reportKey).set(reportData).then(() => {
             showPopup('הדיווח נוסף בהצלחה!');
             setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
@@ -557,6 +594,16 @@
             weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי';
         }
 
+        // Check if there are conflicting reports in the same week
+        const reportDate = formatDate(today);
+        const hasDailyInWeek = hasDailyReportInSameWeek(reportDate, reports);
+        const hasWeeklyInWeek = isDateCoveredByWeeklyReport(reportDate, reports);
+        
+        if (hasDailyInWeek && hasWeeklyInWeek) {
+            showError('יש כבר דיווחים יומיים ושבועיים באותו שבוע. אנא בחר תאריך אחר.');
+            return;
+        }
+
         selectReportType('daily');
         showScreen('daily-report');
         // Ensure there is at least one daily entry by default
@@ -570,11 +617,32 @@
         if (sel) sel.classList.add('active');
         toggleHidden('daily-form', type !== 'daily');
         toggleHidden('weekly-form', type !== 'weekly');
+        
+        const reportDate = getInputValue('report-date');
+        
         if (type === 'weekly') {
-            setInputValue('report-week', getCurrentWeek());
+            // Check if there are daily reports in the same week
+            if (hasDailyReportInSameWeek(reportDate, reports)) {
+                showError('לא ניתן לעשות דיווח שבועי - יש כבר דיווח יומי באותו שבוע');
+                // Switch back to daily
+                selectReportType('daily');
+                return;
+            }
+            
+            // Calculate week range based on selected date, not current date
+            const weekRange = getWeekRangeForDate(reportDate);
+            setInputValue('report-week', weekRange);
             const weeklyEntries = document.getElementById('weekly-entries');
             if (weeklyEntries && weeklyEntries.children.length === 0) addWeeklyEntry();
-            renderWeeklyDatesHint();
+            renderWeeklyDatesHint(reportDate);
+        } else if (type === 'daily') {
+            // Check if there is a weekly report covering this date
+            if (isDateCoveredByWeeklyReport(reportDate, reports)) {
+                showError('לא ניתן לעשות דיווח יומי - יש כבר דיווח שבועי באותו שבוע');
+                // Switch back to weekly
+                selectReportType('weekly');
+                return;
+            }
         }
     }
     window.selectReportType = selectReportType;
@@ -812,6 +880,15 @@
             weeklyToggle.setAttribute('aria-disabled', allowed ? 'false' : 'true');
             weeklyToggle.dataset.allowed = allowed ? '1' : '0';
             weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי';
+        }
+
+        // Check if there are conflicting reports in the same week
+        const hasDailyInWeek = hasDailyReportInSameWeek(formattedDate, reports);
+        const hasWeeklyInWeek = isDateCoveredByWeeklyReport(formattedDate, reports);
+        
+        if (hasDailyInWeek && hasWeeklyInWeek) {
+            showError('יש כבר דיווחים יומיים ושבועיים באותו שבוע. אנא בחר תאריך אחר.');
+            return;
         }
 
         showScreen('daily-report');
@@ -1205,9 +1282,20 @@
         return `${startDate} - ${endDate}`;
     }
     
-    function getCurrentWeekForStorage() { 
-        const now = new Date(); 
-        const sunday = getSundayOfWeek(now);
+    function getWeekRangeForDate(dateString) {
+        if (!dateString) return getCurrentWeek();
+        const date = new Date(dateString);
+        const sunday = getSundayOfWeek(date);
+        const thursday = new Date(sunday);
+        thursday.setDate(sunday.getDate() + 4);
+        const startDate = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
+        const endDate = `${String(thursday.getDate()).padStart(2,'0')}/${String(thursday.getMonth()+1).padStart(2,'0')}/${thursday.getFullYear()}`;
+        return `${startDate} - ${endDate}`;
+    }
+    
+    function getCurrentWeekForStorage(dateString) { 
+        const date = dateString ? new Date(dateString) : new Date(); 
+        const sunday = getSundayOfWeek(date);
         const thursday = new Date(sunday);
         thursday.setDate(sunday.getDate() + 4);
         return `${formatDate(sunday)}_${formatDate(thursday)}`;
@@ -1222,11 +1310,11 @@
     }
     function roundToHalf(num) { return Math.round(num * 2) / 2; }
     function initializeDates() { const today = new Date(); currentMonth = today.getMonth(); currentYear = today.getFullYear(); currentWeek = getCurrentWeek(); }
-    function renderWeeklyDatesHint() {
+    function renderWeeklyDatesHint(dateString) {
         const hintEl = document.getElementById('weekly-dates-hint');
         if (!hintEl) return;
-        const today = new Date();
-        const sunday = getSundayOfWeek(today);
+        const date = dateString ? new Date(dateString) : new Date();
+        const sunday = getSundayOfWeek(date);
         const thursday = new Date(sunday);
         thursday.setDate(sunday.getDate() + 4);
         const startDate = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
