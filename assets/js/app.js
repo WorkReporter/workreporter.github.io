@@ -1013,47 +1013,139 @@
         const month = parseInt(getInputValue('report-month'));
         const year = parseInt(getInputValue('report-year'));
         const resultsDiv = document.getElementById('report-results');
+        // Collect reports that are relevant to the selected month/year
         const monthReports = reports.filter(r => {
             if (r.type === 'daily' && r.date) {
                 const [y, m, d] = r.date.split('-').map(Number);
                 const dt = new Date(y, m - 1, d);
                 return dt.getMonth() + 1 === month && dt.getFullYear() === year;
             }
-            if (r.type === 'weekly' && r.weekEnd) {
-                const [y, m, d] = r.weekEnd.split('-').map(Number);
-                const dt = new Date(y, m - 1, d);
-                return dt.getMonth() + 1 === month && dt.getFullYear() === year;
+            if (r.type === 'weekly' && (r.weekStart || r.weekEnd || r.week)) {
+                // We'll include weekly reports if any part of their week falls into the selected month
+                let weekStart, weekEnd;
+                if (r.weekStart && r.weekEnd) {
+                    weekStart = new Date(r.weekStart);
+                    weekEnd = new Date(r.weekEnd);
+                } else if (r.week) {
+                    const parts = r.week.split(' - ');
+                    if (parts.length === 2) {
+                        const [sDay, sMonth, sYear] = parts[0].split('/').map(Number);
+                        const [eDay, eMonth, eYear] = parts[1].split('/').map(Number);
+                        weekStart = new Date(sYear, sMonth - 1, sDay);
+                        weekEnd = new Date(eYear, eMonth - 1, eDay);
+                    }
+                }
+                if (!weekStart || !weekEnd) return false;
+                // If any date in the week is in the requested month/year, include this weekly report
+                const startMonth = weekStart.getMonth() + 1;
+                const endMonth = weekEnd.getMonth() + 1;
+                const startYear = weekStart.getFullYear();
+                const endYear = weekEnd.getFullYear();
+                // If the week spans months/years, check overlap
+                if ((startYear === year && startMonth === month) || (endYear === year && endMonth === month)) return true;
+                // Also handle weeks that start in previous month and end in next month but include the target month
+                // Check if the target month-year is between start and end
+                const monthStart = new Date(year, month - 1, 1);
+                const monthEnd = new Date(year, month, 0);
+                return weekStart <= monthEnd && weekEnd >= monthStart;
             }
             return false;
         });
         if (monthReports.length === 0) { resultsDiv.innerHTML = '<div class="notification">לא נמצאו דיווחים לחודש שנבחר</div>'; return; }
-        let html = '<h3>דוח חודשי</h3>'; let totalHours = 0; let totalDays = 0; const summary = {};
+
+        let html = '<h3>דוח חודשי</h3>';
+        let totalHours = 0;
+        // totalDays should count unique calendar days in the selected month that have any report (daily or covered by weekly)
+        const uniqueDays = new Set();
+        const summary = {};
+
         monthReports.forEach(report => {
             html += `<div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">`;
             if (report.type === 'daily' && report.date) {
+                // Add this calendar day to uniqueDays
+                uniqueDays.add(report.date);
+
                 const [yearStr, monthStr, dayStr] = report.date.split('-').map(Number);
                 const d = new Date(yearStr, monthStr - 1, dayStr);
                 html += `<h4><span class="material-symbols-outlined" style="vertical-align: middle; color:#2563eb; margin-left:6px;">calendar_today</span>${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}</h4>`;
-                if (report.workStatus === 'no-work') { html += '<p>לא עבד</p>'; } else {
+                if (report.workStatus === 'no-work') {
+                    html += '<p>לא עבד</p>';
+                } else {
+                    // Aggregate entries by researcher for this daily report
+                    const agg = {};
                     (report.entries || []).forEach(e => {
-                        html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#059669; margin-left:6px;">schedule</span>${e.researcher}: ${e.hours} שעות${e.detail ? ' - ' + e.detail : ''}</p>`;
-                        totalHours += e.hours; summary[e.researcher] = summary[e.researcher] || { hours: 0, days: 0 }; summary[e.researcher].hours += e.hours;
+                        const name = e.researcher || 'לא ידוע';
+                        const hrs = Number(e.hours || 0) || 0;
+                        if (!agg[name]) agg[name] = 0;
+                        agg[name] += hrs;
+                    });
+                    Object.entries(agg).forEach(([name, hrs]) => {
+                        html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#059669; margin-left:6px;">schedule</span>${name}: ${hrs} שעות${''}</p>`;
+                        totalHours += hrs;
+                        summary[name] = summary[name] || { hours: 0, days: 0 };
+                        summary[name].hours += hrs;
+                        // each daily report represents one day for the researcher (counted per calendar day, not per entry)
+                        summary[name].days = summary[name].days || 0; // days will be computed globally from uniqueDays
                     });
                 }
             } else if (report.type === 'weekly') {
+                // For weekly reports, compute the week range and list entries
                 const rangeLabel = report.week || `${(report.weekStart || '').split('-').reverse().join('/')} - ${(report.weekEnd || '').split('-').reverse().join('/')}`;
                 html += `<h4><span class="material-symbols-outlined" style="vertical-align: middle; color:#7c3aed; margin-left:6px;">event</span>${rangeLabel}</h4>`;
+
+                // Determine week start/end as Date objects
+                let weekStart, weekEnd;
+                if (report.weekStart && report.weekEnd) {
+                    weekStart = new Date(report.weekStart);
+                    weekEnd = new Date(report.weekEnd);
+                } else if (report.week) {
+                    const weekParts = report.week.split(' - ');
+                    if (weekParts.length === 2) {
+                        const [startPart, endPart] = weekParts;
+                        const [startDay, startMonth, startYear] = startPart.split('/').map(Number);
+                        const [endDay, endMonth, endYear] = endPart.split('/').map(Number);
+                        weekStart = new Date(startYear, startMonth - 1, startDay);
+                        weekEnd = new Date(endYear, endMonth - 1, endDay);
+                    }
+                }
+
+                // Add each date in the weekly range that falls into the selected month to uniqueDays
+                if (weekStart && weekEnd) {
+                    const iter = new Date(weekStart);
+                    while (iter <= weekEnd) {
+                        const ds = formatDate(iter);
+                        const y = iter.getFullYear();
+                        const m = iter.getMonth() + 1;
+                        if (y === year && m === month) uniqueDays.add(ds);
+                        iter.setDate(iter.getDate() + 1);
+                    }
+                }
+
                 (report.entries || []).forEach(e => {
-                    const hours = (Number(e.days || 0) || 0) * (window.APP_CONFIG?.hoursPerDay || 8);
+                    const days = Number(e.days || 0) || 0;
+                    const hours = days * (window.APP_CONFIG?.hoursPerDay || 8);
                     html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#059669; margin-left:6px;">schedule</span>${e.researcher}: ${e.days} ימים (${hours} שעות)${e.detail ? ' - ' + e.detail : ''}</p>`;
-                    totalDays += e.days; totalHours += hours; summary[e.researcher] = summary[e.researcher] || { hours: 0, days: 0 }; summary[e.researcher].days += e.days; summary[e.researcher].hours += hours;
+                    totalHours += hours;
+                    summary[e.researcher] = summary[e.researcher] || { hours: 0, days: 0 };
+                    summary[e.researcher].days += days;
+                    summary[e.researcher].hours += hours;
                 });
             }
             html += '</div>';
         });
+
+        // totalDays is number of unique calendar days in the selected month that had any report
+        const totalDays = uniqueDays.size;
+
         html += '<div style="margin-top: 30px; padding: 20px; background-color: #f9fafb; border-radius: 8px; border:1px dashed #e5e7eb;">';
         html += `<h3><span class="material-symbols-outlined" style="vertical-align: middle; color:#2563eb; margin-left:6px;">insights</span>סיכום חודשי</h3><p><strong>סה"כ שעות: ${totalHours}</strong></p><p><strong>סה"כ ימים: ${totalDays}</strong></p><h4 style="margin-top:12px;">פילוח לפי חוקר/פרויקט:</h4>`;
-        Object.entries(summary).forEach(([name, s]) => { html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#6b7280; margin-left:6px;">person</span>${name}: ${s.hours > 0 ? s.hours + ' שעות ' : ''}${s.days > 0 ? s.days + ' ימים' : ''}</p>`; });
+
+        // For the per-researcher summary, ensure hours already reflect aggregation; days in this summary may remain as previously computed (for weekly entries we used reported days)
+        Object.entries(summary).forEach(([name, s]) => {
+            const hoursText = s.hours > 0 ? s.hours + ' שעות ' : '';
+            const daysText = s.days > 0 ? s.days + ' ימים' : '';
+            html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#6b7280; margin-left:6px;">person</span>${name}: ${hoursText}${daysText}</p>`;
+        });
         html += '</div>';
         resultsDiv.innerHTML = html;
     }
@@ -1216,12 +1308,28 @@
 
     // ---------- Profile UI ----------
     function editProfile() {
-        const inputs = document.querySelectorAll('#user-profile-screen input');
-        if (!inputs || inputs.length === 0) return;
-        const isReadonly = inputs[0].hasAttribute('readonly');
-        inputs.forEach(el => { if (isReadonly) el.removeAttribute('readonly'); else el.setAttribute('readonly', 'readonly'); });
+        // Handle both input and select elements (profile-position is now a <select>)
+        const fields = document.querySelectorAll('#user-profile-screen input, #user-profile-screen select');
+        if (!fields || fields.length === 0) return;
+
+        // Determine current state: check first field's readonly/disabled
+        const first = fields[0];
+        let isReadonly = false;
+        if (first.tagName.toLowerCase() === 'input') isReadonly = first.hasAttribute('readonly');
+        else if (first.tagName.toLowerCase() === 'select') isReadonly = first.hasAttribute('disabled');
+
+        fields.forEach(el => {
+            if (el.tagName.toLowerCase() === 'input') {
+                if (isReadonly) el.removeAttribute('readonly'); else el.setAttribute('readonly', 'readonly');
+            } else if (el.tagName.toLowerCase() === 'select') {
+                if (isReadonly) el.removeAttribute('disabled'); else el.setAttribute('disabled', 'disabled');
+            }
+        });
+
         const btn = document.querySelector('#user-profile-screen .btn');
         if (btn) btn.textContent = isReadonly ? 'שמור' : 'ערוך';
+
+        // When toggling from editable back to readonly, save the values
         if (!isReadonly) {
             const data = { firstName: getInputValue('profile-first-name'), lastName: getInputValue('profile-last-name'), position: getInputValue('profile-position'), email: getInputValue('profile-email') };
             if (currentUser) updateUserProfile(currentUser.uid, data).then(() => showPopup('הפרטים נשמרו'));
@@ -1323,6 +1431,24 @@
     };
 
     function translateErrorMessage(error) {
+        // Normalize possible error representations (Error object, plain object, or string)
+        if (!error) return 'שגיאה בלתי צפויה';
+        if (typeof error === 'string') {
+            // If Firebase sometimes returns the raw message containing the code, try to extract it
+            const codeMatch = error.match(/auth\/[a-z-]+/i);
+            if (codeMatch) {
+                error = { code: codeMatch[0], message: error };
+            } else {
+                return error;
+            }
+        }
+
+        // If no code property, try to extract from message
+        if (!error.code && error.message) {
+            const codeMatch = error.message.match(/auth\/[a-z-]+/i);
+            if (codeMatch) error.code = codeMatch[0];
+        }
+
         const errorMessages = {
             'auth/invalid-email': 'כתובת האימייל אינה חוקית',
             'auth/user-disabled': 'המשתמש הושבת',
@@ -1331,9 +1457,11 @@
             'auth/weak-password': 'סיסמה חלשה מדי',
             'auth/email-already-in-use': 'האימייל כבר רשום במערכת',
             'auth/email-domain-not-allowed': 'רק מייל בדומיין של המכון מורשה',
-            'auth/too-many-requests': 'יותר מדי ניסיונות. נסה שוב מאוחר יותר'
+            'auth/too-many-requests': 'יותר מדי ניסיונות. נסה שוב מאוחר יותר',
+            // Friendly message for invalid login credentials (Firebase may surface this code or only include it in the message)
+            'auth/invalid-login-credentials': 'אימייל/סיסמא אינם תקינים'
         };
-        return errorMessages[error.code] || error.message;
+        return (error.code && errorMessages[error.code]) ? errorMessages[error.code] : (error.message || 'שגיאה בלתי צפויה');
     }
 
     // ---------- Helpers ----------
@@ -1478,7 +1606,7 @@
         });
         const resetForm = document.getElementById('reset-password-form');
         if (resetForm) resetForm.addEventListener('submit', function (e) {
-            e.preventDefault(); const email = getInputValue('reset-email'); auth.sendPasswordResetEmail(email).then(() => setHTML('forgot-password-messages', '<div class="success-message">קישור לשחזור סיסמה נשלח למייל שלך</div>')).catch(err => setHTML('forgot-password-messages', `<div class="error-message">${translateErrorMessage(err)}</div>`));
+            e.preventDefault(); const email = getInputValue('reset-email'); auth.sendPasswordResetEmail(email).then(() => setHTML('forgot-password-messages', '<div class="success-message">קישור לשחזור סיסמה נשלח למייל שלך - (עשוי לקחת מספר דקות)</div>')).catch(err => setHTML('forgot-password-messages', `<div class="error-message">${translateErrorMessage(err)}</div>`));
         });
 
         // live update dropdowns on checkbox toggle in active researchers screen

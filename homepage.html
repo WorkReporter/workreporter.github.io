@@ -1255,7 +1255,7 @@
                     <input type="password" id="login-password" required>
                 </div>
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    <button type="submit" class="btn">התחבר</button>
+                    <button type="submit" class="btn">התחבר/י</button>
                     <a href="#" class="forgot-password-link" onclick="showForgotPassword()">שכחתי סיסמה</a>
                     
                 </div>
@@ -1266,11 +1266,14 @@
             <form id="signup-form">
                 <div class="form-group"><label>שם פרטי:</label><input type="text" id="register-first-name" required></div>
                 <div class="form-group"><label>שם משפחה:</label><input type="text" id="register-last-name" required></div>
-                <div class="form-group"><label>תפקיד:</label><input type="text" id="register-position" required></div>
+                <div class="form-group"><label>תפקיד:</label><select id="register-position" required>
+                    <option value="מנהל">מנהל</option>
+                    <option value="מהנדס מחקר">מהנדס מחקר</option>
+                </select></div>
                 <div class="form-group"><label>אימייל ארגוני:</label><input type="email" id="register-email" required></div>
                 <div class="form-group"><label>סיסמה:</label><input type="password" id="register-password" required minlength="6"></div>
                 <div class="form-group"><label>אימות סיסמה:</label><input type="password" id="register-confirm-password" required minlength="6"></div>
-                <button type="submit" class="btn">הרשם</button>
+                <button type="submit" class="btn">הרשמ/י</button>
             </form>
         </div>
         <div id="forgot-password-form">
@@ -1297,9 +1300,14 @@
         <h2 style="text-align: center; margin-bottom: 30px;">פרטי העובד</h2>
         <div class="form-group"><label>שם פרטי:</label><input type="text" id="profile-first-name" readonly style="background-color: #f9fafb;"></div>
         <div class="form-group"><label>שם משפחה:</label><input type="text" id="profile-last-name" readonly style="background-color: #f9fafb;"></div>
-        <div class="form-group"><label>תפקיד:</label><input type="text" id="profile-position" readonly style="background-color: #f9fafb;"></div>
+        <div class="form-group"><label>תפקיד:</label>
+            <select id="profile-position" disabled style="background-color: #f9fafb;">
+                <option value="מנהל">מנהל</option>
+                <option value="מהנדס מחקר">מהנדס מחקר</option>
+            </select>
+        </div>
         <div class="form-group"><label>אי-מייל:</label><input type="email" id="profile-email" readonly style="background-color: #f9fafb;"></div>
-        <button class="btn" onclick="editProfile()">ערוך</button>
+        <button class="btn" onclick="editProfile()">להפוך עריכה לזמינה</button>
     </div>
 
     <div id="active-researchers-screen" class="container hidden">
@@ -1497,7 +1505,7 @@
                 <div class="toggle-option active" data-status="worked">עבדתי</div>
             </div>
             <div id="work-entries"></div>
-            <button class="btn add" onclick="addWorkEntry()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add</span>הוסף סעיף</button>
+            <button class="btn add" onclick="addWorkEntry()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add</span>הוסף חוקר/משימה</button>
             <div class="total-display"><strong>סה"כ שעות: <span id="total-hours">0</span></strong></div>
         </div>
         <div id="weekly-form" class="hidden">
@@ -1507,7 +1515,7 @@
             <button class="btn add" onclick="addWeeklyEntry()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add</span>הוסף שורה</button>
             <div class="total-display"><strong>סה"כ ימים: <span id="total-days">0</span></strong></div>
         </div>
-        <button class="btn" onclick="submitReport()">הוסף</button>
+        <button class="btn" onclick="submitReport()">שמור דיווח</button>
         <button class="btn secondary" onclick="showScreen('main')">ביטול</button>
     </div>
 
