@@ -367,6 +367,56 @@
         return { hasReport: false, reportType: null };
     }
 
+    // =================================================================
+    // NEW FUNCTION
+    // =================================================================
+    /**
+     * מוצא את הדיווח המלא (יומי או שבועי) לתאריך נתון
+     * @param {string} dateString התאריך בפורמט YYYY-MM-DD
+     * @returns {Object|null} אובייקט הדיווח או null אם לא נמצא
+     */
+    function findReportForDate(dateString) {
+        // חיפוש דיווח יומי ישיר
+        const dailyReport = reports.find(r => r.type === 'daily' && r.date === dateString);
+        if (dailyReport) {
+            return dailyReport;
+        }
+
+        // חיפוש דיווח שבועי שמכסה את התאריך
+        const weeklyReport = reports.find(report => {
+            if (report.type !== 'weekly') return false;
+
+            let weekStart, weekEnd;
+            if (report.weekStart && report.weekEnd) {
+                weekStart = new Date(report.weekStart);
+                weekEnd = new Date(report.weekEnd);
+            } else if (report.week) {
+                const weekParts = report.week.split(' - ');
+                if (weekParts.length === 2) {
+                    const [startPart, endPart] = weekParts;
+                    const [startDay, startMonth, startYear] = startPart.split('/');
+                    const [endDay, endMonth, endYear] = endPart.split('/');
+                    weekStart = new Date(startYear, startMonth - 1, startDay);
+                    weekEnd = new Date(endYear, endMonth - 1, endDay);
+                }
+            }
+
+            if (!weekStart || !weekEnd) return false;
+
+            const checkDate = new Date(dateString);
+            checkDate.setHours(0, 0, 0, 0);
+            weekStart.setHours(0, 0, 0, 0);
+            weekEnd.setHours(23, 59, 59, 999);
+
+            return checkDate >= weekStart && checkDate <= weekEnd;
+        });
+
+        return weeklyReport || null;
+    }
+    // =================================================================
+    // END NEW FUNCTION
+    // =================================================================
+
     /**
      * בודק אם מותר ליצור דיווח חדש לתאריך נתון
      * דרישה: לתת להוסיף דיווח חדש שבוע אחורה אבל לא יותר
@@ -644,7 +694,7 @@
         if (!currentUser) return;
         const reportKey = isWeekly ? `weekly_${getCurrentWeekForStorage()}` : `daily_${reportData.date}`;
         database.ref('reports/' + currentUser.uid + '/' + reportKey).set(reportData).then(() => {
-            showPopup('הדיווח נוסף בהצלחה!');
+            showPopup('הדיווח נוסף/עודכן בהצלחה!');
             setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
         }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
     }
@@ -660,7 +710,99 @@
     }
 
     // ---------- UI: Daily/Weekly Entries ----------
+
+    // =================================================================
+    // NEW FUNCTION
+    // =================================================================
+    /**
+     * טוען נתוני דיווח קיים לתוך טופס הדיווח
+     * @param {Object} report אובייקט הדיווח לטעינה
+     */
+    function populateReportForm(report) {
+        if (!report) return;
+
+        clearReportForm();
+
+        // הגדרת תאריך ושדות בסיסיים. עבור דיווח שבועי, התאריך הנבחר ביומן הוא הקובע
+        const reportDate = selectedDate ? formatDate(selectedDate) : (report.date || report.weekStart);
+        setInputValue('report-date', reportDate);
+
+        // עדכון כותרות וכפתורים
+        const formTitle = document.querySelector('#daily-report-screen h2');
+        if (formTitle) formTitle.textContent = 'עריכת דיווח קיים';
+        const submitBtn = document.querySelector('#daily-report-screen .btn[onclick="submitReport()"]');
+        if (submitBtn) submitBtn.textContent = 'עדכן דיווח';
+
+        // בחירת סוג הדיווח
+        selectReportType(report.type);
+
+        if (report.type === 'daily') {
+            const workStatus = report.workStatus || 'worked';
+            selectWorkStatus(workStatus);
+
+            if (workStatus === 'worked' && Array.isArray(report.entries)) {
+                const container = document.getElementById('work-entries');
+                container.innerHTML = ''; // ודא שהאזור ריק
+                if (report.entries.length === 0) {
+                   addWorkEntry(); // הוסף שורה ריקה אם אין נתונים
+                } else {
+                    report.entries.forEach(entry => {
+                        addWorkEntry();
+                        const newEntryEl = container.lastElementChild;
+                        if (newEntryEl) {
+                            const researcherSelect = newEntryEl.querySelector('.researcher-select');
+                            const hoursInput = newEntryEl.querySelector('.hours-input');
+                            const detailTextarea = newEntryEl.querySelector('textarea');
+
+                            if (researcherSelect) {
+                                researcherSelect.value = entry.researcher;
+                                toggleDetailField(researcherSelect);
+                            }
+                            if (hoursInput) hoursInput.value = entry.hours;
+                            if (detailTextarea) detailTextarea.value = entry.detail || '';
+                        }
+                    });
+                }
+                updateTotalHours();
+            }
+        } else if (report.type === 'weekly' && Array.isArray(report.entries)) {
+            const container = document.getElementById('weekly-entries');
+            container.innerHTML = ''; // ודא שהאזור ריק
+            if (report.entries.length === 0) {
+                addWeeklyEntry();
+            } else {
+                report.entries.forEach(entry => {
+                    addWeeklyEntry();
+                    const newEntryEl = container.lastElementChild;
+                    if (newEntryEl) {
+                        const researcherSelect = newEntryEl.querySelector('.researcher-select');
+                        const daysInput = newEntryEl.querySelector('.days-input');
+                        const detailTextarea = newEntryEl.querySelector('textarea');
+
+                        if (researcherSelect) {
+                            researcherSelect.value = entry.researcher;
+                            toggleDetailField(researcherSelect);
+                        }
+                        if (daysInput) daysInput.value = entry.days;
+                        if (detailTextarea) detailTextarea.value = entry.detail || '';
+                    }
+                });
+            }
+            updateTotalDays();
+        }
+    }
+    // =================================================================
+    // END NEW FUNCTION
+    // =================================================================
+
     function addNewReport() {
+        // --- MODIFIED ---: Reset UI for a new report
+        const formTitle = document.querySelector('#daily-report-screen h2');
+        if (formTitle) formTitle.textContent = 'דיווח חדש';
+        const submitBtn = document.querySelector('#daily-report-screen .btn[onclick="submitReport()"]');
+        if (submitBtn) submitBtn.textContent = 'שמור דיווח';
+        clearReportForm();
+
         const today = new Date();
         setInputValue('report-date', formatDate(today));
         const dayOfWeek = today.getDay();
@@ -920,7 +1062,7 @@
             if (date.toDateString() === today.toDateString()) div.classList.add('today');
 
             // Check if this date has a daily report OR is covered by a weekly report
-            const hasDailyReport = reports.some(r => r.date === dateString);
+            const hasDailyReport = reports.some(r => r.type === 'daily' && r.date === dateString);
             const coveredByWeeklyReport = isDateCoveredByWeeklyReport(dateString, reports);
             if (hasDailyReport || coveredByWeeklyReport) div.classList.add('has-report');
 
@@ -928,11 +1070,26 @@
                 div.style.background = 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)';
                 div.style.color = '#9ca3af';
             }
+            // --- MODIFIED ---: Updated click event listener
             div.addEventListener('click', () => {
-                if (date.getDay() === 5 || date.getDay() === 6) { showError('לא ניתן להוסיף דיווח לימי שישי ושבת'); return; }
+                if (date.getDay() === 5 || date.getDay() === 6) {
+                    showError('לא ניתן להוסיף דיווח לימי שישי ושבת');
+                    return;
+                }
                 document.querySelectorAll('.calendar-day.selected').forEach(dv => dv.classList.remove('selected'));
                 div.classList.add('selected');
                 selectedDate = date;
+
+                // Update action button text based on report existence
+                const addBtnCalendar = document.querySelector('#calendar-screen .btn.add');
+                if (addBtnCalendar) {
+                    const reportExists = div.classList.contains('has-report');
+                    if (reportExists) {
+                        addBtnCalendar.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">edit</span>ערוך דיווח`;
+                    } else {
+                        addBtnCalendar.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add_circle</span>הוסף דיווח`;
+                    }
+                }
             });
             grid.appendChild(div);
         }
@@ -940,6 +1097,7 @@
     window.previousMonth = function () { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar(); };
     window.nextMonth = function () { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); };
 
+    // --- MODIFIED ---: Reworked this function to handle both "Add" and "Edit" flows
     function addCalendarReport() {
         if (!selectedDate) {
             showError('אנא בחר תאריך');
@@ -947,56 +1105,57 @@
         }
 
         const formattedDate = formatDate(selectedDate);
+        const existingReport = findReportForDate(formattedDate);
 
-        // דרישה: בדיקה מקדימה אם התאריך חוקי לדיווח
-        const reportInfo = hasReportForDate(formattedDate, reports);
+        // Reset titles and buttons to default "new report" state
+        const formTitle = document.querySelector('#daily-report-screen h2');
+        if (formTitle) formTitle.textContent = 'דיווח חדש';
+        const submitBtn = document.querySelector('#daily-report-screen .btn[onclick="submitReport()"]');
+        if (submitBtn) submitBtn.textContent = 'שמור דיווח';
 
-        if (reportInfo.hasReport) {
-            // יש דיווח קיים - בודק אם ניתן לערוך
+        if (existingReport) {
+            // --- EDIT FLOW ---
             const editValidation = canEditExistingReport(selectedDate);
             if (!editValidation.allowed) {
                 showError(editValidation.message);
                 return;
             }
+            showScreen('daily-report');
+            populateReportForm(existingReport);
         } else {
-            // אין דיווח - בודק אם ניתן ליצור חדש
+            // --- CREATE NEW FLOW ---
             const createValidation = canCreateNewReport(selectedDate);
             if (!createValidation.allowed) {
                 showError(createValidation.message);
                 return;
             }
-            // הודעה אם זה שבוע קודם
             if (createValidation.message) {
                 showPopup(createValidation.message, 'info');
             }
+
+            clearReportForm();
+            setInputValue('report-date', formattedDate);
+
+            const today = new Date();
+            const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
+            if (weeklyToggle) {
+                const isThursday = (today.getDay() === 4);
+                weeklyToggle.style.opacity = isThursday ? '' : '0.5';
+                weeklyToggle.setAttribute('aria-disabled', !isThursday ? 'true' : 'false');
+                weeklyToggle.dataset.allowed = isThursday ? '1' : '0';
+                weeklyToggle.title = isThursday ? '' : 'דיווח שבועי זמין רק בימי חמישי';
+            }
+
+            showScreen('daily-report');
+            selectReportType('daily');
+            selectWorkStatus('worked');
         }
 
-        // Set the selected date in the form
-        setInputValue('report-date', formattedDate);
-
-        // דרישה: כפתור הוסף דיווח - בין הימים א'-ד' מסך דיווח חדש יומי, ביום ה' יומי/שבועי
-        const today = new Date();
-
-        // Configure report type options based on day
-        const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
-        if (weeklyToggle) {
-            const isThursday = (today.getDay() === 4);
-            const allowed = isThursday;
-            weeklyToggle.style.opacity = allowed ? '' : '0.5';
-            weeklyToggle.setAttribute('aria-disabled', allowed ? 'false' : 'true');
-            weeklyToggle.dataset.allowed = allowed ? '1' : '0';
-            weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי';
-        }
-
-        showScreen('daily-report');
-        selectReportType('daily'); // Always start with daily
-        selectWorkStatus('worked'); // Default to worked
-
-        // הודעת אישור על התאריך שנבחר
-        const dayNames = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+        const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
         const dayName = dayNames[selectedDate.getDay()];
         const displayDate = `${selectedDate.getDate()}/${selectedDate.getMonth() + 1}`;
-        showPopup(`נפתח דיווח ליום ${dayName} ${displayDate}`, 'info');
+        const actionText = existingReport ? 'נפתח לעריכה' : 'נפתח דיווח';
+        showPopup(`${actionText} ליום ${dayName} ${displayDate}`, 'info');
     }
     window.addCalendarReport = addCalendarReport;
 
