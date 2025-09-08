@@ -133,7 +133,24 @@
         if (btn) btn.classList.add('active');
 
         if (screenName === 'calendar') { renderCalendar(); const addBtnCalendar = document.querySelector('#calendar-screen .btn.add'); if (addBtnCalendar && addBtnCalendar.style) addBtnCalendar.style.display = ''; }
-        if (screenName === 'reports') initializeReportScreen();
+        if (screenName === 'reports') {
+            // Always fetch the latest reports from Firebase when opening the reports screen
+            initializeReportScreen();
+            if (currentUser && currentUser.uid) {
+                database.ref('reports/' + currentUser.uid).once('value').then(snapshot => {
+                    const data = snapshot.val();
+                    reports = data ? Object.values(data) : [];
+                    // Ensure UI is updated with freshest data
+                    try { generateReport(); } catch (e) { /* generateReport defined later; safe to ignore if not yet available */ }
+                }).catch(() => {
+                    // On failure just attempt to render with current in-memory reports
+                    try { generateReport(); } catch (e) {}
+                });
+            } else {
+                // No user - still initialize UI
+                try { generateReport(); } catch (e) {}
+            }
+        }
         if (screenName === 'active-researchers') renderResearchers();
         if (screenName === 'main') updateNotifications();
         if (screenName === 'admin') initializeAdminScreen();
