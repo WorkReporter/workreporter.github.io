@@ -235,8 +235,8 @@
                 if (Array.isArray(data) && data.length > 0) {
                     activeResearchers = data;
                 } else {
-                    // default: first 5 from global list
-                    activeResearchers = (allResearchers || []).slice(0, 5);
+                    // אם אין חוקרים פעילים נבחרים, השאר את הרשימה ריקה
+                    activeResearchers = [];
                 }
                 // If relevant screens are open, re-render
                 const isDailyReportOpen = !document.getElementById('daily-report-screen')?.classList.contains('hidden');
@@ -447,6 +447,20 @@
         console.log('  Today:', today.toDateString());
         console.log('  Date to check:', date.toDateString());
 
+        // בדיקת תאריך עתידי - אסור לדווח על תאריכים עתידיים
+        const todayOnly = new Date(today);
+        todayOnly.setHours(0, 0, 0, 0);
+        const dateOnly = new Date(date);
+        dateOnly.setHours(0, 0, 0, 0);
+
+        if (dateOnly > todayOnly) {
+            console.log('  Future date detected - not allowed');
+            return {
+                allowed: false,
+                message: 'לא ניתן לדווח על תאריכים עתידיים'
+            };
+        }
+
         const currentWeekStart = getSundayOfWeek(today);
         const currentWeekEnd = new Date(currentWeekStart);
         currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
@@ -459,7 +473,7 @@
         console.log('  Current week:', currentWeekStart.toDateString(), '-', currentWeekEnd.toDateString());
         console.log('  Previous week:', previousWeekStart.toDateString(), '-', previousWeekEnd.toDateString());
 
-        // Allow reporting for current week (Sunday-Thursday)
+        // Allow reporting for current week (Sunday-Thursday) but only for past/today dates
         const inCurrentWeek = isInCurrentWeek(date);
         console.log('  In current week?', inCurrentWeek);
         if (inCurrentWeek) {
@@ -603,6 +617,17 @@
         // Create date in local timezone to avoid timezone issues
         const [year, month, day] = reportDate.split('-').map(Number);
         const selectedDate = new Date(year, month - 1, day);
+
+        // בדיקת תאריך עתידי - אסור לדווח על תאריכים עתידיים
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time to midnight for accurate date comparison
+        const selectedDateOnly = new Date(selectedDate);
+        selectedDateOnly.setHours(0, 0, 0, 0);
+
+        if (selectedDateOnly > today) {
+            showError('לא ניתן לדווח על תאריכים עתידיים');
+            return;
+        }
 
         // דרישה: לא לאפשר דיוח עבודה בימי שישי שבת
         if (selectedDate.getDay() === 5 || selectedDate.getDay() === 6) {
@@ -909,12 +934,19 @@
         if (!container) return;
         const entryDiv = document.createElement('div');
         entryDiv.className = 'work-entry';
-        const baseList = (Array.isArray(activeResearchers) && activeResearchers.length > 0) ? activeResearchers : allResearchers;
-        const available = [...(baseList || []), 'משימות אחרות', 'סמינר / קורס / הכשרה'];
+
+        // אם אין חוקרים פעילים נבחרים, הצג רק את האפשרויות הקבועות
+        let available;
+        if (Array.isArray(activeResearchers) && activeResearchers.length > 0) {
+            available = [...activeResearchers, 'משימות אחרות', 'סמינר / קורס / הכשרה'];
+        } else {
+            available = ['משימות אחרות', 'סמינר / קורס / הכשרה'];
+        }
+
         entryDiv.innerHTML = `
             ${container.children.length > 0 ? '<button class="remove-btn" onclick="removeEntry(this)">×</button>' : ''}
             <div class="form-group">
-                <label>בחר חוקר/משימה:</label>
+                <label>בחר חוקר.ת/משימה:</label>
                 <select class="researcher-select" onchange="toggleDetailField(this)">
                     ${available.map(r => `<option value="${r}">${r}</option>`).join('')}
                 </select>
@@ -941,8 +973,15 @@
         if (!container) return;
         const entryDiv = document.createElement('div');
         entryDiv.className = 'work-entry';
-        const baseList = (Array.isArray(activeResearchers) && activeResearchers.length > 0) ? activeResearchers : allResearchers;
-        const available = [...(baseList || []), 'משימות אחרות', 'סמינר / קורס / הכשרה'];
+
+        // אם אין חוקרים פעילים נבחרים, הצג רק את האפשרויות הקבועות
+        let available;
+        if (Array.isArray(activeResearchers) && activeResearchers.length > 0) {
+            available = [...activeResearchers, 'משימות אחרות', 'סמינר / קורס / הכשרה'];
+        } else {
+            available = ['משימות אחרות', 'סמינר / קורס / הכשרה'];
+        }
+
         entryDiv.innerHTML = `
             ${container.children.length > 0 ? '<button class="remove-btn" onclick="removeEntry(this)">×</button>' : ''}
             <div class="form-group">
@@ -996,8 +1035,14 @@
     }
 
     function refreshResearcherDropdowns() {
-        const baseList = (Array.isArray(activeResearchers) && activeResearchers.length > 0) ? activeResearchers : allResearchers;
-        const available = [...(baseList || []), 'משימות אחרות', 'סמינר / קורס / הכשרה'];
+        // אם אין חוקרים פעילים נבחרים, הצג רק את האפשרויות הקבועות
+        let available;
+        if (Array.isArray(activeResearchers) && activeResearchers.length > 0) {
+            available = [...activeResearchers, 'משימות אחרות', 'סמינר / קורס / הכשרה'];
+        } else {
+            available = ['משימות אחרות', 'סמינר / קורס / הכשרה'];
+        }
+
         document.querySelectorAll('.researcher-select').forEach(sel => {
             const current = sel.value || '';
             sel.innerHTML = [...available.map(r => `<option value="${r}">${r}</option>`)].join('');
@@ -1104,7 +1149,7 @@
                     if (reportExists) {
                         addBtnCalendar.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">edit</span>ערוך דיווח`;
                     } else {
-                        addBtnCalendar.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add_circle</span>הוסף דיווח`;
+                        addBtnCalendar.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add_circle</span>הוספת דיווח`;
                     }
                 }
             });
@@ -1367,7 +1412,7 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span class="missing-status">חסר דיווח</span>
-                        <button class="add-missing-report-btn" onclick="addReportForDate('${formattedDate}')" title="הוסף דיווח ל${dayName} ${dateStr}">
+                        <button class="add-missing-report-btn" onclick="addReportForDate('${formattedDate}')" title="הוספת דיווח ל${dayName} ${dateStr}">
                             <span class="material-symbols-outlined">add_circle</span>
                         </button>
                     </div>

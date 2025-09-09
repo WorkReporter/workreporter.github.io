@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="he">
 <head>
+
+
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מערכת דיווח שעות - וולקני</title>
+    <title>מערכת דיווח שעות - המכון להנדסת מערכות חקלאיות וביולוגיות</title>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://www.google-analytics.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://apis.google.com https://work-report-volcani-default-rtdb.firebaseio.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.google-analytics.com; connect-src 'self' https://work-report-volcani-default-rtdb.firebaseio.com wss://work-report-volcani-default-rtdb.firebaseio.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com; frame-src 'self' https://accounts.google.com https://apis.google.com https://*.firebaseio.com https://work-report-volcani.firebaseapp.com https://*.firebaseapp.com;">
     <!-- X-Frame-Options must be set as an HTTP response header. Removed meta tag. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1221,7 +1225,7 @@
 <body>
     <div class="header">
         <div class="user-icon" onclick="showScreen('user-profile')"><span class="material-symbols-outlined" aria-hidden="true">account_circle</span></div>
-        <h1>מערכת דיווח שעות - וולקני</h1>
+        <h1>מערכת דיווח שעות - המכון להנדסת מערכות חקלאיות וביולוגיות</h1>
         <div class="header-actions">
             <div onclick="showScreen('main')" style="cursor: pointer;"><span class="material-symbols-outlined" aria-hidden="true">home</span></div>
             <button id="logout-btn" onclick="logout()" style="display:none; background:#ef4444; color:white; border: 1px solid #ef4444; padding:6px 10px; border-radius:6px; cursor:pointer;">התנתק</button>
@@ -1229,10 +1233,10 @@
     </div>
 
             <div class="navigation" style="display:none;">
-            <button class="nav-btn" onclick="showScreen('reports')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">insights</span>דוחות</button>
-            <button class="nav-btn" onclick="showScreen('calendar')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">calendar_month</span>יומן</button>
             <button class="nav-btn active" onclick="showScreen('main')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">home</span>בית</button>
             <button class="nav-btn" onclick="showScreen('active-researchers')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">group</span>חוקרים פעילים</button>
+            <button class="nav-btn" onclick="showScreen('calendar')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">calendar_month</span>יומן</button>
+            <button class="nav-btn" onclick="showScreen('reports')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">insights</span>דוחות</button>
             <button class="nav-btn" onclick="showScreen('about')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">info</span>אודות</button>
             <button id="admin-nav-btn" class="nav-btn" onclick="showScreen('admin')" style="display:none;"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">admin_panel_settings</span>ממשק מנהל</button>
         </div>
@@ -1289,7 +1293,7 @@
 
     <div id="main-screen" class="container hidden">
         <div id="notifications"></div>
-        <button class="btn" id="add-report-btn" onclick="addNewReport()">+ הוסף דיווח</button>
+        <button class="btn" id="add-report-btn" onclick="addNewReport()">+ הוספת דיווח</button>
         <div id="messages" style="margin-top: 30px;">
             <h3>הודעות</h3>
             <div id="missing-reports"></div>
@@ -1313,7 +1317,7 @@
     <div id="active-researchers-screen" class="container hidden">
         <h2 style="text-align: center; margin-bottom: 30px;">חוקרים פעילים</h2>
         <div class="researchers-list" id="researchers-list"></div>
-        <button class="btn" onclick="saveResearchers()">שמור</button>
+        <button class="btn" onclick="saveResearchers()">שמירה</button>
     </div>
 
     <div id="about-screen" class="container hidden">
@@ -1389,13 +1393,13 @@
             <button onclick="nextMonth()" aria-label="חודש הבא"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
         </div>
         <div class="calendar" id="calendar-grid"></div>
-        <button class="btn add" onclick="addCalendarReport()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add_circle</span>הוסף דיווח</button>
+        <button class="btn add" onclick="addCalendarReport()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add_circle</span>הוספת דיווח</button>
         <div class="calendar-legend">
             <h4>מקרא:</h4>
             <div class="legend-items">
                 <div class="legend-item">
                     <span class="legend-color legend-has-report"></span>
-                    <span>יש דיווח</span>
+                    <span>קיים דיווח</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-color legend-today"></span>
@@ -1436,7 +1440,7 @@
             <label>שנה:</label>
             <select id="report-year"></select>
         </div>
-        <button class="btn" onclick="generateReport()">הצג דוח</button>
+        <button class="btn" onclick="generateReport()">הצגת דו"ח</button>
         <div id="report-results" style="margin-top: 30px;"></div>
     </div>
 
@@ -1505,17 +1509,17 @@
                 <div class="toggle-option active" data-status="worked">עבדתי</div>
             </div>
             <div id="work-entries"></div>
-            <button class="btn add" onclick="addWorkEntry()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add</span>הוסף חוקר/משימה</button>
+            <button class="btn add" onclick="addWorkEntry()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add</span>הוספת חוקר.ת/משימה</button>
             <div class="total-display"><strong>סה"כ שעות: <span id="total-hours">0</span></strong></div>
         </div>
         <div id="weekly-form" class="hidden">
             <div class="form-group"><label>טווח תאריכים:</label><input type="text" id="report-week" readonly style="background-color: #f9fafb;"></div>
             <div id="weekly-dates-hint" style="margin: 8px 0 16px; color:#6b7280; font-size: 14px;"></div>
             <div id="weekly-entries"></div>
-            <button class="btn add" onclick="addWeeklyEntry()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add</span>הוסף שורה</button>
+            <button class="btn add" onclick="addWeeklyEntry()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add</span>הוספת שורה</button>
             <div class="total-display"><strong>סה"כ ימים: <span id="total-days">0</span></strong></div>
         </div>
-        <button class="btn" onclick="submitReport()">שמור דיווח</button>
+        <button class="btn" onclick="submitReport()">שמירת דיווח</button>
         <button class="btn secondary" onclick="showScreen('main')">ביטול</button>
     </div>
 
