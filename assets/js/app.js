@@ -55,6 +55,9 @@
                     loadActiveResearchers(user.uid),
                     loadReports(user.uid)
                 ]).then(async () => {
+                    // Merge user-specific researchers with global list after loading
+                    await mergeUserSpecificResearchers(user.uid);
+
                     try {
                         // admin check by attempting to read an admin-only path (e.g., users root)
                         await window.database.ref('users').once('value');
@@ -209,6 +212,28 @@
         });
     }
 
+    /**
+     * מרגה חוקרים מותאמים אישית מהרשימה הפעילה של המשתמש עם הרשימה הגלובלית
+     * @param {string} uid מזהה המשתמש
+     */
+    async function mergeUserSpecificResearchers(uid) {
+        if (!uid || !Array.isArray(activeResearchers)) return;
+
+        // מוצא חוקרים שקיימים ברשימה הפעילה אבל לא ברשימה הגלובלית
+        const userSpecificResearchers = activeResearchers.filter(researcher =>
+            researcher &&
+            researcher !== 'משימות אחרות' &&
+            researcher !== 'סמינר / קורס / הכשרה' &&
+            !allResearchers.includes(researcher)
+        );
+
+        // מוסיף את החוקרים המותאמים אישית לרשימה הגלובלית המקומית
+        if (userSpecificResearchers.length > 0) {
+            allResearchers = [...allResearchers, ...userSpecificResearchers];
+            console.log(`Merged ${userSpecificResearchers.length} user-specific researchers:`, userSpecificResearchers);
+        }
+    }
+
     function loadUserProfile(uid) {
         return database.ref('users/' + uid).once('value').then((snapshot) => {
             const userData = snapshot.val() || {};
@@ -230,7 +255,7 @@
         if (activeResearchersRef) { activeResearchersRef.off(); activeResearchersRef = null; }
         activeResearchersRef = database.ref('users/' + uid + '/activeResearchers');
         return new Promise((resolve) => {
-            activeResearchersRef.on('value', snap => {
+            activeResearchersRef.on('value', async snap => {
                 const data = snap.val();
                 if (Array.isArray(data) && data.length > 0) {
                     activeResearchers = data;
@@ -238,6 +263,10 @@
                     // אם אין חוקרים פעילים נבחרים, השאר את הרשימה ריקה
                     activeResearchers = [];
                 }
+
+                // מזג חוקרים מותאמים אישית עם הרש lista הגלובלית
+                await mergeUserSpecificResearchers(uid);
+
                 // If relevant screens are open, re-render
                 const isDailyReportOpen = !document.getElementById('daily-report-screen')?.classList.contains('hidden');
                 if (isDailyReportOpen) { refreshResearcherDropdowns(); }
@@ -1552,6 +1581,7 @@
 
         // When toggling from editable back to readonly, save the values
         if (!isReadonly) {
+
             const data = { firstName: getInputValue('profile-first-name'), lastName: getInputValue('profile-last-name'), position: getInputValue('profile-position'), email: getInputValue('profile-email') };
             if (currentUser) updateUserProfile(currentUser.uid, data).then(() => showPopup('הפרטים נשמרו'));
         }
@@ -1864,6 +1894,18 @@
 
         // Do not auto-add entries here; entries are created when opening the report screen
         // setTimeout(() => { addWorkEntry(); }, 100);
+
+        // Accessibility/init for Add Researcher toggle
+        try {
+            const addBtn = document.getElementById('add-new-btn');
+            const form = document.getElementById('add-researcher-form');
+            if (addBtn && form) {
+                addBtn.setAttribute('aria-controls', 'add-researcher-form');
+                addBtn.setAttribute('aria-expanded', 'false');
+                form.setAttribute('aria-hidden', 'true');
+                form.setAttribute('role', 'form');
+            }
+        } catch (e) { /* ignore */ }
     });
 
     function getSundayOfWeek(date) {
@@ -1883,4 +1925,59 @@
         // Initialize current week
         currentWeek = getCurrentWeek();
     }
+
+    // ---------- Add New Researcher Functions ----------
+    function addNewResearcher() {
+        const input = document.getElementById('new-researcher-name');
+        if (!input) return;
+
+        const newName = input.value.trim();
+        if (!newName) {
+            showError('אנא הזן שם החוקר');
+            return;
+        }
+
+        // בדוק אם החוקר כבר קיים ברשימה הגלובלית
+        if (allResearchers.includes(newName)) {
+            showError('החוקר כבר קיים ברשימה');
+            return;
+        }
+
+        // בדוק אם החוקר כבר קיים ברשימה הפעילה
+        if (activeResearchers.includes(newName)) {
+            showError('החוקר כבר קיים ברשימת החוקרים הפעילים');
+            return;
+        }
+
+        // הוסף את החוקר לרשימה הגלובלית מקומית
+        allResearchers.push(newName);
+
+        // הוסף את החוקר לרשימת החוקרים הפעילים מקומית
+        activeResearchers.push(newName);
+
+        // רענן את התצוגה מיד
+        renderResearchers();
+        refreshResearcherDropdowns();
+
+        showPopup(`החוקר "${newName}" נוסף בהצלחה לרשימת החוקרים הפעילים`);
+
+        // נקה את השדה
+        input.value = '';
+
+        // נסה לעדכן את Firebase אבל אל תיכשל אם אין הרשאות
+        // זה יקרה רק אם המשתמש הוא מנהל
+        if (currentUser && isAdmin) {
+            database.ref('global/researchers').set(allResearchers).catch(() => {
+                // שקט - לא נציג שגיאה כי המשתמש רגיל לא צריך הרשאות לעדכן את הרשימה הגלובלית
+            });
+        }
+
+        // עדכן את Firebase עם הרשימה הפעילה המעודכנת
+        if (currentUser) {
+            database.ref('users/' + currentUser.uid + '/activeResearchers').set(activeResearchers).catch(() => {
+                showError('שגיאה בשמירת החוקר ברשימה הפעילה');
+            });
+        }
+    }
+    window.addNewResearcher = addNewResearcher;
 })();

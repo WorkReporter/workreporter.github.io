@@ -8,7 +8,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מערכת דיווח שעות - המכון להנדסת מערכות חקלאיות וביולוגיות</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://www.google-analytics.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://apis.google.com https://work-report-volcani-default-rtdb.firebaseio.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.google-analytics.com; connect-src 'self' https://work-report-volcani-default-rtdb.firebaseio.com wss://work-report-volcani-default-rtdb.firebaseio.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com; frame-src 'self' https://accounts.google.com https://apis.google.com https://*.firebaseio.com https://work-report-volcani.firebaseapp.com https://*.firebaseapp.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://www.google-analytics.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://apis.google.com https://work-report-volcani-default-rtdb.firebaseio.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.google-analytics.com; connect-src 'self' https://work-report-volcani-default-rtdb.firebaseio.com wss://work-report-volcani-default-rtdb.firebaseio.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com https://cdn.jsdelivr.net; frame-src 'self' https://accounts.google.com https://apis.google.com https://*.firebaseio.com https://work-report-volcani.firebaseapp.com https://*.firebaseapp.com;">
     <!-- X-Frame-Options must be set as an HTTP response header. Removed meta tag. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1078,6 +1078,115 @@
             background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
         }
 
+        /* === Add New Researcher Styles === */
+        .add-new-researcher-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #bbf7d0;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(22, 101, 52, 0.1);
+        }
+
+        .add-new-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .add-new-btn:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .add-new-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .add-new-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+        }
+
+        .add-researcher-form {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .add-researcher-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .add-researcher-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .add-researcher-form input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            direction: rtl;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .add-researcher-form input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .add-researcher-form .btn-add {
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .add-researcher-form .btn-add:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-1px);
+        }
+
+        .add-researcher-form .btn-add:active {
+            transform: translateY(0);
+        }
+
+        .add-researcher-form .btn-add .material-symbols-outlined {
+            font-size: 18px;
+        }
+
         @media (max-width: 600px) {
             .container {
                 margin: 10px;
@@ -1306,7 +1415,7 @@
         <div class="form-group"><label>שם משפחה:</label><input type="text" id="profile-last-name" readonly style="background-color: #f9fafb;"></div>
         <div class="form-group"><label>תפקיד:</label>
             <select id="profile-position" disabled style="background-color: #f9fafb;">
-                <option value="מנהל">מנהל</option>
+                <option value="מנה��">מנהל</option>
                 <option value="מהנדס מחקר">מהנדס מחקר</option>
             </select>
         </div>
@@ -1316,7 +1425,24 @@
 
     <div id="active-researchers-screen" class="container hidden">
         <h2 style="text-align: center; margin-bottom: 30px;">חוקרים פעילים</h2>
+
         <div class="researchers-list" id="researchers-list"></div>
+
+        <!-- Add New Researcher Section - moved to bottom -->
+        <div class="add-new-researcher-container">
+            <div class="add-researcher-title">הוספת חוקר.ת חדש.ה</div>
+
+            <div id="add-researcher-form" class="add-researcher-form">
+                <div class="add-researcher-row">
+                    <input type="text" id="new-researcher-name" placeholder="הזן שם החוקר החדש..." maxlength="50">
+                    <button class="btn-add" onclick="addNewResearcher()">
+                        <span class="material-symbols-outlined">add</span>
+                        הוספה
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <button class="btn" onclick="saveResearchers()">שמירה</button>
     </div>
 
@@ -1440,7 +1566,7 @@
             <label>שנה:</label>
             <select id="report-year"></select>
         </div>
-        <button class="btn" onclick="generateReport()">הצגת דו"ח</button>
+        <button class="btn" onclick="generateReport()">הצג�� דו"ח</button>
         <div id="report-results" style="margin-top: 30px;"></div>
     </div>
 
