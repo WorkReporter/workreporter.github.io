@@ -618,7 +618,7 @@
             return false;
         });
 
-        // בדוק התנגשות
+        // בדוק התנגשו��
         const hasWeeklyReport = weekReports.some(r => r.type === 'weekly');
         const hasDailyReport = weekReports.some(r => r.type === 'daily');
 
@@ -675,7 +675,7 @@
                 return;
             }
         } else {
-            // אין דיווח - בודק אם ניתן ליצור חדש
+            // אין דיוח - בודק אם ניתן ליצור חדש
             const createValidation = canCreateNewReport(selectedDate);
             if (!createValidation.allowed) {
                 showError(createValidation.message);
@@ -705,12 +705,49 @@
             reportData.workStatus = workStatus;
 
             if (workStatus === 'worked') {
-                document.querySelectorAll('#work-entries .work-entry').forEach(entry => {
+                // Collect valid entries and validate them
+                const validEntries = [];
+                let hasValidationErrors = false;
+                let errorMessage = '';
+
+                document.querySelectorAll('#work-entries .work-entry').forEach((entry, index) => {
                     const researcher = entry.querySelector('.researcher-select')?.value || '';
                     const hours = parseFloat(entry.querySelector('.hours-input')?.value || '0') || 0;
-                    const detail = (entry.querySelector('textarea')?.value) || '';
-                    if (researcher && hours > 0) reportData.entries.push({ researcher, hours, detail });
+                    const detail = (entry.querySelector('textarea')?.value || '').trim();
+
+                    // Skip empty entries (no researcher selected)
+                    if (!researcher) return;
+
+                    // Validate hours > 0
+                    if (hours <= 0) {
+                        hasValidationErrors = true;
+                        errorMessage = `שורה ${index + 1}: חייב להזין מספר שעות גדול מ-0`;
+                        return;
+                    }
+
+                    // Validate required details for specific researcher types
+                    if ((researcher === 'משימות אחרות' || researcher === 'סמינר / קורס / הכשרה') && !detail) {
+                        hasValidationErrors = true;
+                        errorMessage = `שורה ${index + 1}: חייב להוסיף פירוט עבור "${researcher}"`;
+                        return;
+                    }
+
+                    validEntries.push({ researcher, hours, detail });
                 });
+
+                // Check for validation errors
+                if (hasValidationErrors) {
+                    showError(errorMessage);
+                    return;
+                }
+
+                // Check if no valid entries with hours
+                if (validEntries.length === 0) {
+                    showError('חייב להזין לפחות חוקר אחד עם מספר שעות גדול מ-0');
+                    return;
+                }
+
+                reportData.entries = validEntries;
             }
         } else {
             // דרישה: דיווח שבועי - הגעה אליו ביום ה' בלבד
@@ -723,13 +760,39 @@
             const week = getInputValue('report-week');
             reportData.week = week;
             const weeklyEntries = [];
+            let hasValidationErrors = false;
+            let errorMessage = '';
 
-            document.querySelectorAll('#weekly-entries .work-entry').forEach(entry => {
+            document.querySelectorAll('#weekly-entries .work-entry').forEach((entry, index) => {
                 const researcher = entry.querySelector('.researcher-select')?.value || '';
                 const days = parseFloat(entry.querySelector('.days-input')?.value || '0') || 0;
-                const detail = (entry.querySelector('textarea')?.value) || '';
-                if (researcher && days > 0) weeklyEntries.push({ researcher, days, detail });
+                const detail = (entry.querySelector('textarea')?.value || '').trim();
+
+                // Skip empty entries (no researcher selected)
+                if (!researcher) return;
+
+                // Validate days > 0
+                if (days <= 0) {
+                    hasValidationErrors = true;
+                    errorMessage = `שורה ${index + 1}: חייב להזין מספר ימים גדול מ-0`;
+                    return;
+                }
+
+                // Validate required details for specific researcher types
+                if ((researcher === 'משימות אחרות' || researcher === 'סמינר / קורס / הכשרה') && !detail) {
+                    hasValidationErrors = true;
+                    errorMessage = `שורה ${index + 1}: חייב להוסיף פירוט עבור "${researcher}"`;
+                    return;
+                }
+
+                weeklyEntries.push({ researcher, days, detail });
             });
+
+            // Check for validation errors
+            if (hasValidationErrors) {
+                showError(errorMessage);
+                return;
+            }
 
             if (weeklyEntries.length === 0) {
                 showError('אנא הזן לפחות שורה אחת לדיווח שבועי');
@@ -871,7 +934,7 @@
         const formTitle = document.querySelector('#daily-report-screen h2');
         if (formTitle) formTitle.textContent = 'דיווח חדש';
         const submitBtn = document.querySelector('#daily-report-screen .btn[onclick="submitReport()"]');
-        if (submitBtn) submitBtn.textContent = 'שמור דיווח';
+        if (submitBtn) submitBtn.textContent = 'שמירת דיווח';
         clearReportForm();
 
         const today = new Date();
@@ -1202,7 +1265,7 @@
         const formTitle = document.querySelector('#daily-report-screen h2');
         if (formTitle) formTitle.textContent = 'דיווח חדש';
         const submitBtn = document.querySelector('#daily-report-screen .btn[onclick="submitReport()"]');
-        if (submitBtn) submitBtn.textContent = 'שמור דיווח';
+        if (submitBtn) submitBtn.textContent = 'שמירת דיווח';
 
         if (existingReport) {
             // --- EDIT FLOW ---
