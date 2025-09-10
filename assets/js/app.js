@@ -1045,7 +1045,7 @@
             </div>
             <div class="form-group detail-field" style="display: none;">
                 <label>פרט:</label>
-                <textarea rows="2" placeholder="הוסף פרטים נוספים..."></textarea>
+                <textarea rows="2" placeholder="הוספ.י פרטים נוספים..."></textarea>
             </div>
             <div class="form-group">
                 <label>שעות:</label>
@@ -1084,7 +1084,7 @@
             </div>
             <div class="form-group detail-field" style="display: none;">
                 <label>פרט:</label>
-                <textarea rows="2" placeholder="הוסף פרטים נוספים..."></textarea>
+                <textarea rows="2" placeholder="הוספ.י פרטים נוספים..."></textarea>
             </div>
             <div class="form-group">
                 <label>ימים:</label>
@@ -1239,7 +1239,7 @@
                 if (addBtnCalendar) {
                     const reportExists = div.classList.contains('has-report');
                     if (reportExists) {
-                        addBtnCalendar.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">edit</span>ערוך דיווח`;
+                        addBtnCalendar.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">edit</span>עריכת דיווח`;
                     } else {
                         addBtnCalendar.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add_circle</span>הוספת דיווח`;
                     }
@@ -1640,7 +1640,7 @@
         });
 
         const btn = document.querySelector('#user-profile-screen .btn');
-        if (btn) btn.textContent = isReadonly ? 'שמור' : 'ערוך';
+        if (btn) btn.textContent = isReadonly ? 'שמירה' : 'עריכה';
 
         // When toggling from editable back to readonly, save the values
         if (!isReadonly) {
