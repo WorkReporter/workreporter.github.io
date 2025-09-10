@@ -1217,6 +1217,53 @@
             .calendar-nav {
                 padding: 10px;
             }
+
+            /* === Mobile responsive styles for Add Researcher Section === */
+            .add-new-researcher-container {
+                margin-bottom: 15px;
+                padding: 12px;
+                margin-left: 0;
+                margin-right: 0;
+            }
+
+            .add-researcher-title {
+                font-size: 16px;
+                font-weight: 600;
+                text-align: center;
+                margin-bottom: 12px;
+                color: #059669;
+            }
+
+            .add-researcher-row {
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .add-researcher-form input {
+                width: 100%;
+                padding: 14px 16px;
+                font-size: 16px;
+                border-radius: 8px;
+                border: 2px solid #d1d5db;
+                background: white;
+                text-align: right;
+            }
+
+            .add-researcher-form .btn-add {
+                width: 100%;
+                padding: 14px 20px;
+                font-size: 16px;
+                font-weight: 600;
+                justify-content: center;
+                border-radius: 8px;
+                min-height: 48px;
+            }
+
+            .add-researcher-form .btn-add .material-symbols-outlined {
+                font-size: 20px;
+                margin-left: 8px;
+            }
         }
         @media (max-width: 420px) {
             .calendar {
@@ -1639,7 +1686,7 @@
             <div class="total-display"><strong>סה"כ שעות: <span id="total-hours">0</span></strong></div>
         </div>
         <div id="weekly-form" class="hidden">
-            <div class="form-group"><label>טווח תאריכים:</label><input type="text" id="report-week" readonly style="background-color: #f9fafb;"></div>
+            <div class="form-group"><label>טו��ח תאריכים:</label><input type="text" id="report-week" readonly style="background-color: #f9fafb;"></div>
             <div id="weekly-dates-hint" style="margin: 8px 0 16px; color:#6b7280; font-size: 14px;"></div>
             <div id="weekly-entries"></div>
             <button class="btn add" onclick="addWeeklyEntry()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add</span>הוספת שורה</button>
