@@ -865,7 +865,7 @@
         const formTitle = document.querySelector('#daily-report-screen h2');
         if (formTitle) formTitle.textContent = 'עריכת דיווח קיים';
         const submitBtn = document.querySelector('#daily-report-screen .btn[onclick="submitReport()"]');
-        if (submitBtn) submitBtn.textContent = 'עדכן דיווח';
+        if (submitBtn) submitBtn.textContent = 'עדכן.י דיווח';
 
         // בחירת סוג הדיווח
         selectReportType(report.type);
