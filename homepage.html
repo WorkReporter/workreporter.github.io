@@ -1430,6 +1430,13 @@
                     <option value="מנהל">מנהל</option>
                     <option value="מהנדס מחקר">מהנדס מחקר</option>
                 </select></div>
+                <div id="register-manager-warning" class="info-message" style="display:none; margin-top:-10px;">שים לב! ההרשאות בפועל למנהל ניתנות במערכת. אם אתה לא מנהל לא תוכל להשתמש במערכת.</div>
+                <div class="form-group" id="register-my-manager-group" style="display:none;"><label>מנהל שלי:</label><select id="register-my-manager">
+                    <option value="">בחר/י מנהל</option>
+                    <option value="יעל זלצר">יעל זלצר</option>
+                    <option value="מנהל 2">מנהל 2</option>
+                    <option value="מנהל 3">מנהל 3</option>
+                </select></div>
                 <div class="form-group"><label>אימייל ארגוני:</label><input type="email" id="register-email" required></div>
                 <div class="form-group"><label>סיסמה:</label><input type="password" id="register-password" required minlength="6"></div>
                 <div class="form-group"><label>אימות סיסמה:</label><input type="password" id="register-confirm-password" required minlength="6"></div>
@@ -1464,6 +1471,15 @@
             <select id="profile-position" disabled style="background-color: #f9fafb;">
                 <option value="מנהל">מנהל</option>
                 <option value="מהנדס מחקר">מהנדס מחקר</option>
+            </select>
+        </div>
+        <div id="profile-manager-warning" class="info-message" style="display:none; margin-top:-10px;">שים לב! ההרשאות בפועל למנהל ניתנות במערכת. אם אתה לא מנהל לא תוכל להשתמש במערכת.</div>
+        <div class="form-group" id="profile-my-manager-group" style="display:none;"><label>מנהל שלי:</label>
+            <select id="profile-my-manager" disabled style="background-color: #f9fafb;">
+                <option value="">בחר/י מנהל</option>
+                <option value="יעל זלצר">יעל זלצר</option>
+                <option value="מנהל 2">מנהל 2</option>
+                <option value="מנהל 3">מנהל 3</option>
             </select>
         </div>
         <div class="form-group"><label>אי-מייל:</label><input type="email" id="profile-email" readonly style="background-color: #f9fafb;"></div>
