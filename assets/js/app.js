@@ -241,6 +241,12 @@
             setInputValue('profile-last-name', userData.lastName || '');
             setInputValue('profile-position', userData.position || '');
             setInputValue('profile-email', userData.email || (currentUser ? currentUser.email : ''));
+            const profileMgr = document.getElementById('profile-my-manager');
+            if (profileMgr) profileMgr.value = userData.my_manager || '';
+            // Update manager field visibility according to role
+            if (typeof updateManagerUIVisibility === 'function') {
+                updateManagerUIVisibility(userData.position || '');
+            }
         }).catch(() => {});
     }
 
@@ -1646,6 +1652,12 @@
         if (!isReadonly) {
 
             const data = { firstName: getInputValue('profile-first-name'), lastName: getInputValue('profile-last-name'), position: getInputValue('profile-position'), email: getInputValue('profile-email') };
+            // Persist my_manager for researchers
+            if ((data.position || '') === 'מהנדס מחקר') {
+                data.my_manager = getInputValue('profile-my-manager') || '';
+            } else {
+                data.my_manager = '';
+            }
             if (currentUser) updateUserProfile(currentUser.uid, data).then(() => showPopup('הפרטים נשמרו'));
         }
     }
@@ -1725,7 +1737,11 @@
         }
         return auth.createUserWithEmailAndPassword(data.email, data.password).then(async (cred) => {
             const uid = cred.user.uid;
-            await database.ref('users/' + uid).set({ firstName: data.firstName, lastName: data.lastName, position: data.position, email: data.email, createdAt: new Date().toISOString() }).catch(() => {});
+            const payload = { firstName: data.firstName, lastName: data.lastName, position: data.position, email: data.email, createdAt: new Date().toISOString() };
+            if ((data.position || '') === 'מהנדס מחקר') {
+                payload.my_manager = data.my_manager || '';
+            }
+            await database.ref('users/' + uid).set(payload).catch(() => {});
             return cred;
         });
     }
@@ -1848,6 +1864,21 @@
         return `${startDate} - ${endDate}`;
     }
 
+    // Manager UI visibility helper (registration + profile)
+    function updateManagerUIVisibility(positionVal) {
+        // Registration screen
+        const regGroup = document.getElementById('register-my-manager-group');
+        const regWarn = document.getElementById('register-manager-warning');
+        if (regGroup) regGroup.style.display = (positionVal === 'מהנדס מחקר') ? '' : 'none';
+        if (regWarn) regWarn.style.display = (positionVal === 'מנהל') ? '' : 'none';
+
+        // Profile screen
+        const profGroup = document.getElementById('profile-my-manager-group');
+        const profWarn = document.getElementById('profile-manager-warning');
+        const effectivePos = positionVal || (document.getElementById('profile-position')?.value || '');
+        if (profGroup) profGroup.style.display = (effectivePos === 'מהנדס מחקר') ? '' : 'none';
+        if (profWarn) profWarn.style.display = (effectivePos === 'מנהל') ? '' : 'none';
+    }
     /**
      * מחזיר את מפתח האחסון לשבוע של תאריך נתון
      * @param {Date} date התאריך לבדיקה
@@ -1898,6 +1929,9 @@
             setHTML('register-messages', '');
 
             const data = { firstName: getInputValue('register-first-name'), lastName: getInputValue('register-last-name'), position: getInputValue('register-position'), email: getInputValue('register-email'), password: getInputValue('register-password') };
+            if (data.position === 'מהנדס מחקר') {
+                data.my_manager = getInputValue('register-my-manager') || '';
+            }
             const confirm = getInputValue('register-confirm-password');
             if (data.password !== confirm) { setHTML('register-messages', '<div class="error-message">סיסמאות אינן תואמות</div>'); if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'הרשמה'; } this.dataset.loading = '0'; return; }
 
@@ -1918,6 +1952,12 @@
                 this.dataset.loading = '0';
             }
         });
+        // Role-based manager UI
+        const regPos = document.getElementById('register-position');
+        if (regPos) {
+            regPos.addEventListener('change', function(){ updateManagerUIVisibility(this.value); });
+            updateManagerUIVisibility(regPos.value);
+        }
         const resetForm = document.getElementById('reset-password-form');
         if (resetForm) resetForm.addEventListener('submit', function (e) {
             e.preventDefault(); const email = getInputValue('reset-email'); auth.sendPasswordResetEmail(email).then(() => setHTML('forgot-password-messages', '<div class="success-message">קישור לשחזור סיסמה נשלח למייל שלך - (עשוי לקחת מספר דקות)</div>')).catch(err => setHTML('forgot-password-messages', `<div class="error-message">${translateErrorMessage(err)}</div>`));
