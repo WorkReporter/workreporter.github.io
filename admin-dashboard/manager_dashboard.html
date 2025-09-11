@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת דיווח שעות - מנהלים</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Heebo', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-icon {
+            background: #3b82f6;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #64748b;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .screen-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        /* Employee List Screen */
+        .employees-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .employee-button {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-family: inherit;
+        }
+
+        .employee-button:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Calendar Screen */
+        .calendar-container {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .nav-btn {
+            background: #f1f5f9;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #475569;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .month-year {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar th {
+            padding: 1rem 0.5rem;
+            font-weight: 500;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .calendar td {
+            padding: 0;
+            position: relative;
+        }
+
+        .calendar-day {
+            width: 100%;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 2px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background: #f1f5f9;
+        }
+
+        .calendar-day.other-month {
+            color: #cbd5e0;
+            cursor: default;
+        }
+
+        .calendar-day.other-month:hover {
+            background: transparent;
+        }
+
+        .calendar-day.has-reports {
+            background: #22c55e;
+            color: white;
+            position: relative;
+        }
+
+        .calendar-day.has-reports:hover {
+            background: #16a34a;
+        }
+
+        .calendar-day.range-start {
+            background: #1e40af;
+            color: white;
+        }
+
+        .calendar-day.range-end {
+            background: #1e40af;
+            color: white;
+        }
+
+        .calendar-day.in-range {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .date-selection-info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .date-selection-info.has-selection {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1e40af;
+        }
+
+        .date-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+
+        .date-value {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .generate-report-btn {
+            width: 100%;
+            padding: 1rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 1rem;
+        }
+
+        .generate-report-btn:hover:not(:disabled) {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .generate-report-btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .back-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: #e2e8f0;
+        }
+
+        /* Report Screens */
+        .report-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .report-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .hours-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border-right: 4px solid #3b82f6;
+        }
+
+        .hours-item.other-task {
+            border-right-color: #f59e0b;
+        }
+
+        .hours-item.seminar {
+            border-right-color: #10b981;
+        }
+
+        .hours-label {
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .hours-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1e293b;
+        }
+
+        .categorization-item {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .categorization-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            gap: 1rem;
+        }
+
+        .task-info {
+            flex: 1;
+        }
+
+        .task-name {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 0.25rem;
+        }
+
+        .task-hours {
+            color: #b45309;
+            font-size: 0.9rem;
+        }
+
+        .categorization-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            flex: 2;
+        }
+
+        .option-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d97706;
+            background: white;
+            color: #92400e;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .option-btn:hover {
+            background: #fef3c7;
+        }
+
+        .option-btn.active {
+            background: #d97706;
+            color: white;
+        }
+
+        .custom-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d97706;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-family: inherit;
+            background: white;
+        }
+
+        /* Final Report */
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 1rem;
+            text-align: right;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .stats-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .stats-table td {
+            color: #1e293b;
+        }
+
+        .percentage-cell {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .categorization-summary {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .category-tag {
+            background: #3b82f6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .category-tag.allocated {
+            background: #10b981;
+        }
+
+        .missing-days {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .missing-day {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .action-buttons .generate-report-btn {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .action-buttons .back-btn {
+            flex: 0 0 120px;
+            margin: 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .loading::after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f1f5f9;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            margin: 1rem auto;
+            animation: spin 1s linear infinite;
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                padding: 1rem;
+            }
+
+            .categorization-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .categorization-options {
+                justify-content: flex-start;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .action-buttons .back-btn {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+        import { getDatabase, ref, get, query, orderByChild, equalTo } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+        // Firebase configuration - Replace with your config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDpzAnHPl8trZDQwC-G5twRWSwdweko_T8",
+            authDomain: "work-report-volcani.firebaseapp.com",
+            projectId: "work-report-volcani",
+            storageBucket: "work-report-volcani.firebasestorage.app",
+            messagingSenderId: "569559789764",
+            appId: "1:569559789764:web:d11b9c0e43ff78a66dd991",
+            measurementId: "G-M5Z4R1FB40",
+            databaseURL: "https://work-report-volcani-default-rtdb.firebaseio.com/"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Make Firebase available globally
+        window.firebaseApp = { app, auth, db, get, ref, query, orderByChild, equalTo };
+    </script>
+
+    <div class="header">
+        <div class="header-title">
+            <div class="header-icon">🏠</div>
+            שם המנהל
+        </div>
+        <div class="user-profile">
+            <div class="user-avatar">👤</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Screen 1: Active Employees -->
+        <div id="employees-screen" class="screen active">
+            <h1 class="screen-title">עובדים פעילים</h1>
+            <div class="employees-list" id="employees-list">
+                <div class="loading">טוען רשימת עובדים...</div>
+            </div>
+        </div>
+
+        <!-- Screen 2: Calendar Date Selection -->
+        <div id="calendar-screen" class="screen">
+            <h1 class="screen-title" id="calendar-title">עובד - הפקת דו"ח</h1>
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <button class="nav-btn" onclick="previousMonth()">‹</button>
+                    <div class="month-year" id="month-year">אוגוסט 2025</div>
+                    <button class="nav-btn" onclick="nextMonth()">›</button>
+                </div>
+
+                <table class="calendar">
+                    <thead>
+                        <tr>
+                            <th>א</th>
+                            <th>ב</th>
+                            <th>ג</th>
+                            <th>ד</th>
+                            <th>ה</th>
+                            <th>ו</th>
+                            <th>ש</th>
+                        </tr>
+                    </thead>
+                    <tbody id="calendar-body">
+                        <!-- Calendar will be populated here -->
+                    </tbody>
+                </table>
+
+                <div class="date-selection-info" id="date-selection">
+                    <div>בחר תאריך התחלה</div>
+                </div>
+
+                <button class="generate-report-btn" id="generate-report" disabled onclick="generateIntermediateReport()">
+                    הפקת דו"ח שעות
+                </button>
+
+                <button class="back-btn" onclick="showEmployeesScreen()">חזרה</button>
+            </div>
+        </div>
+
+        <!-- Screen 3: Intermediate Report -->
+        <div id="intermediate-screen" class="screen">
+            <div class="report-container">
+                <h1 class="screen-title" id="intermediate-title">עובד - הפקת דו"ח שכר ביניים</h1>
+                <p style="text-align: center; color: #64748b; margin-bottom: 2rem;" id="intermediate-subtitle">לתקופה</p>
+
+                <div id="intermediate-content">
+                    <div class="loading">מעבד נתוני דיווח...</div>
+                </div>
+
+                <div class="action-buttons" id="intermediate-actions" style="display: none;">
+                    <button class="generate-report-btn" onclick="generateFinalReport()">
+                        אישור שעות דו"ח
+                    </button>
+                    <button class="back-btn" onclick="showCalendarScreen()">חזרה</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 4: Final Report -->
+        <div id="final-screen" class="screen">
+            <div class="report-container">
+                <h1 class="screen-title" id="final-title">עובד - דו"ח</h1>
+                <p style="text-align: center; color: #64748b; margin-bottom: 2rem;" id="final-subtitle">לתקופה</p>
+
+                <div id="final-content">
+                    <div class="loading">מכין דו"ח סופי...</div>
+                </div>
+
+                <div class="action-buttons" id="final-actions" style="display: none;">
+                    <button class="generate-report-btn" onclick="exportFinalReport()">
+                        הפקת דו"ח
+                    </button>
+                    <button class="back-btn" onclick="showIntermediateScreen()">חזרה</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state management
+        const AppState = {
+            currentUser: null,
+            employees: [],
+            selectedEmployee: null,
+            selectedStartDate: null,
+            selectedEndDate: null,
+            currentMonth: 7, // August (0-based)
+            currentYear: 2025,
+            reportData: null,
+            categorizations: new Map()
+        };
+
+        // Firebase data functions
+        async function loadEmployeesForManager(managerId) {
+            try {
+                const { db, ref, get, query, orderByChild, equalTo } = window.firebaseApp;
+                const usersRef = ref(db, 'users');
+                const managerQuery = query(usersRef, orderByChild('my_manager'), equalTo(managerId));
+                const snapshot = await get(managerQuery);
+
+                if (snapshot.exists()) {
+                    const employees = [];
+                    snapshot.forEach(child => {
+                        const employee = { id: child.key, ...child.val() };
+                        employees.push(employee);
+                    });
+                    return employees;
+                } else {
+                    console.log('No employees found for this manager');
+                    return [];
+                }
+            } catch (error) {
+                console.error('Error loading employees:', error);
+                return [];
+            }
+        }
+
+        async function loadEmployeeReports(employeeId, startDate, endDate) {
+            try {
+                const { db, ref, get } = window.firebaseApp;
+                const reportsRef = ref(db, `reports/${employeeId}`);
+                const snapshot = await get(reportsRef);
+
+                if (!snapshot.exists()) {
+                    return [];
+                }
+
+                const reports = [];
+                const data = snapshot.val();
+
+                Object.entries(data).forEach(([reportId, reportData]) => {
+                    const reportDate = new Date(reportData.date);
+                    if (reportDate >= startDate && reportDate <= endDate) {
+                        reports.push({
+                            id: reportId,
+                            date: reportData.date,
+                            type: reportData.type,
+                            entries: reportData.entries || [],
+                            workStatus: reportData.workStatus
+                        });
+                    }
+                });
+
+                return reports.sort((a, b) => new Date(a.date) - new Date(b.date));
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                return [];
+            }
+        }
+
+        async function getReportDatesForEmployee(employeeId, year, month) {
+            try {
+                const { db, ref, get } = window.firebaseApp;
+                const reportsRef = ref(db, `reports/${employeeId}`);
+                const snapshot = await get(reportsRef);
+
+                if (!snapshot.exists()) {
+                    return new Set();
+                }
+
+                const reportDates = new Set();
+                const data = snapshot.val();
+
+                Object.values(data).forEach(report => {
+                    const reportDate = new Date(report.date);
+                    if (reportDate.getFullYear() === year && reportDate.getMonth() === month) {
+                        reportDates.add(reportDate.getDate());
+                    }
+                });
+
+                return reportDates;
+            } catch (error) {
+                console.error('Error getting report dates:', error);
+                return new Set();
+            }
+        }
+
+        // Screen management
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function showEmployeesScreen() {
+            showScreen('employees-screen');
+        }
+
+        function showCalendarScreen(employee) {
+            if (employee) {
+                AppState.selectedEmployee = employee;
+                document.getElementById('calendar-title').textContent = `${employee.firstName} ${employee.lastName} - הפקת דו"ח`;
+            }
+            showScreen('calendar-screen');
+            generateCalendar();
+        }
+
+        function showIntermediateScreen() {
+            const employee = AppState.selectedEmployee;
+            const startDate = AppState.selectedStartDate.toLocaleDateString('he-IL');
+            const endDate = AppState.selectedEndDate.toLocaleDateString('he-IL');
+
+            document.getElementById('intermediate-title').textContent = `${employee.firstName} ${employee.lastName} - הפקת דו"ח שכר ביניים`;
+            document.getElementById('intermediate-subtitle').textContent = `לתקופה ${startDate} - ${endDate}`;
+
+            showScreen('intermediate-screen');
+        }
+
+        function showFinalScreen() {
+            const employee = AppState.selectedEmployee;
+            const startDate = AppState.selectedStartDate.toLocaleDateString('he-IL');
+            const endDate = AppState.selectedEndDate.toLocaleDateString('he-IL');
+
+            document.getElementById('final-title').textContent = `${employee.firstName} ${employee.lastName} - דו"ח`;
+            document.getElementById('final-subtitle').textContent = `לתקופה ${startDate} - ${endDate}`;
+
+            showScreen('final-screen');
+        }
+
+        // Employee list rendering
+        async function renderEmployeesList() {
+            const container = document.getElementById('employees-list');
+
+            if (!AppState.currentUser) {
+                container.innerHTML = '<div class="empty-state">יש להתחבר כדי לצפות ברשימת העובדים</div>';
+                return;
+            }
+
+            try {
+                const employees = await loadEmployeesForManager(AppState.currentUser.uid);
+                AppState.employees = employees;
+
+                if (employees.length === 0) {
+                    container.innerHTML = '<div class="empty-state">לא נמצאו עובדים המשויכים אליך</div>';
+                    return;
+                }
+
+                const employeeButtons = employees.map(employee => `
+                    <button class="employee-button" onclick="showCalendarScreen(${JSON.stringify(employee).replace(/"/g, '&quot;')})">
+                        ${employee.firstName} ${employee.lastName}
+                    </button>
+                `).join('');
+
+                container.innerHTML = employeeButtons;
+            } catch (error) {
+                console.error('Error rendering employees:', error);
+                container.innerHTML = '<div class="empty-state">שגיאה בטעינת רשימת העובדים</div>';
+            }
+        }
+
+        // Calendar functions
+        async function generateCalendar() {
+            const monthNames = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+                              'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+
+            document.getElementById('month-year').textContent = `${monthNames[AppState.currentMonth]} ${AppState.currentYear}`;
+
+            const firstDay = new Date(AppState.currentYear, AppState.currentMonth, 1).getDay();
+            const daysInMonth = new Date(AppState.currentYear, AppState.currentMonth + 1, 0).getDate();
+            const daysInPrevMonth = new Date(AppState.currentYear, AppState.currentMonth, 0).getDate();
+
+            const calendarBody = document.getElementById('calendar-body');
+            calendarBody.innerHTML = '';
+
+            // Get report dates for selected employee
+            let reportDates = new Set();
+            if (AppState.selectedEmployee) {
+                reportDates = await getReportDatesForEmployee(
+                    AppState.selectedEmployee.id,
+                    AppState.currentYear,
+                    AppState.currentMonth
+                );
+            }
+
+            let date = 1;
+            let nextMonthDate = 1;
+
+            for (let week = 0; week < 6; week++) {
+                const row = document.createElement('tr');
+
+                for (let day = 0; day < 7; day++) {
+                    const cell = document.createElement('td');
+                    const dayDiv = document.createElement('div');
+                    dayDiv.className = 'calendar-day';
+
+                    if (week === 0 && day < firstDay) {
+                        // Previous month days
+                        const prevDate = daysInPrevMonth - firstDay + day + 1;
+                        dayDiv.textContent = prevDate;
+                        dayDiv.classList.add('other-month');
+                    } else if (date > daysInMonth) {
+                        // Next month days
+                        dayDiv.textContent = nextMonthDate;
+                        dayDiv.classList.add('other-month');
+                        nextMonthDate++;
+                    } else {
+                        // Current month days
+                        dayDiv.textContent = date;
+
+                        if (reportDates.has(date)) {
+                            dayDiv.classList.add('has-reports');
+                        }
+
+                        dayDiv.addEventListener('click', () => selectDate(date));
+                        date++;
+                    }
+
+                    cell.appendChild(dayDiv);
+                    row.appendChild(cell);
+                }
+
+                calendarBody.appendChild(row);
+                if (date > daysInMonth && week > 3) break;
+            }
+
+            updateCalendarSelection();
+        }
+
+        function selectDate(day) {
+            const clickedDate = new Date(AppState.currentYear, AppState.currentMonth, day);
+
+            if (!AppState.selectedStartDate || (AppState.selectedStartDate && AppState.selectedEndDate)) {
+                // Start new selection
+                AppState.selectedStartDate = clickedDate;
+                AppState.selectedEndDate = null;
+            } else if (clickedDate >= AppState.selectedStartDate) {
+                // Complete the range
+                AppState.selectedEndDate = clickedDate;
+            } else {
+                // Clicked before start date, reset
+                AppState.selectedStartDate = clickedDate;
+                AppState.selectedEndDate = null;
+            }
+
+            updateCalendarSelection();
+            updateDateSelection();
+            updateGenerateButton();
+        }
+
+        function updateCalendarSelection() {
+            document.querySelectorAll('.calendar-day').forEach(day => {
+                day.classList.remove('range-start', 'range-end', 'in-range');
+
+                if (!day.classList.contains('other-month')) {
+                    const dayNum = parseInt(day.textContent);
+                    const dayDate = new Date(AppState.currentYear, AppState.currentMonth, dayNum);
+
+                    if (AppState.selectedStartDate && dayDate.getTime() === AppState.selectedStartDate.getTime()) {
+                        day.classList.add('range-start');
+                    } else if (AppState.selectedEndDate && dayDate.getTime() === AppState.selectedEndDate.getTime()) {
+                        day.classList.add('range-end');
+                    } else if (AppState.selectedStartDate && AppState.selectedEndDate &&
+                              dayDate > AppState.selectedStartDate && dayDate < AppState.selectedEndDate) {
+                        day.classList.add('in-range');
+                    }
+                }
+            });
+        }
+
+        function updateDateSelection() {
+            const container = document.getElementById('date-selection');
+
+            if (AppState.selectedStartDate && AppState.selectedEndDate) {
+                const startStr = AppState.selectedStartDate.toLocaleDateString('he-IL');
+                const endStr = AppState.selectedEndDate.toLocaleDateString('he-IL');
+                container.className = 'date-selection-info has-selection';
+                container.innerHTML = `
+                    <div class="date-label">טווח נבחר</div>
+                    <div class="date-value">${startStr} - ${endStr}</div>
+                `;
+            } else if (AppState.selectedStartDate) {
+                const startStr = AppState.selectedStartDate.toLocaleDateString('he-IL');
+                container.className = 'date-selection-info has-selection';
+                container.innerHTML = `
+                    <div class="date-label">תאריך התחלה</div>
+                    <div class="date-value">${startStr}</div>
+                    <div style="margin-top: 0.5rem; font-size: 0.8rem;">בחר תאריך סיום</div>
+                `;
+            } else {
+                container.className = 'date-selection-info';
+                container.innerHTML = '<div>בחר תאריך התחלה</div>';
+            }
+        }
+
+        function updateGenerateButton() {
+            const btn = document.getElementById('generate-report');
+            btn.disabled = !(AppState.selectedStartDate && AppState.selectedEndDate);
+        }
+
+        function previousMonth() {
+            if (AppState.currentMonth === 0) {
+                AppState.currentMonth = 11;
+                AppState.currentYear--;
+            } else {
+                AppState.currentMonth--;
+            }
+            generateCalendar();
+        }
+
+        function nextMonth() {
+            if (AppState.currentMonth === 11) {
+                AppState.currentMonth = 0;
+                AppState.currentYear++;
+            } else {
+                AppState.currentMonth++;
+            }
+            generateCalendar();
+        }
+
+        // Report generation functions
+        async function generateIntermediateReport() {
+            showIntermediateScreen();
+
+            try {
+                const reports = await loadEmployeeReports(
+                    AppState.selectedEmployee.id,
+                    AppState.selectedStartDate,
+                    AppState.selectedEndDate
+                );
+
+                AppState.reportData = processReportData(reports);
+                renderIntermediateReport(AppState.reportData);
+
+            } catch (error) {
+                console.error('Error generating report:', error);
+                document.getElementById('intermediate-content').innerHTML =
+                    '<div class="empty-state">שגיאה בטעינת נתוני הדיווח</div>';
+            }
+        }
+
+        function processReportData(reports) {
+            const data = {
+                researchers: new Map(),
+                otherTasks: [],
+                seminars: [],
+                totalHours: 0,
+                workDays: new Set(),
+                missingDays: []
+            };
+
+            reports.forEach(report => {
+                data.workDays.add(report.date);
+
+                report.entries.forEach(entry => {
+                    const hours = report.type === 'weekly' ?
+                        (parseInt(entry.days) || 0) * 8 :
+                        parseInt(entry.hours) || 0;
+
+                    data.totalHours += hours;
+
+                    if (entry.researcher === 'משימות אחרות') {
+                        data.otherTasks.push({
+                            name: entry.detail || 'משימה לא מוגדרת',
+                            hours: hours,
+                            date: report.date,
+                            categorization: null
+                        });
+                    } else if (entry.researcher?.includes('סמינר') ||
+                               entry.researcher?.includes('קורס') ||
+                               entry.researcher?.includes('הכשרה')) {
+                        data.seminars.push({
+                            name: entry.researcher,
+                            hours: hours,
+                            date: report.date,
+                            categorization: 'seminar'
+                        });
+                    } else {
+                        const current = data.researchers.get(entry.researcher) || 0;
+                        data.researchers.set(entry.researcher, current + hours);
+                    }
+                });
+            });
+
+            // Calculate missing days
+            data.missingDays = calculateMissingDays(
+                AppState.selectedStartDate,
+                AppState.selectedEndDate,
+                data.workDays
+            );
+
+            return data;
+        }
+
+        function calculateMissingDays(startDate, endDate, workDays) {
+            const missing = [];
+            const current = new Date(startDate);
+
+            while (current <= endDate) {
+                const dayOfWeek = current.getDay();
+                // Skip Fridays (5) and Saturdays (6) - weekend in Israel
+                if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+                    const dateStr = current.toISOString().split('T')[0];
+                    if (!workDays.has(dateStr)) {
+                        missing.push(new Date(current));
+                    }
+                }
+                current.setDate(current.getDate() + 1);
+            }
+
+            return missing;
+        }
+
+        function renderIntermediateReport(data) {
+            let html = '';
+
+            // Researchers section
+            if (data.researchers.size > 0) {
+                html += `
+                    <div class="report-section">
+                        <h3 class="section-title">חוקרים:</h3>
+                `;
+
+                data.researchers.forEach((hours, researcher) => {
+                    html += `
+                        <div class="hours-item">
+                            <span class="hours-label">${researcher} - סה"כ שעות</span>
+                            <span class="hours-value">${hours}</span>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            // Other tasks section
+            if (data.otherTasks.length > 0) {
+                html += `
+                    <div class="report-section">
+                        <h3 class="section-title">משימות אחרות:</h3>
+                `;
+
+                data.otherTasks.forEach((task, index) => {
+                    html += `
+                        <div class="categorization-item">
+                            <div class="categorization-header">
+                                <div class="task-info">
+                                    <div class="task-name">${task.name}</div>
+                                    <div class="task-hours">סה"כ שעות: ${task.hours}</div>
+                                </div>
+                                <div class="categorization-options">
+                                    <button class="option-btn" onclick="selectCategorization(${index}, 'active', this)">חוקר פעיל</button>
+                                    <button class="option-btn" onclick="selectCategorization(${index}, 'relative', this)">חלוקה יחסית</button>
+                                    <button class="option-btn" onclick="selectCategorization(${index}, 'seminar', this)">סמינר</button>
+                                    <button class="option-btn" onclick="selectCategorization(${index}, 'custom', this)">חיוב חדש</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            // Seminars section
+            if (data.seminars.length > 0) {
+                html += `
+                    <div class="report-section">
+                        <h3 class="section-title">סמינר/קורס/הכשרה:</h3>
+                `;
+
+                data.seminars.forEach(seminar => {
+                    html += `
+                        <div class="hours-item seminar">
+                            <span class="hours-label">${seminar.name} - סה"כ שעות</span>
+                            <span class="hours-value">${seminar.hours}</span>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            if (!html) {
+                html = '<div class="empty-state">לא נמצאו דיווחים לתקופה הנבחרת</div>';
+            }
+
+            document.getElementById('intermediate-content').innerHTML = html;
+            document.getElementById('intermediate-actions').style.display = 'flex';
+        }
+
+        function selectCategorization(taskIndex, type, button) {
+            // Remove active class from siblings
+            const siblings = button.parentElement.querySelectorAll('.option-btn');
+            siblings.forEach(btn => btn.classList.remove('active'));
+
+            // Add active class to clicked button
+            button.classList.add('active');
+
+            // Store categorization
+            AppState.categorizations.set(taskIndex, type);
+
+            // Handle custom input
+            const item = button.closest('.categorization-item');
+            let input = item.querySelector('.custom-input');
+
+            if (type === 'custom') {
+                if (!input) {
+                    input = document.createElement('input');
+                    input.className = 'custom-input';
+                    input.placeholder = 'הכנס הסבר לחיוב חדש...';
+                    input.addEventListener('input', (e) => {
+                        AppState.categorizations.set(`${taskIndex}_custom`, e.target.value);
+                    });
+                    item.appendChild(input);
+                }
+                input.style.display = 'block';
+                input.focus();
+            } else {
+                if (input) {
+                    input.style.display = 'none';
+                }
+            }
+        }
+
+        async function generateFinalReport() {
+            showFinalScreen();
+
+            try {
+                const finalData = processFinalReport(AppState.reportData, AppState.categorizations);
+                renderFinalReport(finalData);
+
+            } catch (error) {
+                console.error('Error generating final report:', error);
+                document.getElementById('final-content').innerHTML =
+                    '<div class="empty-state">שגיאה בהכנת הדו"ח הסופי</div>';
+            }
+        }
+
+        function processFinalReport(data, categorizations) {
+            const finalData = {
+                categories: new Map(),
+                totalHours: data.totalHours,
+                categorizedTasks: [],
+                missingDays: data.missingDays
+            };
+
+            // Add researcher hours
+            data.researchers.forEach((hours, researcher) => {
+                finalData.categories.set(researcher, hours);
+            });
+
+            // Add seminar hours
+            data.seminars.forEach(seminar => {
+                const current = finalData.categories.get('סמינר') || 0;
+                finalData.categories.set('סמינר', current + seminar.hours);
+            });
+
+            // Process categorized other tasks
+            data.otherTasks.forEach((task, index) => {
+                const categorization = categorizations.get(index);
+                const customText = categorizations.get(`${index}_custom`);
+
+                let categoryName = 'לא מקוטלג';
+                let displayName = categorization;
+
+                switch (categorization) {
+                    case 'active':
+                        categoryName = 'חוקר פעיל';
+                        displayName = 'חוקר פעיל';
+                        break;
+                    case 'relative':
+                        categoryName = 'חלוקה יחסית';
+                        displayName = 'חלוקה יחסית';
+                        break;
+                    case 'seminar':
+                        categoryName = 'סמינר';
+                        displayName = 'סמינר';
+                        break;
+                    case 'custom':
+                        categoryName = 'חיוב חדש';
+                        displayName = customText || 'חיוב חדש';
+                        break;
+                    default:
+                        categoryName = 'לא מקוטלג';
+                        displayName = 'לא מקוטלג';
+                }
+
+                const current = finalData.categories.get(categoryName) || 0;
+                finalData.categories.set(categoryName, current + task.hours);
+
+                finalData.categorizedTasks.push({
+                    name: task.name,
+                    category: displayName,
+                    hours: task.hours
+                });
+            });
+
+            return finalData;
+        }
+
+        function renderFinalReport(data) {
+            let html = '';
+
+            // Summary table
+            html += `
+                <div class="report-section">
+                    <h3 class="section-title">סך השעות:</h3>
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>סה"כ שעות</th>
+                                <th>אחוז מסך השעות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            data.categories.forEach((hours, category) => {
+                const percentage = data.totalHours > 0 ? Math.round((hours / data.totalHours) * 100) : 0;
+                html += `
+                    <tr>
+                        <td style="font-weight: 500;">${category}</td>
+                        <td style="text-align: center;">${hours}</td>
+                        <td class="percentage-cell">${percentage}%</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            // Categorized tasks
+            if (data.categorizedTasks.length > 0) {
+                html += `
+                    <div class="report-section">
+                        <h3 class="section-title">משימות אחרות:</h3>
+                `;
+
+                data.categorizedTasks.forEach(task => {
+                    html += `
+                        <div class="categorization-summary">
+                            <span class="category-tag">${task.name}</span>
+                            <span>→</span>
+                            <span class="category-tag allocated">${task.category}</span>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            // Missing days
+            html += `
+                <div class="report-section">
+                    <h3 class="section-title">ימים ללא דיווח: <span style="color: #3b82f6;">${data.missingDays.length} סה"כ ימים</span></h3>
+                    <div class="missing-days">
+            `;
+
+            data.missingDays.forEach(date => {
+                html += `<div class="missing-day">${date.toLocaleDateString('he-IL')}</div>`;
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('final-content').innerHTML = html;
+            document.getElementById('final-actions').style.display = 'flex';
+        }
+
+        function exportFinalReport() {
+            // In a real implementation, this would generate and download a report
+            const employee = AppState.selectedEmployee;
+            const startDate = AppState.selectedStartDate.toLocaleDateString('he-IL');
+            const endDate = AppState.selectedEndDate.toLocaleDateString('he-IL');
+
+            alert(`דו"ח עבור ${employee.firstName} ${employee.lastName} לתקופה ${startDate} - ${endDate} הופק בהצלחה!`);
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Firebase auth state listener
+            window.firebaseApp.auth.onAuthStateChanged((user) => {
+                AppState.currentUser = user;
+                if (user) {
+                    renderEmployeesList();
+                } else {
+                    document.getElementById('employees-list').innerHTML =
+                        '<div class="empty-state">יש להתחבר כדי לגשת למערכת</div>';
+                }
+            });
+
+            // Initialize calendar
+            generateCalendar();
+        });
+    </script>
+</body>
+</html>
