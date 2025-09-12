@@ -77,7 +77,7 @@
                         }
                     }
                     if (isAdmin) {
-                        window.location.href = '/admin-dashboard/index.html';
+                        window.location.href = '/admin-dashboard/manager_dashboard.html';
                     } else {
                         showScreen('main');
                     }
@@ -90,7 +90,7 @@
                         isAdmin = false;
                     }
                     if (isAdmin) {
-                        window.location.href = '/admin-dashboard/index.html';
+                        window.location.href = '/admin-dashboard/manager_dashboard.html';
                     } else {
                         showScreen('main');
                     }
@@ -242,7 +242,14 @@
             setInputValue('profile-position', userData.position || '');
             setInputValue('profile-email', userData.email || (currentUser ? currentUser.email : ''));
             const profileMgr = document.getElementById('profile-my-manager');
-            if (profileMgr) profileMgr.value = userData.my_manager || '';
+            if (profileMgr) {
+                // אם יש כבר שדות מפורקים השתמש בהם להרכבת הערך
+                if (userData.my_manager_email && userData.my_manager_fullName) {
+                    profileMgr.value = `${userData.my_manager_fullName}|${userData.my_manager_email}`;
+                } else {
+                    profileMgr.value = userData.my_manager || '';
+                }
+            }
             // Update manager field visibility according to role
             if (typeof updateManagerUIVisibility === 'function') {
                 updateManagerUIVisibility(userData.position || '');
@@ -624,7 +631,7 @@
             return false;
         });
 
-        // בדוק התנגשו��
+        // בדוק התנגשויות
         const hasWeeklyReport = weekReports.some(r => r.type === 'weekly');
         const hasDailyReport = weekReports.some(r => r.type === 'daily');
 
@@ -780,7 +787,7 @@
                 // Validate days > 0
                 if (days <= 0) {
                     hasValidationErrors = true;
-                    errorMessage = `שורה ${index + 1}: חייב להזין מספר ימים גדול מ-0`;
+                    errorMessage = `שורה ${index + 1}: חייב להזן מספר ימים גדול מ-0`;
                     return;
                 }
 
@@ -1651,12 +1658,27 @@
         // When toggling from editable back to readonly, save the values
         if (!isReadonly) {
 
-            const data = { firstName: getInputValue('profile-first-name'), lastName: getInputValue('profile-last-name'), position: getInputValue('profile-position'), email: getInputValue('profile-email') };
-            // Persist my_manager for researchers
+            const data = {
+                firstName: getInputValue('profile-first-name'),
+                lastName: getInputValue('profile-last-name'),
+                position: getInputValue('profile-position'),
+                email: getInputValue('profile-email')
+            };
             if ((data.position || '') === 'מהנדס מחקר') {
-                data.my_manager = getInputValue('profile-my-manager') || '';
+                const selVal = getInputValue('profile-my-manager') || '';
+                data.my_manager = selVal;
+                if (selVal.includes('|')) {
+                    const [fullName, email] = selVal.split('|');
+                    data.my_manager_fullName = fullName.trim();
+                    data.my_manager_email = email.trim();
+                } else {
+                    data.my_manager_fullName = '';
+                    data.my_manager_email = '';
+                }
             } else {
                 data.my_manager = '';
+                data.my_manager_fullName = '';
+                data.my_manager_email = '';
             }
             if (currentUser) updateUserProfile(currentUser.uid, data).then(() => showPopup('הפרטים נשמרו'));
         }
@@ -1742,6 +1764,24 @@
                 payload.my_manager = data.my_manager || '';
             }
             await database.ref('users/' + uid).set(payload).catch(() => {});
+
+            // אם המשתמש הוא מנהל, הוסף אותו לרשימת המנהלים הגלובלית (לבחירה בלבד)
+            // הרשאות אמיתיות ניתנות רק דרך הכללים ב-firebase-rules.json
+            if (data.position === 'מנהל') {
+                const managerData = {
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    fullName: `${data.firstName} ${data.lastName}`,
+                    email: data.email,
+                    uid: uid,
+                    createdAt: new Date().toISOString(),
+                    isApproved: false // לא מאושר כמנהל אמיתי עד שלא יוסיף למיילים ב-rules
+                };
+                await database.ref('managers/' + uid).set(managerData).catch((error) => {
+                    console.error('Error adding manager to global list:', error);
+                });
+            }
+
             return cred;
         });
     }
@@ -2083,4 +2123,115 @@
         }
     }
     window.addNewResearcher = addNewResearcher;
+
+    // ---------- Manager Management Functions ----------
+
+    /**
+     * טוען רשימת מנהלים מ-Firebase
+     * @returns {Promise<Array>} רשימת מנהלים
+     */
+    async function loadManagersList() {
+        try {
+            const snapshot = await database.ref('managers').once('value');
+            const managers = snapshot.val() || {};
+
+            // המר את אובייקט המנהלים למערך
+            const managersList = Object.entries(managers).map(([id, manager]) => ({
+                id,
+                fullName: manager.fullName || `${manager.firstName} ${manager.lastName}`,
+                email: manager.email,
+                firstName: manager.firstName,
+                lastName: manager.lastName
+            }));
+
+            return managersList;
+        } catch (error) {
+            console.error('Error loading managers list:', error);
+            return [];
+        }
+    }
+
+    /**
+     * מעדכן את רשימת המנהלים ב-dropdown של הפרופיל
+     */
+    async function updateManagersDropdown() {
+        const managerSelect = document.getElementById('profile-my-manager');
+        const loadingElement = document.getElementById('manager-loading');
+
+        if (!managerSelect) return;
+
+        try {
+            if (loadingElement) loadingElement.style.display = 'block';
+
+            const managers = await loadManagersList();
+
+            // שמור את הבחירה הנוכחית
+            const currentValue = managerSelect.value;
+
+            // נקה את הרשימה הקיימת
+            managerSelect.innerHTML = '';
+
+            // הוסף אפשרות ברירת מחדל
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'בחר/י מנהל';
+            managerSelect.appendChild(defaultOption);
+
+            // הוסף מנהלים לרשימה
+            managers.forEach(manager => {
+                const option = document.createElement('option');
+                option.value = `${manager.fullName}|${manager.email}`;
+                option.textContent = `${manager.fullName} (${manager.email})`;
+                managerSelect.appendChild(option);
+            });
+
+            // החזר את הבחירה הקיימת אם קיימת
+            if (currentValue) {
+                managerSelect.value = currentValue;
+            }
+
+            if (loadingElement) loadingElement.style.display = 'none';
+
+        } catch (error) {
+            console.error('Error updating managers dropdown:', error);
+            if (loadingElement) {
+                loadingElement.textContent = 'שגיאה בטעינת רשימת מנהלים';
+                loadingElement.style.color = '#dc2626';
+            }
+        }
+    }
+
+    /**
+     * מעדכן את הנראות של שדה המנהל לפי התפקיד
+     * @param {string} position התפקיד
+     */
+    function updateManagerUIVisibility(position) {
+        const managerGroup = document.getElementById('profile-my-manager-group');
+        const managerWarning = document.getElementById('profile-manager-warning');
+        const registerManagerNote = document.getElementById('register-manager-selection-note');
+        const registerManagerWarning = document.getElementById('register-manager-warning');
+
+        if (position === 'מהנדס מחקר') {
+            if (managerGroup) {
+                managerGroup.style.display = 'block';
+                updateManagersDropdown(); // טען רשימת מנהלים
+            }
+            if (managerWarning) managerWarning.style.display = 'none';
+            if (registerManagerNote) registerManagerNote.style.display = 'block';
+            if (registerManagerWarning) registerManagerWarning.style.display = 'none';
+        } else if (position === 'מנהל') {
+            if (managerGroup) managerGroup.style.display = 'none';
+            if (managerWarning) managerWarning.style.display = 'block';
+            if (registerManagerNote) registerManagerNote.style.display = 'none';
+            if (registerManagerWarning) registerManagerWarning.style.display = 'block';
+        } else {
+            if (managerGroup) managerGroup.style.display = 'none';
+            if (managerWarning) managerWarning.style.display = 'none';
+            if (registerManagerNote) registerManagerNote.style.display = 'none';
+            if (registerManagerWarning) registerManagerWarning.style.display = 'none';
+        }
+    }
+
+    // חשוף את הפונקציה לשימוש גלובלי
+    window.updateManagerUIVisibility = updateManagerUIVisibility;
 })();

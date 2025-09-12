@@ -245,6 +245,38 @@
             color: #1e40af;
         }
 
+        /* Weekly report visuals */
+        .calendar-day.weekly-day {
+            position: relative;
+        }
+        .calendar-day.weekly-day::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 6px;
+            right: 6px;
+            border-top: 2px dashed rgba(255,255,255,0.9);
+        }
+        .calendar-day.other-month.weekly-day::after {
+            border-top-color: rgba(31,41,55,0.4);
+        }
+        .calendar-day.weekly-start::before,
+        .calendar-day.weekly-end::before {
+            content: '';
+            position: absolute;
+            top: 1px;
+            width: 6px;
+            height: 6px;
+            border: 2px dashed rgba(255,255,255,0.9);
+            border-radius: 50%;
+        }
+        .calendar-day.weekly-start::before { left: 2px; }
+        .calendar-day.weekly-end::before { right: 2px; }
+        .calendar-day.other-month.weekly-start::before,
+        .calendar-day.other-month.weekly-end::before {
+            border-color: rgba(31,41,55,0.4);
+        }
+
         .date-selection-info {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -465,57 +497,21 @@
             font-weight: 600;
         }
 
-        .categorization-summary {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .category-tag {
-            background: #3b82f6;
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .category-tag.allocated {
-            background: #10b981;
-        }
-
-        .missing-days {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .missing-day {
-            background: #fee2e2;
-            color: #b91c1c;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .action-buttons .generate-report-btn {
-            flex: 1;
-            margin-bottom: 0;
-        }
-
-        .action-buttons .back-btn {
-            flex: 0 0 120px;
-            margin: 0;
-        }
+        /* Show-calculation panel styles */
+        .calc-actions { margin: 12px 0 0; text-align: left; }
+        .calc-btn { background:#0ea5e9; color:#fff; border:none; border-radius:8px; padding:8px 12px; font-weight:600; cursor:pointer; }
+        .calc-btn:hover { background:#0284c7; }
+        .calc-panel { margin-top:12px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; }
+        .calc-section { margin-bottom:16px; }
+        .calc-title { font-weight:700; color:#1e293b; margin-bottom:8px; }
+        .calc-grid { display:grid; grid-template-columns:1fr; gap:8px; }
+        .calc-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px; }
+        .calc-subtitle { color:#0f766e; font-weight:700; margin-bottom:6px; }
+        .equation { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; direction:ltr; color:#334155; }
+        .eq-line { margin:2px 0; }
+        .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+        .chip { background:#e2e8f0; color:#0f172a; border-radius:999px; padding:2px 8px; font-size:12px; }
+        .note { color:#64748b; font-size:12px; margin-top:6px; }
 
         .loading {
             text-align: center;
@@ -604,7 +600,7 @@
     <div class="header">
         <div class="header-title">
             <div class="header-icon">🏠</div>
-            שם המנהל
+שם מנהל/ת
         </div>
         <div class="user-profile">
             <div class="user-avatar">👤</div>
@@ -702,39 +698,68 @@
         // Global state management
         const AppState = {
             currentUser: null,
+            isManager: false,
+            managerName: '',
             employees: [],
             selectedEmployee: null,
             selectedStartDate: null,
             selectedEndDate: null,
-            currentMonth: 7, // August (0-based)
-            currentYear: 2025,
+            currentMonth: new Date().getMonth(), // Current month
+            currentYear: new Date().getFullYear(), // Current year
             reportData: null,
-            categorizations: new Map()
+            categorizations: new Map(),
+            finalReport: null
         };
 
-        // Firebase data functions
-        async function loadEmployeesForManager(managerId) {
-            try {
-                const { db, ref, get, query, orderByChild, equalTo } = window.firebaseApp;
-                const usersRef = ref(db, 'users');
-                const managerQuery = query(usersRef, orderByChild('my_manager'), equalTo(managerId));
-                const snapshot = await get(managerQuery);
 
-                if (snapshot.exists()) {
-                    const employees = [];
-                    snapshot.forEach(child => {
-                        const employee = { id: child.key, ...child.val() };
-                        employees.push(employee);
-                    });
-                    return employees;
-                } else {
-                    console.log('No employees found for this manager');
+
+
+
+        // Firebase data functions - Updated to work with your database structure
+        async function loadEmployeesForManager(managerName) {
+            try {
+                const { db, ref, get } = window.firebaseApp;
+                const usersRef = ref(db, 'users');
+                const snapshot = await get(usersRef);
+
+                if (!snapshot.exists()) {
+                    console.log('No users found');
                     return [];
                 }
+
+                const employees = [];
+                const data = snapshot.val();
+
+                Object.entries(data).forEach(([userId, userData]) => {
+                    // Check if this user has the current manager as their manager
+                    // Now compare by manager's full name and email combined
+                    if (userData.my_manager && userData.firstName && userData.lastName) {
+                        // Extract manager info from stored value (format: "Name|email")
+                        const storedManagerInfo = userData.my_manager;
+
+                        // Check if the stored manager matches current manager
+                        if (storedManagerInfo.includes(managerName) ||
+                            storedManagerInfo.includes(AppState.currentUser?.email || '')) {
+                            employees.push({
+                                id: userId,
+                                ...userData
+                            });
+                        }
+                    }
+                });
+
+                console.log(`Found ${employees.length} employees for manager: ${managerName}`);
+                return employees;
             } catch (error) {
                 console.error('Error loading employees:', error);
                 return [];
             }
+        }
+
+        function normalizeEntries(entries) {
+            if (Array.isArray(entries)) return entries.filter(e => e != null);
+            if (entries && typeof entries === 'object') return Object.values(entries).filter(e => e != null);
+            return [];
         }
 
         async function loadEmployeeReports(employeeId, startDate, endDate) {
@@ -750,14 +775,31 @@
                 const reports = [];
                 const data = snapshot.val();
 
+                // Normalize start/end to local date-only (midnight) to avoid timezone issues
+                const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
                 Object.entries(data).forEach(([reportId, reportData]) => {
-                    const reportDate = new Date(reportData.date);
-                    if (reportDate >= startDate && reportDate <= endDate) {
+                    const reportDateObj = new Date(reportData.date);
+                    const reportDateOnly = new Date(reportDateObj.getFullYear(), reportDateObj.getMonth(), reportDateObj.getDate());
+
+                    let include = false;
+                    if (reportData.type === 'weekly') {
+                        const weekStart = getSundayOfWeek(reportDateOnly);
+                        const weekEndThu = new Date(weekStart);
+                        weekEndThu.setDate(weekStart.getDate() + 4); // Sun-Thu
+                        // overlap test
+                        include = weekEndThu >= start && weekStart <= end;
+                    } else {
+                        include = reportDateOnly >= start && reportDateOnly <= end;
+                    }
+
+                    if (include) {
                         reports.push({
                             id: reportId,
-                            date: reportData.date,
+                            date: `${reportDateOnly.getFullYear()}-${String(reportDateOnly.getMonth()+1).padStart(2,'0')}-${String(reportDateOnly.getDate()).padStart(2,'0')}`,
                             type: reportData.type,
-                            entries: reportData.entries || [],
+                            entries: normalizeEntries(reportData.entries),
                             workStatus: reportData.workStatus
                         });
                     }
@@ -777,23 +819,40 @@
                 const snapshot = await get(reportsRef);
 
                 if (!snapshot.exists()) {
-                    return new Set();
+                    return { reportedDays: new Set(), weeklyDays: new Set() };
                 }
 
-                const reportDates = new Set();
+                const reportedDays = new Set();
+                const weeklyDays = new Set();
                 const data = snapshot.val();
 
                 Object.values(data).forEach(report => {
-                    const reportDate = new Date(report.date);
-                    if (reportDate.getFullYear() === year && reportDate.getMonth() === month) {
-                        reportDates.add(reportDate.getDate());
+                    const dateStr = typeof report.date === 'string' ? report.date.split('T')[0] : null;
+                    if (!dateStr) return;
+                    const [y, m, d] = dateStr.split('-').map(Number);
+                    const reportDate = new Date(y, m - 1, d);
+
+                    if (report.type === 'weekly') {
+                        const weekStart = getSundayOfWeek(reportDate);
+                        for (let i = 0; i <= 4; i++) { // Sun-Thu as working days
+                            const cur = new Date(weekStart);
+                            cur.setDate(weekStart.getDate() + i);
+                            if (cur.getFullYear() === year && cur.getMonth() === month) {
+                                reportedDays.add(cur.getDate());
+                                weeklyDays.add(cur.getDate());
+                            }
+                        }
+                    } else {
+                        if (reportDate.getFullYear() === year && reportDate.getMonth() === month) {
+                            reportedDays.add(reportDate.getDate());
+                        }
                     }
                 });
 
-                return reportDates;
+                return { reportedDays, weeklyDays };
             } catch (error) {
                 console.error('Error getting report dates:', error);
-                return new Set();
+                return { reportedDays: new Set(), weeklyDays: new Set() };
             }
         }
 
@@ -808,13 +867,21 @@
         }
 
         function showCalendarScreen(employee) {
-            if (employee) {
-                AppState.selectedEmployee = employee;
-                document.getElementById('calendar-title').textContent = `${employee.firstName} ${employee.lastName} - הפקת דו"ח`;
-            }
-            showScreen('calendar-screen');
-            generateCalendar();
-        }
+    if (employee) {
+        AppState.selectedEmployee = employee;
+        document.getElementById('calendar-title').textContent = `${employee.firstName} ${employee.lastName} - הפקת דו"ח`;
+    }
+
+    // 🟢 אפס בחירה קודמת
+    AppState.selectedStartDate = null;
+    AppState.selectedEndDate = null;
+    updateDateSelection();
+    updateGenerateButton();
+
+    showScreen('calendar-screen');
+    generateCalendar();
+}
+
 
         function showIntermediateScreen() {
             const employee = AppState.selectedEmployee;
@@ -842,13 +909,13 @@
         async function renderEmployeesList() {
             const container = document.getElementById('employees-list');
 
-            if (!AppState.currentUser) {
-                container.innerHTML = '<div class="empty-state">יש להתחבר כדי לצפות ברשימת העובדים</div>';
+            if (!AppState.currentUser || !AppState.isManager) {
+                container.innerHTML = '<div class="empty-state">יש להתחבר כמנהל כדי לצפות ברשימת העובדים</div>';
                 return;
             }
 
             try {
-                const employees = await loadEmployeesForManager(AppState.currentUser.uid);
+                const employees = await loadEmployeesForManager(AppState.managerName);
                 AppState.employees = employees;
 
                 if (employees.length === 0) {
@@ -884,9 +951,9 @@
             calendarBody.innerHTML = '';
 
             // Get report dates for selected employee
-            let reportDates = new Set();
+            let reportMeta = { reportedDays: new Set(), weeklyDays: new Set() };
             if (AppState.selectedEmployee) {
-                reportDates = await getReportDatesForEmployee(
+                reportMeta = await getReportDatesForEmployee(
                     AppState.selectedEmployee.id,
                     AppState.currentYear,
                     AppState.currentMonth
@@ -905,12 +972,10 @@
                     dayDiv.className = 'calendar-day';
 
                     if (week === 0 && day < firstDay) {
-                        // Previous month days
                         const prevDate = daysInPrevMonth - firstDay + day + 1;
                         dayDiv.textContent = prevDate;
                         dayDiv.classList.add('other-month');
                     } else if (date > daysInMonth) {
-                        // Next month days
                         dayDiv.textContent = nextMonthDate;
                         dayDiv.classList.add('other-month');
                         nextMonthDate++;
@@ -918,11 +983,19 @@
                         // Current month days
                         dayDiv.textContent = date;
 
-                        if (reportDates.has(date)) {
-                            dayDiv.classList.add('has-reports');
+                        if (reportMeta.reportedDays.has(date)) {
+                             dayDiv.classList.add('has-reports');
+                         }
+                        if (reportMeta.weeklyDays.has(date)) {
+                            dayDiv.classList.add('weekly-day');
+                            const dow = new Date(AppState.currentYear, AppState.currentMonth, date).getDay();
+                            if (dow === 0) dayDiv.classList.add('weekly-start');
+                            if (dow === 4) dayDiv.classList.add('weekly-end');
                         }
 
-                        dayDiv.addEventListener('click', () => selectDate(date));
+                        // FIX: capture current date value before increment to avoid closure bug
+                        const dayNumber = date;
+                        dayDiv.addEventListener('click', () => selectDate(dayNumber));
                         date++;
                     }
 
@@ -1060,12 +1133,34 @@
             };
 
             reports.forEach(report => {
-                data.workDays.add(report.date);
+                // ensure workDays contains date strings in YYYY-MM-DD format
+                const baseDate = new Date(report.date);
+                if (report.type === 'weekly') {
+                    const weekStart = getSundayOfWeek(baseDate);
+                    for (let i = 0; i <= 4; i++) { // Sun-Thu
+                        const cur = new Date(weekStart);
+                        cur.setDate(weekStart.getDate() + i);
+                        data.workDays.add(toLocalDateStr(cur));
+                    }
+                } else {
+                    data.workDays.add(toLocalDateStr(baseDate));
+                }
 
                 report.entries.forEach(entry => {
-                    const hours = report.type === 'weekly' ?
-                        (parseInt(entry.days) || 0) * 8 :
-                        parseInt(entry.hours) || 0;
+                    let hours = 0;
+                    if (report.type === 'weekly') {
+                        if (entry && entry.hours != null && entry.hours !== '') {
+                            hours = parseFloat(entry.hours) || 0;
+                        } else if (entry && entry.days != null && entry.days !== '') {
+                            hours = (parseFloat(entry.days) || 0) * 8;
+                        } else if (Array.isArray(entry.dailyHours)) {
+                            hours = entry.dailyHours.reduce((sum, h) => sum + (parseFloat(h) || 0), 0);
+                        } else {
+                            hours = 0;
+                        }
+                    } else {
+                        hours = parseFloat(entry.hours) || 0;
+                    }
 
                     data.totalHours += hours;
 
@@ -1087,7 +1182,7 @@
                         });
                     } else {
                         const current = data.researchers.get(entry.researcher) || 0;
-                        data.researchers.set(entry.researcher, current + hours);
+                        data.researchers.set(entry.researcher, +(current + hours).toFixed(2));
                     }
                 });
             });
@@ -1110,7 +1205,8 @@
                 const dayOfWeek = current.getDay();
                 // Skip Fridays (5) and Saturdays (6) - weekend in Israel
                 if (dayOfWeek !== 5 && dayOfWeek !== 6) {
-                    const dateStr = current.toISOString().split('T')[0];
+                    // use local date string (YYYY-MM-DD) to avoid timezone shifts from toISOString()
+                    const dateStr = `${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}-${String(current.getDate()).padStart(2,'0')}`;
                     if (!workDays.has(dateStr)) {
                         missing.push(new Date(current));
                     }
@@ -1200,19 +1296,18 @@
         }
 
         function selectCategorization(taskIndex, type, button) {
-            // Remove active class from siblings
             const siblings = button.parentElement.querySelectorAll('.option-btn');
             siblings.forEach(btn => btn.classList.remove('active'));
-
-            // Add active class to clicked button
             button.classList.add('active');
-
-            // Store categorization
             AppState.categorizations.set(taskIndex, type);
 
-            // Handle custom input
             const item = button.closest('.categorization-item');
             let input = item.querySelector('.custom-input');
+            let activeSelect = item.querySelector('.active-select');
+
+            // Hide optional elements first
+            if (input) input.style.display = 'none';
+            if (activeSelect) activeSelect.style.display = 'none';
 
             if (type === 'custom') {
                 if (!input) {
@@ -1226,9 +1321,21 @@
                 }
                 input.style.display = 'block';
                 input.focus();
-            } else {
-                if (input) {
-                    input.style.display = 'none';
+            } else if (type === 'active') {
+                // Show a select of active researchers
+                const activeList = (AppState.selectedEmployee && Array.isArray(AppState.selectedEmployee.activeResearchers)) ? AppState.selectedEmployee.activeResearchers : [];
+                if (activeList.length > 0) {
+                    if (!activeSelect) {
+                        activeSelect = document.createElement('select');
+                        activeSelect.className = 'active-select custom-input';
+                        activeSelect.style.marginTop = '0.5rem';
+                        activeSelect.innerHTML = '<option value="">בחר חוקר פעיל...</option>' + activeList.map(r => `<option value="${r}">${r}</option>`).join('');
+                        activeSelect.addEventListener('change', (e) => {
+                            AppState.categorizations.set(`${taskIndex}_activeResearcher`, e.target.value);
+                        });
+                        item.appendChild(activeSelect);
+                    }
+                    activeSelect.style.display = 'block';
                 }
             }
         }
@@ -1238,6 +1345,7 @@
 
             try {
                 const finalData = processFinalReport(AppState.reportData, AppState.categorizations);
+                AppState.finalReport = finalData;
                 renderFinalReport(finalData);
 
             } catch (error) {
@@ -1252,7 +1360,8 @@
                 categories: new Map(),
                 totalHours: data.totalHours,
                 categorizedTasks: [],
-                missingDays: data.missingDays
+                missingDays: data.missingDays,
+                calculation: { relative: [] }
             };
 
             // Add researcher hours
@@ -1266,44 +1375,96 @@
                 finalData.categories.set('סמינר', current + seminar.hours);
             });
 
-            // Process categorized other tasks
+            const activeList = (AppState.selectedEmployee && Array.isArray(AppState.selectedEmployee.activeResearchers)) ? AppState.selectedEmployee.activeResearchers : [];
+
             data.otherTasks.forEach((task, index) => {
                 const categorization = categorizations.get(index);
                 const customText = categorizations.get(`${index}_custom`);
-
+                const chosenActive = categorizations.get(`${index}_activeResearcher`);
                 let categoryName = 'לא מקוטלג';
                 let displayName = categorization;
 
                 switch (categorization) {
                     case 'active':
-                        categoryName = 'חוקר פעיל';
-                        displayName = 'חוקר פעיל';
+                        if (chosenActive) {
+                            const prev = finalData.categories.get(chosenActive) || 0;
+                            finalData.categories.set(chosenActive, prev + task.hours);
+                            categoryName = chosenActive;
+                            displayName = `חוקר פעיל: ${chosenActive}`;
+                        } else if (activeList.length === 1) {
+                            const onlyR = activeList[0];
+                            const prev = finalData.categories.get(onlyR) || 0;
+                            finalData.categories.set(onlyR, prev + task.hours);
+                            categoryName = onlyR;
+                            displayName = `חוקר פעיל: ${onlyR}`;
+                        } else {
+                            categoryName = 'חוקר פעיל (לא נבחר)';
+                            const prev = finalData.categories.get(categoryName) || 0;
+                            finalData.categories.set(categoryName, prev + task.hours);
+                            displayName = 'חוקר פעיל (לא נבחר)';
+                        }
                         break;
                     case 'relative':
-                        categoryName = 'חלוקה יחסית';
-                        displayName = 'חלוקה יחסית';
+                        if (activeList.length > 0) {
+                            const weights = activeList.map(r => ({ name: r, base: data.researchers.get(r) || 0 }));
+                            const totalBase = weights.reduce((s, w) => s + w.base, 0);
+
+                            if (totalBase > 0) {
+                                const detail = { type:'relative', method:'proportional', taskName: task.name, taskHours: +task.hours, totalBase: +totalBase.toFixed(2), items: [] };
+                                let remaining = task.hours;
+                                weights.forEach((w, idx) => {
+                                    const raw = task.hours * (w.base / totalBase);
+                                    const add = (idx === weights.length - 1) ? remaining : +raw.toFixed(2);
+                                    remaining = +(remaining - add).toFixed(2);
+                                    const prev = finalData.categories.get(w.name) || 0;
+                                    finalData.categories.set(w.name, +(prev + add).toFixed(2));
+                                    detail.items.push({ researcher: w.name, baseHours: +(+w.base).toFixed(2), weight: +((w.base/totalBase)).toFixed(4), allocated: +(+add).toFixed(2) });
+                                });
+                                finalData.calculation.relative.push(detail);
+                                categoryName = 'חלוקה יחסית';
+                                displayName = `חלוקה יחסית לפי שעות פעילות (${totalBase.toFixed(2)} ש"ע בסיס)`;
+                            } else {
+                                const portion = task.hours / activeList.length;
+                                const detail = { type:'relative', method:'equal', taskName: task.name, taskHours: +task.hours, totalBase: 0, items: [] };
+                                let remaining = task.hours;
+                                activeList.forEach((r, idx) => {
+                                    const add = (idx === activeList.length - 1) ? +remaining.toFixed(2) : +portion.toFixed(2);
+                                    remaining = +(remaining - add).toFixed(2);
+                                    const prev = finalData.categories.get(r) || 0;
+                                    finalData.categories.set(r, +(prev + add).toFixed(2));
+                                    detail.items.push({ researcher: r, baseHours: 0, weight: +(1/activeList.length).toFixed(4), allocated: +add.toFixed(2) });
+                                });
+                                finalData.calculation.relative.push(detail);
+                                categoryName = 'חלוקה יחסית (שווה בהעדר בסיס)';
+                                displayName = 'חלוקה יחסית (אין שעות בסיס)';
+                            }
+                        } else {
+                            categoryName = 'חלוקה יחסית (ללא חוקרים)';
+                            const prev = finalData.categories.get(categoryName) || 0;
+                            finalData.categories.set(categoryName, prev + task.hours);
+                            displayName = 'חלוקה יחסית (אין חוקרים פעילים להקצות)';
+                        }
                         break;
                     case 'seminar':
+                        const prevSem = finalData.categories.get('סמינר') || 0;
+                        finalData.categories.set('סמינר', prevSem + task.hours);
                         categoryName = 'סמינר';
                         displayName = 'סמינר';
                         break;
                     case 'custom':
-                        categoryName = 'חיוב חדש';
+                        categoryName = customText || 'חיוב חדש';
+                        const prevCustom = finalData.categories.get(categoryName) || 0;
+                        finalData.categories.set(categoryName, prevCustom + task.hours);
                         displayName = customText || 'חיוב חדש';
                         break;
                     default:
+                        const prevUn = finalData.categories.get('לא מקוטלג') || 0;
+                        finalData.categories.set('לא מקוטלג', prevUn + task.hours);
                         categoryName = 'לא מקוטלג';
                         displayName = 'לא מקוטלג';
                 }
 
-                const current = finalData.categories.get(categoryName) || 0;
-                finalData.categories.set(categoryName, current + task.hours);
-
-                finalData.categorizedTasks.push({
-                    name: task.name,
-                    category: displayName,
-                    hours: task.hours
-                });
+                finalData.categorizedTasks.push({ name: task.name, category: displayName, hours: task.hours });
             });
 
             return finalData;
@@ -1341,6 +1502,10 @@
             html += `
                         </tbody>
                     </table>
+                    <div class="calc-actions">
+                        <button class="calc-btn" onclick="toggleCalculation()">הצגת חישוב - חלוקה יחסית</button>
+                    </div>
+                    <div id="calc-panel" class="calc-panel" style="display:none;"></div>
                 </div>
             `;
 
@@ -1384,13 +1549,159 @@
             document.getElementById('final-actions').style.display = 'flex';
         }
 
-        function exportFinalReport() {
-            // In a real implementation, this would generate and download a report
-            const employee = AppState.selectedEmployee;
-            const startDate = AppState.selectedStartDate.toLocaleDateString('he-IL');
-            const endDate = AppState.selectedEndDate.toLocaleDateString('he-IL');
+        // Show-calculation logic
+        function toggleCalculation() {
+            const panel = document.getElementById('calc-panel');
+            if (!panel) return;
+            if (panel.style.display === 'none') {
+                renderCalculationPanel(AppState.finalReport);
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
+        }
 
-            alert(`דו"ח עבור ${employee.firstName} ${employee.lastName} לתקופה ${startDate} - ${endDate} הופק בהצלחה!`);
+        function renderCalculationPanel(finalData) {
+            const panel = document.getElementById('calc-panel');
+            if (!panel) return;
+            if (!finalData || !finalData.calculation) {
+                panel.innerHTML = '<div class="empty-state">אין נתונים להצגה</div>';
+                return;
+            }
+
+            let html = '';
+            html += '<div class="calc-section">';
+            html += '<div class="calc-title">חישובי חלוקה יחסית</div>';
+            const rel = finalData.calculation.relative || [];
+            if (rel.length === 0) {
+                html += '<div class="note">לא בוצעו חלוקות יחסיות בתקופה זו.</div>';
+            } else {
+                html += '<div class="calc-grid">';
+                rel.forEach((item, idx) => {
+                    html += '<div class="calc-card">';
+                    const taskHours = item.taskHours?.toFixed ? item.taskHours.toFixed(2) : item.taskHours;
+                    html += `<div class=\"calc-subtitle\">${idx+1}. ${item.taskName || 'משימה'} — ${taskHours} שעות (${item.method==='proportional' ? 'חלוקה יחסית' : 'חלוקה שווה'})</div>`;
+                    if (item.method === 'proportional') {
+                        const totalBase = item.totalBase?.toFixed ? item.totalBase.toFixed(2) : item.totalBase;
+                        html += `<div class=\"equation eq-line\">סה\"כ שעות בסיס = ${totalBase}</div>`;
+                    }
+                    if (Array.isArray(item.items)) {
+                        html += '<div class="chips">';
+                        item.items.forEach(it => {
+                            const baseStr = it.baseHours?.toFixed ? it.baseHours.toFixed(2) : it.baseHours;
+                            const wStr = it.weight?.toFixed ? it.weight.toFixed(4) : it.weight;
+                            html += `<span class=\"chip\">${it.researcher}: בסיס ${baseStr}${item.method==='proportional' ? ` • משקל ${wStr}` : ''}</span>`;
+                        });
+                        html += '</div>';
+                        item.items.forEach(it => {
+                            const baseStr = it.baseHours?.toFixed ? it.baseHours.toFixed(2) : it.baseHours;
+                            const totalBaseStr = item.totalBase?.toFixed ? item.totalBase.toFixed(2) : item.totalBase;
+                            const allocStr = it.allocated?.toFixed ? it.allocated.toFixed(2) : it.allocated;
+                            if (item.method === 'proportional') {
+                                html += `<div class=\"equation eq-line\">${it.researcher}: allot = ${taskHours} × (${baseStr} / ${totalBaseStr}) = ${allocStr}</div>`;
+                            } else {
+                                const share = item.items.length ? (1/item.items.length).toFixed(2) : '—';
+                                html += `<div class=\"equation eq-line\">${it.researcher}: allot = ${taskHours} × ${share} = ${allocStr}</div>`;
+                            }
+                        });
+                    }
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+            html += '</div>';
+            panel.innerHTML = html;
+        }
+
+        function exportFinalReport() {
+    const employee = AppState.selectedEmployee;
+    const startDate = AppState.selectedStartDate.toLocaleDateString('he-IL');
+    const endDate = AppState.selectedEndDate.toLocaleDateString('he-IL');
+
+    alert(`דו"ח עבור ${employee.firstName} ${employee.lastName} לתקופה ${startDate} - ${endDate} הופק בהצלחה!`);
+
+    // 🟢 אפס טווח בחירה
+    AppState.selectedStartDate = null;
+    AppState.selectedEndDate = null;
+    updateDateSelection();
+    updateGenerateButton();
+}
+
+
+        // Helpers
+        function getSundayOfWeek(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const sunday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - day);
+            return sunday;
+        }
+
+        function toLocalDateStr(dt) {
+            return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+        }
+
+        // Show-calculation logic
+        function toggleCalculation() {
+            const panel = document.getElementById('calc-panel');
+            if (!panel) return;
+            if (panel.style.display === 'none') {
+                renderCalculationPanel(AppState.finalReport);
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function renderCalculationPanel(finalData) {
+            const panel = document.getElementById('calc-panel');
+            if (!panel) return;
+            if (!finalData || !finalData.calculation) {
+                panel.innerHTML = '<div class="empty-state">אין נתונים להצגה</div>';
+                return;
+            }
+
+            let html = '';
+            html += '<div class="calc-section">';
+            html += '<div class="calc-title">חישובי חלוקה יחסית</div>';
+            const rel = finalData.calculation.relative || [];
+            if (rel.length === 0) {
+                html += '<div class="note">לא בוצעו חלוקות יחסיות בתקופה זו.</div>';
+            } else {
+                html += '<div class="calc-grid">';
+                rel.forEach((item, idx) => {
+                    html += '<div class="calc-card">';
+                    const taskHours = item.taskHours?.toFixed ? item.taskHours.toFixed(2) : item.taskHours;
+                    html += `<div class=\"calc-subtitle\">${idx+1}. ${item.taskName || 'משימה'} — ${taskHours} שעות (${item.method==='proportional' ? 'חלוקה יחסית' : 'חלוקה שווה'})</div>`;
+                    if (item.method === 'proportional') {
+                        const totalBase = item.totalBase?.toFixed ? item.totalBase.toFixed(2) : item.totalBase;
+                        html += `<div class=\"equation eq-line\">סה\"כ שעות בסיס = ${totalBase}</div>`;
+                    }
+                    if (Array.isArray(item.items)) {
+                        html += '<div class="chips">';
+                        item.items.forEach(it => {
+                            const baseStr = it.baseHours?.toFixed ? it.baseHours.toFixed(2) : it.baseHours;
+                            const wStr = it.weight?.toFixed ? it.weight.toFixed(4) : it.weight;
+                            html += `<span class=\"chip\">${it.researcher}: בסיס ${baseStr}${item.method==='proportional' ? ` • משקל ${wStr}` : ''}</span>`;
+                        });
+                        html += '</div>';
+                        item.items.forEach(it => {
+                            const baseStr = it.baseHours?.toFixed ? it.baseHours.toFixed(2) : it.baseHours;
+                            const totalBaseStr = item.totalBase?.toFixed ? item.totalBase.toFixed(2) : item.totalBase;
+                            const allocStr = it.allocated?.toFixed ? it.allocated.toFixed(2) : it.allocated;
+                            if (item.method === 'proportional') {
+                                html += `<div class=\"equation eq-line\">${it.researcher}: allot = ${taskHours} × (${baseStr} / ${totalBaseStr}) = ${allocStr}</div>`;
+                            } else {
+                                const share = item.items.length ? (1/item.items.length).toFixed(2) : '—';
+                                html += `<div class=\"equation eq-line\">${it.researcher}: allot = ${taskHours} × ${share} = ${allocStr}</div>`;
+                            }
+                        });
+                    }
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+            html += '</div>';
+            panel.innerHTML = html;
         }
 
         // Initialize app
@@ -1399,8 +1710,33 @@
             window.firebaseApp.auth.onAuthStateChanged((user) => {
                 AppState.currentUser = user;
                 if (user) {
-                    renderEmployeesList();
+                    // Check if user is manager by trying to access manager-only resources
+                    // This relies on Firebase security rules rather than email checking
+                    checkManagerAccess().then(isManager => {
+                        AppState.isManager = isManager;
+                        if (isManager) {
+                            AppState.managerName = user.displayName || user.email.split('@')[0] || 'מנהל';
+
+                            // Update header with manager name
+                            document.querySelector('.header-title').innerHTML = `
+                                <div class="header-icon">🏠</div>
+                                ${AppState.managerName}
+                            `;
+
+                            renderEmployeesList();
+                        } else {
+                            document.getElementById('employees-list').innerHTML =
+                                '<div class="empty-state">אין לך הרשאות מנהל במערכת</div>';
+                        }
+                    }).catch(() => {
+                        document.getElementById('employees-list').innerHTML =
+                            '<div class="empty-state">שגיאה בבדיקת הרשאות</div>';
+                    });
                 } else {
+                    document.querySelector('.header-title').innerHTML = `
+                        <div class="header-icon">🏠</div>
+                        מערכת דיווח שעות
+                    `;
                     document.getElementById('employees-list').innerHTML =
                         '<div class="empty-state">יש להתחבר כדי לגשת למערכת</div>';
                 }
@@ -1409,6 +1745,21 @@
             // Initialize calendar
             generateCalendar();
         });
+
+        // Check manager access based on Firebase security rules
+        async function checkManagerAccess() {
+            try {
+                const { db, ref, get } = window.firebaseApp;
+                // Try to read from a manager-only path
+                // If successful, user has manager permissions
+                const usersRef = ref(db, 'users');
+                await get(usersRef);
+                return true;
+            } catch (error) {
+                // If access denied, user is not a manager
+                return false;
+            }
+        }
     </script>
 </body>
 </html>
