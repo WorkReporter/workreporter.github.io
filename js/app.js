@@ -40,6 +40,69 @@
     };
     window.setIsAdmin = function (v) { isAdmin = v; updateAdminUI(); };
 
+    // ---------- Loading Management ----------
+    function showLoadingOverlay(message = 'קורא את הנתונים שלך', submessage = 'אנא המתן בזמן שאנחנו טוענים את המידע') {
+        const overlay = document.getElementById('loading-overlay');
+        const text = overlay.querySelector('.loading-text');
+        const subtext = overlay.querySelector('.loading-subtext');
+        const progressBar = document.getElementById('loading-progress-bar');
+        
+        if (text) text.innerHTML = message + '<span class="loading-dots"></span>';
+        if (subtext) subtext.textContent = submessage;
+        if (progressBar) progressBar.style.width = '0%';
+        
+        overlay.style.display = 'flex';
+    }
+
+    function hideLoadingOverlay() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }
+
+    function updateLoadingProgress(percentage, message = null) {
+        const progressBar = document.getElementById('loading-progress-bar');
+        const text = document.querySelector('.loading-text');
+        
+        if (progressBar) {
+            progressBar.style.width = percentage + '%';
+        }
+        
+        if (message && text) {
+            text.innerHTML = message + '<span class="loading-dots"></span>';
+        }
+    }
+
+    function showScreenLoading(screenId, message = 'טוען...') {
+        const screen = document.getElementById(screenId + '-screen');
+        if (screen) {
+            screen.classList.add('screen-loading');
+            const spinner = screen.querySelector('.loading-spinner');
+            if (!spinner) {
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'loading-spinner';
+                loadingDiv.style.position = 'absolute';
+                loadingDiv.style.top = '50%';
+                loadingDiv.style.left = '50%';
+                loadingDiv.style.transform = 'translate(-50%, -50%)';
+                loadingDiv.style.zIndex = '1001';
+                screen.appendChild(loadingDiv);
+            }
+        }
+    }
+
+    function hideScreenLoading(screenId) {
+        const screen = document.getElementById(screenId + '-screen');
+        if (screen) {
+            screen.classList.remove('screen-loading');
+            const spinner = screen.querySelector('.loading-spinner');
+            if (spinner) {
+                spinner.remove();
+            }
+        }
+    }
+
     // ---------- Auth Flow ----------
     function init() {
         auth.onAuthStateChanged(async (user) => {
@@ -49,12 +112,18 @@
                 isAdmin = false;
                 setAuthUIState(true);
                 initializeDates();
+                
+                // Show loading overlay during data loading
+                showLoadingOverlay('קורא את הנתונים שלך', 'אנא המתן בזמן שאנחנו טוענים את המידע');
+                updateLoadingProgress(10, 'מתחבר למערכת');
+                
                 Promise.all([
                     ensureGlobalResearchersSeed(),
                     loadUserProfile(user.uid),
                     loadActiveResearchers(user.uid),
                     loadReports(user.uid)
                 ]).then(async () => {
+                    updateLoadingProgress(80, 'מעבד את הנתונים');
                     // Merge user-specific researchers with global list after loading
                     await mergeUserSpecificResearchers(user.uid);
 
@@ -76,11 +145,18 @@
                             await userRef.set({ firstName: '', lastName: '', position: '', email, createdAt: new Date().toISOString() }).catch(() => {});
                         }
                     }
-                    if (isAdmin) {
-                        window.location.href = '/admin-dashboard/index.html';
-                    } else {
-                        showScreen('main');
-                    }
+                    
+                    updateLoadingProgress(100, 'מסיים טעינה');
+                    
+                    // Hide loading overlay after a short delay
+                    setTimeout(() => {
+                        hideLoadingOverlay();
+                        if (isAdmin) {
+                            window.location.href = '/admin-dashboard/index.html';
+                        } else {
+                            showScreen('main');
+                        }
+                    }, 500);
                 }).catch(async () => {
                     // Even on partial failures, route admins to admin dashboard for convenience
                     try {
@@ -89,11 +165,18 @@
                     } catch (_) {
                         isAdmin = false;
                     }
-                    if (isAdmin) {
-                        window.location.href = '/admin-dashboard/index.html';
-                    } else {
-                        showScreen('main');
-                    }
+                    
+                    updateLoadingProgress(100, 'מסיים טעינה');
+                    
+                    // Hide loading overlay even on error
+                    setTimeout(() => {
+                        hideLoadingOverlay();
+                        if (isAdmin) {
+                            window.location.href = '/admin-dashboard/index.html';
+                        } else {
+                            showScreen('main');
+                        }
+                    }, 500);
                 });
             } else {
                 // cleanup listeners on sign-out
@@ -135,8 +218,17 @@
         const btn = document.querySelector(`.nav-btn[onclick="showScreen('${screenName}')"]`);
         if (btn) btn.classList.add('active');
 
-        if (screenName === 'calendar') { renderCalendar(); const addBtnCalendar = document.querySelector('#calendar-screen .btn.add'); if (addBtnCalendar && addBtnCalendar.style) addBtnCalendar.style.display = ''; }
+        if (screenName === 'calendar') { 
+            showScreenLoading('calendar', 'טוען יומן');
+            setTimeout(() => {
+                renderCalendar(); 
+                const addBtnCalendar = document.querySelector('#calendar-screen .btn.add'); 
+                if (addBtnCalendar && addBtnCalendar.style) addBtnCalendar.style.display = '';
+                hideScreenLoading('calendar');
+            }, 300);
+        }
         if (screenName === 'reports') {
+            showScreenLoading('reports', 'טוען דוחות');
             // Always fetch the latest reports from Firebase when opening the reports screen
             initializeReportScreen();
             if (currentUser && currentUser.uid) {
@@ -145,18 +237,33 @@
                     reports = data ? Object.values(data) : [];
                     // Ensure UI is updated with freshest data
                     try { generateReport(); } catch (e) { /* generateReport defined later; safe to ignore if not yet available */ }
+                    hideScreenLoading('reports');
                 }).catch(() => {
                     // On failure just attempt to render with current in-memory reports
                     try { generateReport(); } catch (e) {}
+                    hideScreenLoading('reports');
                 });
             } else {
                 // No user - still initialize UI
                 try { generateReport(); } catch (e) {}
+                hideScreenLoading('reports');
             }
         }
-        if (screenName === 'active-researchers') renderResearchers();
+        if (screenName === 'active-researchers') {
+            showScreenLoading('active-researchers', 'טוען חוקרים פעילים');
+            setTimeout(() => {
+                renderResearchers();
+                hideScreenLoading('active-researchers');
+            }, 200);
+        }
         if (screenName === 'main') updateNotifications();
-        if (screenName === 'admin') initializeAdminScreen();
+        if (screenName === 'admin') {
+            showScreenLoading('admin', 'טוען ממשק מנהל');
+            setTimeout(() => {
+                initializeAdminScreen();
+                hideScreenLoading('admin');
+            }, 300);
+        }
     }
 
     // Basic XSS protection utility available globally
@@ -745,6 +852,9 @@
 
             if (!currentUser) return;
 
+            // Show loading state for weekly report
+            showScreenLoading('daily-report', 'שומר דיווח שבועי');
+            
             const weeklyKey = `weekly_${getWeekForStorageByDate(selectedDate)}`;
             database.ref('reports/' + currentUser.uid + '/' + weeklyKey).set({
                 ...reportData,
@@ -752,22 +862,34 @@
                 type: 'weekly',
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             }).then(() => {
+                hideScreenLoading('daily-report');
                 showPopup('הדיווח השבועי נשמר בהצלחה!');
                 setTimeout(() => {
                     showScreen('main');
                     clearReportForm();
                     loadReports(currentUser.uid);
                 }, 1200);
-            }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
+            }).catch((error) => {
+                hideScreenLoading('daily-report');
+                showError('שגיאה בשמירת הדיווח: ' + error.message);
+            });
             return;
         }
 
         if (!currentUser) return;
+        
+        // Show loading state
+        showScreenLoading('daily-report', 'שומר דיווח');
+        
         const reportKey = isWeekly ? `weekly_${getCurrentWeekForStorage()}` : `daily_${reportData.date}`;
         database.ref('reports/' + currentUser.uid + '/' + reportKey).set(reportData).then(() => {
+            hideScreenLoading('daily-report');
             showPopup('הדיווח נוסף/עודכן בהצלחה!');
             setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
-        }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
+        }).catch((error) => {
+            hideScreenLoading('daily-report');
+            showError('שגיאה בשמירת הדיווח: ' + error.message);
+        });
     }
     window.submitReport = submitReport;
 
@@ -1542,16 +1664,24 @@
         // Immediately refresh dropdowns in open report forms (so removals reflect instantly)
         refreshResearcherDropdowns();
 
+        // Show loading state
+        showScreenLoading('active-researchers', 'שומר חוקרים פעילים');
+
         // Persist to database; server listener will also update state
         if (currentUser) {
             database.ref('users/' + currentUser.uid + '/activeResearchers')
                 .set(activeResearchers)
                 .then(() => {
+                    hideScreenLoading('active-researchers');
                     showPopup('החוקרים הפעילים נשמרו בהצלחה');
                     // Extra safety: refresh again after confirmation
                     refreshResearcherDropdowns();
                 })
-                .catch(() => {});
+                .catch(() => {
+                    hideScreenLoading('active-researchers');
+                });
+        } else {
+            hideScreenLoading('active-researchers');
         }
     }
     window.saveResearchers = saveResearchers;
