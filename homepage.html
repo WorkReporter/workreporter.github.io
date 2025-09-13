@@ -1427,9 +1427,16 @@
                 <div class="form-group"><label>שם פרטי:</label><input type="text" id="register-first-name" required></div>
                 <div class="form-group"><label>שם משפחה:</label><input type="text" id="register-last-name" required></div>
                 <div class="form-group"><label>תפקיד:</label><select id="register-position" required>
-                    <option value="מנהל">מנהל</option>
                     <option value="מהנדס מחקר">מהנדס מחקר</option>
+                                        <option value="מנהל">מנהל</option>
+
                 </select></div>
+                <div id="register-manager-warning" class="info-message" style="display:none; margin-top:10px;">
+                    ⚠️ שים.י לב! ההרשאות בפועל למנהל.ת ניתנות במערכת. אם את.ה לא באמת מנהל.ת לא תוכל.י להשתמש במערכת.
+                </div>
+                <div class="info-message" id="register-manager-selection-note" style="display:none; margin-top:10px; background:#e3f2fd; border-color:#2196f3; color:#1976d2;">
+                    📋 בחירת המנהל שלך תתבצע לאחר ההתחברות בעמוד "פרטי עובד"
+                </div>
                 <div class="form-group"><label>אימייל ארגוני:</label><input type="email" id="register-email" required></div>
                 <div class="form-group"><label>סיסמה:</label><input type="password" id="register-password" required minlength="6"></div>
                 <div class="form-group"><label>אימות סיסמה:</label><input type="password" id="register-confirm-password" required minlength="6"></div>
@@ -1465,6 +1472,18 @@
                 <option value="מנהל">מנהל</option>
                 <option value="מהנדס מחקר">מהנדס מחקר</option>
             </select>
+        </div>
+        <div id="profile-manager-warning" class="info-message" style="display:none; margin-top:10px;">
+            ⚠️ שים לב! ההרשאות בפועל למנהל ניתנות במערכת. אם אתה לא מנהל לא תוכל להשתמש במערכת.
+        </div>
+        <div class="form-group" id="profile-my-manager-group" style="display:none;">
+            <label>מנהל שלי:</label>
+            <select id="profile-my-manager" disabled style="background-color: #f9fafb;">
+                <option value="">בחר/י מנהל</option>
+            </select>
+            <div id="manager-loading" style="display:none; color: #64748b; font-size: 14px; margin-top: 5px;">
+                טוען רשימת מנהלים...
+            </div>
         </div>
         <div class="form-group"><label>אי-מייל:</label><input type="email" id="profile-email" readonly style="background-color: #f9fafb;"></div>
         <button class="btn" onclick="editProfile()">להפוך עריכה לזמינה</button>
@@ -1701,6 +1720,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/assets/js/config.js"></script>
+    <script src="/admin-dashboard/managers_admin.js"></script>
     <script src="/assets/js/app.js"></script>
     <script src="/assets/js/admin.js"></script>
 </body>
