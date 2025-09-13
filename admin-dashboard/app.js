@@ -60,7 +60,25 @@ function show(elm) { if (elm) elm.hidden = false; }
 function hide(elm) { if (elm) elm.hidden = true; }
 
 function setLoading(isLoading) {
-  if (isLoading) { show(el.loading); } else { hide(el.loading); }
+  if (isLoading) { 
+    show(el.loading); 
+    updateLoadingProgress(0, 'מתחבר למערכת');
+  } else { 
+    hide(el.loading); 
+  }
+}
+
+function updateLoadingProgress(percentage, message = null) {
+  const progressBar = document.getElementById('admin-loading-progress-bar');
+  const text = el.loading?.querySelector('.loading-text');
+  
+  if (progressBar) {
+    progressBar.style.width = percentage + '%';
+  }
+  
+  if (message && text) {
+    text.innerHTML = message + '<span class="loading-dots"></span>';
+  }
 }
 
 function setSignedOutUI() {
@@ -461,12 +479,18 @@ function buildResearcherTotals(reportsByUser, usersById, filters) {
 
 el.btnExportAllCsv?.addEventListener('click', () => {
   if (!isAdmin) return;
+  
+  // Show loading state
+  setLoading(true);
+  updateLoadingProgress(10, 'מכין נתונים לייצוא');
+  
   // Read current UI state to honor checkbox even if filters weren't applied
   const allocateNow = !!el.allocateOthers?.checked;
   const month = Number(el.filterMonth?.value || state.filters.month);
   const year = Number(el.filterYear?.value || state.filters.year);
   const filters = { month, year, allocateOthers: allocateNow };
 
+  updateLoadingProgress(30, 'מעבד נתונים מפורטים');
   // Detailed section (per user, date, researcher, hours, description)
   const detailedRows = buildAllReportsFlat(state.reportsByUser, state.usersById, filters);
   const detailedCsv = toCsv(detailedRows, [
@@ -479,6 +503,7 @@ el.btnExportAllCsv?.addEventListener('click', () => {
     { key: 'description', header: 'פרטים' },
   ]);
 
+  updateLoadingProgress(60, 'מעבד סיכומים');
   // Separator and totals section
   const totals = buildResearcherTotals(state.reportsByUser, state.usersById, filters);
   const totalsCsv = toCsv(totals, [
@@ -487,9 +512,17 @@ el.btnExportAllCsv?.addEventListener('click', () => {
     { key: 'allocationApplied', header: 'חלוקת "משימות אחרות"' },
   ]);
 
+  updateLoadingProgress(80, 'יוצר קובץ');
   const combined = detailedCsv + '\n\n----- סיכום לפי חוקר -----\n' + totalsCsv;
   const suffix = allocateNow ? 'with_allocation' : 'no_allocation';
+  
+  updateLoadingProgress(100, 'מוריד קובץ');
   download(`reports_full_${suffix}_${new Date().toISOString().slice(0,10)}.csv`, combined, 'text/csv;charset=utf-8');
+  
+  // Hide loading after download
+  setTimeout(() => {
+    setLoading(false);
+  }, 1000);
 });
 
 el.btnExportSelfCsv?.addEventListener('click', () => {
@@ -510,8 +543,12 @@ onAuthStateChanged(auth, async user => {
   }
   setSignedInUI(user);
   setLoading(true);
+  
+  updateLoadingProgress(20, 'בודק הרשאות מנהל');
   const allowed = await attemptAdminDetection();
-  setLoading(false);
+  
+  updateLoadingProgress(60, 'טוען נתונים');
+  
   if (allowed) {
     // Admin view
     isAdmin = true;
@@ -519,15 +556,28 @@ onAuthStateChanged(auth, async user => {
     show(el.adminFilters);
     initYearOptions();
     syncFiltersUI();
+    
+    updateLoadingProgress(80, 'מעבד נתונים');
     renderAllAdminViews();
     subscribeAsAdmin();
-    if (location.hash !== '#/admin') {
-      location.hash = '#/admin';
-    }
+    
+    updateLoadingProgress(100, 'מסיים טעינה');
+    
+    // Hide loading after a short delay
+    setTimeout(() => {
+      setLoading(false);
+      if (location.hash !== '#/admin') {
+        location.hash = '#/admin';
+      }
+    }, 500);
   } else {
-    // Non-admin shouldn’t be here – send to homepage
+    // Non-admin shouldn't be here – send to homepage
     isAdmin = false;
-    window.location.href = '/homepage.html';
+    updateLoadingProgress(100, 'מסיים טעינה');
+    setTimeout(() => {
+      setLoading(false);
+      window.location.href = '/homepage.html';
+    }, 500);
   }
 });
 
@@ -560,12 +610,29 @@ function syncFiltersUI() {
 }
 
 el.applyFilters?.addEventListener('click', () => {
+  if (!isAdmin) return;
+  
+  // Show loading state
+  setLoading(true);
+  updateLoadingProgress(20, 'מעבד סינון');
+  
   const month = Number(el.filterMonth?.value || state.filters.month);
   const year = Number(el.filterYear?.value || state.filters.year);
   const allocate = !!el.allocateOthers?.checked;
   state.filters = { month, year, allocateOthers: allocate };
+  
+  updateLoadingProgress(60, 'מעדכן טבלאות');
   renderAdminReportsTable(state.reportsByUser, state.usersById);
+  
+  updateLoadingProgress(80, 'מעדכן גרפים');
   renderChartsAndMaybeTables();
+  
+  updateLoadingProgress(100, 'מסיים רענון');
+  
+  // Hide loading after a short delay
+  setTimeout(() => {
+    setLoading(false);
+  }, 500);
 });
 
 function renderAllAdminViews() {
