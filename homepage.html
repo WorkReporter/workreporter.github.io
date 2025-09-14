@@ -1745,10 +1745,27 @@
 <script>
     // **QA FIX:** Streamlined, robust, and safe injection logic for the guided tour.
     function openGuidedTour() {
-        // Prevent multiple injections
+        // If a previous tour container exists, refresh the page to ensure a clean state
         if (document.getElementById('guided-tour-container')) {
-            console.log("Tour is already active or injected.");
+            // Reload so the tour can be started again without stale injected DOM/scripts
+            location.reload();
             return;
+        }
+
+        // If a previous tour container exists, clean it up so the tour can be restarted
+        const existing = document.getElementById('guided-tour-container');
+        if (existing) {
+            try {
+                if (window.GuidedTour_QA_Enhanced && typeof window.GuidedTour_QA_Enhanced.end === 'function') {
+                    window.GuidedTour_QA_Enhanced.end();
+                }
+            } catch (e) {
+                console.warn('Error while ending previous tour instance', e);
+            }
+
+            try { existing.remove(); } catch (e) { /* ignore */ }
+
+            try { delete window.GuidedTour_QA_Enhanced; } catch (e) { window.GuidedTour_QA_Enhanced = undefined; }
         }
 
         // Ensure we're on the main/home screen first so the tour can find elements there.
@@ -1795,7 +1812,7 @@
                     console.error('Failed to load the guided tour.', error);
                     alert('מצטערים, לא ניתן היה לטעון את סיור ההדרכה.');
                 });
-        }, 800);
+        }, 80);
     }
 
     // **QA FIX:** More robust CSS to ensure proper layering of app elements during the tour.
