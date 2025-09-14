@@ -458,6 +458,13 @@
             color: white;
         }
 
+        /* dropdown arrow visual indicator */
+        .option-btn .dropdown-arrow {
+            margin-inline-start: 0.5rem;
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
         .custom-input {
             width: 100%;
             padding: 0.75rem;
@@ -571,7 +578,6 @@
     </style>
 </head>
 <body>
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
         import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -600,7 +606,7 @@
     <div class="header">
         <div class="header-title">
             <div class="header-icon">🏠</div>
-שם מנהל/ת
+            שם מנהל/ת
         </div>
         <div class="user-profile">
             <div class="user-avatar">👤</div>
@@ -608,7 +614,6 @@
     </div>
 
     <div class="container">
-        <!-- Screen 1: Active Employees -->
         <div id="employees-screen" class="screen active">
             <h1 class="screen-title">עובדים פעילים</h1>
             <div class="employees-list" id="employees-list">
@@ -616,7 +621,6 @@
             </div>
         </div>
 
-        <!-- Screen 2: Calendar Date Selection -->
         <div id="calendar-screen" class="screen">
             <h1 class="screen-title" id="calendar-title">עובד - הפקת דו"ח</h1>
             <div class="calendar-container">
@@ -639,8 +643,7 @@
                         </tr>
                     </thead>
                     <tbody id="calendar-body">
-                        <!-- Calendar will be populated here -->
-                    </tbody>
+                        </tbody>
                 </table>
 
                 <div class="date-selection-info" id="date-selection">
@@ -655,7 +658,6 @@
             </div>
         </div>
 
-        <!-- Screen 3: Intermediate Report -->
         <div id="intermediate-screen" class="screen">
             <div class="report-container">
                 <h1 class="screen-title" id="intermediate-title">עובד - הפקת דו"ח שכר ביניים</h1>
@@ -674,7 +676,6 @@
             </div>
         </div>
 
-        <!-- Screen 4: Final Report -->
         <div id="final-screen" class="screen">
             <div class="report-container">
                 <h1 class="screen-title" id="final-title">עובד - דו"ח</h1>
@@ -710,10 +711,6 @@
             categorizations: new Map(),
             finalReport: null
         };
-
-
-
-
 
         // Firebase data functions - Updated to work with your database structure
         async function loadEmployeesForManager(managerName) {
@@ -867,20 +864,19 @@
         }
 
         function showCalendarScreen(employee) {
-    if (employee) {
-        AppState.selectedEmployee = employee;
-        document.getElementById('calendar-title').textContent = `${employee.firstName} ${employee.lastName} - הפקת דו"ח`;
-    }
+            if (employee) {
+                AppState.selectedEmployee = employee;
+                document.getElementById('calendar-title').textContent = `${employee.firstName} ${employee.lastName} - הפקת דו"ח`;
+            }
 
-    // 🟢 אפס בחירה קודמת
-    AppState.selectedStartDate = null;
-    AppState.selectedEndDate = null;
-    updateDateSelection();
-    updateGenerateButton();
+            AppState.selectedStartDate = null;
+            AppState.selectedEndDate = null;
+            updateDateSelection();
+            updateGenerateButton();
 
-    showScreen('calendar-screen');
-    generateCalendar();
-}
+            showScreen('calendar-screen');
+            generateCalendar();
+        }
 
 
         function showIntermediateScreen() {
@@ -950,7 +946,6 @@
             const calendarBody = document.getElementById('calendar-body');
             calendarBody.innerHTML = '';
 
-            // Get report dates for selected employee
             let reportMeta = { reportedDays: new Set(), weeklyDays: new Set() };
             if (AppState.selectedEmployee) {
                 reportMeta = await getReportDatesForEmployee(
@@ -980,7 +975,6 @@
                         dayDiv.classList.add('other-month');
                         nextMonthDate++;
                     } else {
-                        // Current month days
                         dayDiv.textContent = date;
 
                         if (reportMeta.reportedDays.has(date)) {
@@ -993,7 +987,6 @@
                             if (dow === 4) dayDiv.classList.add('weekly-end');
                         }
 
-                        // FIX: capture current date value before increment to avoid closure bug
                         const dayNumber = date;
                         dayDiv.addEventListener('click', () => selectDate(dayNumber));
                         date++;
@@ -1014,14 +1007,11 @@
             const clickedDate = new Date(AppState.currentYear, AppState.currentMonth, day);
 
             if (!AppState.selectedStartDate || (AppState.selectedStartDate && AppState.selectedEndDate)) {
-                // Start new selection
                 AppState.selectedStartDate = clickedDate;
                 AppState.selectedEndDate = null;
             } else if (clickedDate >= AppState.selectedStartDate) {
-                // Complete the range
                 AppState.selectedEndDate = clickedDate;
             } else {
-                // Clicked before start date, reset
                 AppState.selectedStartDate = clickedDate;
                 AppState.selectedEndDate = null;
             }
@@ -1122,18 +1112,22 @@
             }
         }
 
+        // ==========================================================
+        // ===== 🚀 START: MODIFIED CODE FOR SEMINAR HANDLING 🚀 =====
+        // ==========================================================
+
         function processReportData(reports) {
+            // שינוי: הפרדה למערכים נפרדים
             const data = {
                 researchers: new Map(),
-                otherTasks: [],
-                seminars: [],
+                otherTasks: [], // משימות נוספות בלבד
+                seminars: [], // סמינרים/קורסים/הכשרות בלבד
                 totalHours: 0,
                 workDays: new Set(),
                 missingDays: []
             };
 
             reports.forEach(report => {
-                // ensure workDays contains date strings in YYYY-MM-DD format
                 const baseDate = new Date(report.date);
                 if (report.type === 'weekly') {
                     const weekStart = getSundayOfWeek(baseDate);
@@ -1164,21 +1158,24 @@
 
                     data.totalHours += hours;
 
-                    if (entry.researcher === 'משימות אחרות') {
-                        data.otherTasks.push({
-                            name: entry.detail || 'משימה לא מוגדרת',
+                    // שינוי: הפרדה ברורה בין סמינרים למשימות אחרות
+                    const isSeminar = entry.researcher?.includes('סמינר') ||
+                                      entry.researcher?.includes('קורס') ||
+                                      entry.researcher?.includes('הכשרה');
+
+                    if (isSeminar) {
+                        data.seminars.push({
+                            name: entry.detail || entry.researcher || 'סמינר לא מוגדר',
                             hours: hours,
                             date: report.date,
                             categorization: null
                         });
-                    } else if (entry.researcher?.includes('סמינר') ||
-                               entry.researcher?.includes('קורס') ||
-                               entry.researcher?.includes('הכשרה')) {
-                        data.seminars.push({
-                            name: entry.researcher,
+                    } else if (entry.researcher === 'משימות אחרות') {
+                        data.otherTasks.push({
+                            name: entry.detail || entry.researcher || 'משימה לא מוגדרת',
                             hours: hours,
                             date: report.date,
-                            categorization: 'seminar'
+                            categorization: null
                         });
                     } else {
                         const current = data.researchers.get(entry.researcher) || 0;
@@ -1187,7 +1184,6 @@
                 });
             });
 
-            // Calculate missing days
             data.missingDays = calculateMissingDays(
                 AppState.selectedStartDate,
                 AppState.selectedEndDate,
@@ -1203,9 +1199,7 @@
 
             while (current <= endDate) {
                 const dayOfWeek = current.getDay();
-                // Skip Fridays (5) and Saturdays (6) - weekend in Israel
                 if (dayOfWeek !== 5 && dayOfWeek !== 6) {
-                    // use local date string (YYYY-MM-DD) to avoid timezone shifts from toISOString()
                     const dateStr = `${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}-${String(current.getDate()).padStart(2,'0')}`;
                     if (!workDays.has(dateStr)) {
                         missing.push(new Date(current));
@@ -1220,13 +1214,9 @@
         function renderIntermediateReport(data) {
             let html = '';
 
-            // Researchers section
+            // Researchers section (ללא שינוי)
             if (data.researchers.size > 0) {
-                html += `
-                    <div class="report-section">
-                        <h3 class="section-title">חוקרים:</h3>
-                `;
-
+                html += `<div class="report-section"><h3 class="section-title">חוקרים:</h3>`;
                 data.researchers.forEach((hours, researcher) => {
                     html += `
                         <div class="hours-item">
@@ -1235,18 +1225,16 @@
                         </div>
                     `;
                 });
-
                 html += '</div>';
             }
 
-            // Other tasks section
+            // הפרדה: משימות נוספות
             if (data.otherTasks.length > 0) {
-                html += `
-                    <div class="report-section">
-                        <h3 class="section-title">משימות אחרות:</h3>
-                `;
+                html += `<div class="report-section"><h3 class="section-title">משימות נוספות:</h3>`;
 
                 data.otherTasks.forEach((task, index) => {
+                    const key = `other_${index}`;
+
                     html += `
                         <div class="categorization-item">
                             <div class="categorization-header">
@@ -1255,31 +1243,39 @@
                                     <div class="task-hours">סה"כ שעות: ${task.hours}</div>
                                 </div>
                                 <div class="categorization-options">
-                                    <button class="option-btn" onclick="selectCategorization(${index}, 'active', this)">חוקר פעיל</button>
-                                    <button class="option-btn" onclick="selectCategorization(${index}, 'relative', this)">חלוקה יחסית</button>
-                                    <button class="option-btn" onclick="selectCategorization(${index}, 'seminar', this)">סמינר</button>
-                                    <button class="option-btn" onclick="selectCategorization(${index}, 'custom', this)">חיוב חדש</button>
+                                    <button class="option-btn" onclick="selectCategorization('${key}', 'seminar', this)">סמינר</button>
+                                    <button class="option-btn" onclick="selectCategorization('${key}', 'active', this)">חוקר פעיל <span class="dropdown-arrow">▾</span></button>
+                                    <button class="option-btn" onclick="selectCategorization('${key}', 'relative', this)">חלוקה יחסית</button>
+                                    <button class="option-btn" onclick="selectCategorization('${key}', 'custom', this)">חיוב חדש</button>
                                 </div>
                             </div>
                         </div>
                     `;
                 });
-
                 html += '</div>';
             }
 
-            // Seminars section
+            // הפרדה: סמינרים/קורסים/הכשרות
             if (data.seminars.length > 0) {
-                html += `
-                    <div class="report-section">
-                        <h3 class="section-title">סמינר/קורס/הכשרה:</h3>
-                `;
+                html += `<div class="report-section"><h3 class="section-title">סמינר/קורס/הכשרה:</h3>`;
 
-                data.seminars.forEach(seminar => {
+                data.seminars.forEach((task, index) => {
+                    const key = `sem_${index}`;
+
                     html += `
-                        <div class="hours-item seminar">
-                            <span class="hours-label">${seminar.name} - סה"כ שעות</span>
-                            <span class="hours-value">${seminar.hours}</span>
+                        <div class="categorization-item">
+                            <div class="categorization-header">
+                                <div class="task-info">
+                                    <div class="task-name">${task.name}</div>
+                                    <div class="task-hours">סה"כ שעות: ${task.hours}</div>
+                                </div>
+                                <div class="categorization-options">
+                                    <button class="option-btn" onclick="selectCategorization('${key}', 'seminar', this)">סמינר</button>
+                                    <button class="option-btn" onclick="selectCategorization('${key}', 'active', this)">חוקר פעיל <span class="dropdown-arrow">▾</span></button>
+                                    <button class="option-btn" onclick="selectCategorization('${key}', 'equal', this)">חלוקה שווה</button>
+                                    <button class="option-btn" onclick="selectCategorization('${key}', 'custom', this)">חיוב חדש</button>
+                                </div>
+                            </div>
                         </div>
                     `;
                 });
@@ -1305,7 +1301,6 @@
             let input = item.querySelector('.custom-input');
             let activeSelect = item.querySelector('.active-select');
 
-            // Hide optional elements first
             if (input) input.style.display = 'none';
             if (activeSelect) activeSelect.style.display = 'none';
 
@@ -1322,7 +1317,6 @@
                 input.style.display = 'block';
                 input.focus();
             } else if (type === 'active') {
-                // Show a select of active researchers
                 const activeList = (AppState.selectedEmployee && Array.isArray(AppState.selectedEmployee.activeResearchers)) ? AppState.selectedEmployee.activeResearchers : [];
                 if (activeList.length > 0) {
                     if (!activeSelect) {
@@ -1364,23 +1358,18 @@
                 calculation: { relative: [] }
             };
 
-            // Add researcher hours
             data.researchers.forEach((hours, researcher) => {
                 finalData.categories.set(researcher, hours);
             });
 
-            // Add seminar hours
-            data.seminars.forEach(seminar => {
-                const current = finalData.categories.get('סמינר') || 0;
-                finalData.categories.set('סמינר', current + seminar.hours);
-            });
-
             const activeList = (AppState.selectedEmployee && Array.isArray(AppState.selectedEmployee.activeResearchers)) ? AppState.selectedEmployee.activeResearchers : [];
 
+            // עיבוד משימות נוספות
             data.otherTasks.forEach((task, index) => {
-                const categorization = categorizations.get(index);
-                const customText = categorizations.get(`${index}_custom`);
-                const chosenActive = categorizations.get(`${index}_activeResearcher`);
+                const key = `other_${index}`;
+                const categorization = categorizations.get(key);
+                const customText = categorizations.get(`${key}_custom`);
+                const chosenActive = categorizations.get(`${key}_activeResearcher`);
                 let categoryName = 'לא מקוטלג';
                 let displayName = categorization;
 
@@ -1404,6 +1393,30 @@
                             displayName = 'חוקר פעיל (לא נבחר)';
                         }
                         break;
+
+                    case 'equal':
+                        if (activeList.length > 0) {
+                            const portion = task.hours / activeList.length;
+                            let remaining = task.hours;
+
+                            activeList.forEach((researcher, idx) => {
+                                const amountToAdd = (idx === activeList.length - 1) ? +remaining.toFixed(2) : +portion.toFixed(2);
+                                remaining = +(remaining - amountToAdd).toFixed(2);
+
+                                const prevHours = finalData.categories.get(researcher) || 0;
+                                finalData.categories.set(researcher, +(prevHours + amountToAdd).toFixed(2));
+                            });
+
+                            categoryName = `חלוקה שווה (${activeList.length} חוקרים)`;
+                            displayName = `חלוקה שווה (${activeList.length} חוקרים)`;
+                        } else {
+                            categoryName = 'חלוקה שווה (אין חוקרים פעילים)';
+                            const prev = finalData.categories.get(categoryName) || 0;
+                            finalData.categories.set(categoryName, prev + task.hours);
+                            displayName = 'חלוקה שווה (אין חוקרים פעילים להקצות)';
+                        }
+                        break;
+
                     case 'relative':
                         if (activeList.length > 0) {
                             const weights = activeList.map(r => ({ name: r, base: data.researchers.get(r) || 0 }));
@@ -1452,10 +1465,11 @@
                         displayName = 'סמינר';
                         break;
                     case 'custom':
-                        categoryName = customText || 'חיוב חדש';
+                        // שינוי: הצגת "חיוב חדש - {הטקסט}"
+                        categoryName = customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
                         const prevCustom = finalData.categories.get(categoryName) || 0;
                         finalData.categories.set(categoryName, prevCustom + task.hours);
-                        displayName = customText || 'חיוב חדש';
+                        displayName = categoryName;
                         break;
                     default:
                         const prevUn = finalData.categories.get('לא מקוטלג') || 0;
@@ -1467,13 +1481,84 @@
                 finalData.categorizedTasks.push({ name: task.name, category: displayName, hours: task.hours });
             });
 
+            // עיבוד סמינרים
+            data.seminars.forEach((task, index) => {
+                const key = `sem_${index}`;
+                const categorization = categorizations.get(key) || 'seminar';
+                const customText = categorizations.get(`${key}_custom`);
+                const chosenActive = categorizations.get(`${key}_activeResearcher`);
+                let categoryName = 'סמינר';
+                let displayName = 'סמינר';
+
+                switch (categorization) {
+                    case 'seminar':
+                        const prevSem = finalData.categories.get('סמינר') || 0;
+                        finalData.categories.set('סמינר', prevSem + task.hours);
+                        categoryName = 'סמינר';
+                        displayName = 'סמינר';
+                        break;
+                    case 'active':
+                        if (chosenActive) {
+                            const prev = finalData.categories.get(chosenActive) || 0;
+                            finalData.categories.set(chosenActive, prev + task.hours);
+                            categoryName = chosenActive;
+                            displayName = `חוקר פעיל: ${chosenActive}`;
+                        } else if (activeList.length === 1) {
+                            const onlyR = activeList[0];
+                            const prev = finalData.categories.get(onlyR) || 0;
+                            finalData.categories.set(onlyR, prev + task.hours);
+                            categoryName = onlyR;
+                            displayName = `חוקר פעיל: ${onlyR}`;
+                        } else {
+                            const prev = finalData.categories.get('סמינר (לא מוקצה)') || 0;
+                            finalData.categories.set('סמינר (לא מוקצה)', prev + task.hours);
+                            categoryName = 'סמינר (לא מוקצה)';
+                            displayName = 'סמינר (לא מוקצה)';
+                        }
+                        break;
+                    case 'equal':
+                        if (activeList.length > 0) {
+                            const portion = task.hours / activeList.length;
+                            let remaining = task.hours;
+                            activeList.forEach((researcher, idx) => {
+                                const add = (idx === activeList.length - 1) ? +remaining.toFixed(2) : +portion.toFixed(2);
+                                remaining = +(remaining - add).toFixed(2);
+                                const prev = finalData.categories.get(researcher) || 0;
+                                finalData.categories.set(researcher, +(prev + add).toFixed(2));
+                            });
+                            categoryName = `חלוקה שווה (${activeList.length} חוקרים)`;
+                            displayName = `חלוקה שווה (${activeList.length} חוקרים)`;
+                        } else {
+                            const prev = finalData.categories.get('סמינר (לא מוקצה)') || 0;
+                            finalData.categories.set('סמינר (לא מוקצה)', prev + task.hours);
+                            categoryName = 'סמינר (לא מוקצה)';
+                            displayName = 'סמינר (לא מוקצה)';
+                        }
+                        break;
+                    case 'custom':
+                        // שינוי: הצגת "חיוב חדש - {הטקסט}"
+                        categoryName = customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
+                        const prevCustom = finalData.categories.get(categoryName) || 0;
+                        finalData.categories.set(categoryName, prevCustom + task.hours);
+                        displayName = categoryName;
+                        break;
+                    default:
+                        const prevDefault = finalData.categories.get('סמינר') || 0;
+                        finalData.categories.set('סמינר', prevDefault + task.hours);
+                        categoryName = 'סמינר';
+                        displayName = 'סמינר';
+                }
+
+                finalData.categorizedTasks.push({ name: task.name, category: displayName, hours: task.hours });
+            });
+
             return finalData;
         }
+
 
         function renderFinalReport(data) {
             let html = '';
 
-            // Summary table
             html += `
                 <div class="report-section">
                     <h3 class="section-title">סך השעות:</h3>
@@ -1490,6 +1575,7 @@
 
             data.categories.forEach((hours, category) => {
                 const percentage = data.totalHours > 0 ? Math.round((hours / data.totalHours) * 100) : 0;
+
                 html += `
                     <tr>
                         <td style="font-weight: 500;">${category}</td>
@@ -1509,38 +1595,25 @@
                 </div>
             `;
 
-            // Categorized tasks
             if (data.categorizedTasks.length > 0) {
-                html += `
+                 html += `
                     <div class="report-section">
-                        <h3 class="section-title">משימות אחרות:</h3>
+                        <h3 class="section-title">פירוט משימות וסמינרים:</h3>
+                        ${data.categorizedTasks.map(task => `
+                            <div class="hours-item other-task">
+                                <span class="hours-label">${task.name} <strong>→ ${task.category}</strong></span>
+                                <span class="hours-value">${task.hours}</span>
+                            </div>
+                        `).join('')}
+                    </div>
                 `;
-
-                data.categorizedTasks.forEach(task => {
-                    html += `
-                        <div class="categorization-summary">
-                            <span class="category-tag">${task.name}</span>
-                            <span>→</span>
-                            <span class="category-tag allocated">${task.category}</span>
-                        </div>
-                    `;
-                });
-
-                html += '</div>';
             }
 
-            // Missing days
             html += `
                 <div class="report-section">
                     <h3 class="section-title">ימים ללא דיווח: <span style="color: #3b82f6;">${data.missingDays.length} סה"כ ימים</span></h3>
-                    <div class="missing-days">
-            `;
-
-            data.missingDays.forEach(date => {
-                html += `<div class="missing-day">${date.toLocaleDateString('he-IL')}</div>`;
-            });
-
-            html += `
+                    <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                        ${data.missingDays.map(date => `<div style="background:#f1f5f9; padding: 4px 10px; border-radius:15px; font-size:0.9rem;">${date.toLocaleDateString('he-IL')}</div>`).join('') || '<div style="color:#64748b;">אין ימים חסרים בתקופה זו.</div>'}
                     </div>
                 </div>
             `;
@@ -1549,83 +1622,113 @@
             document.getElementById('final-actions').style.display = 'flex';
         }
 
-        // Show-calculation logic
-        function toggleCalculation() {
-            const panel = document.getElementById('calc-panel');
-            if (!panel) return;
-            if (panel.style.display === 'none') {
-                renderCalculationPanel(AppState.finalReport);
-                panel.style.display = 'block';
-            } else {
-                panel.style.display = 'none';
-            }
+        // ==========================================================
+        // ===== 🚀 START: CSV EXPORT IMPLEMENTATION 🚀 =====
+        // ==========================================================
+
+        /**
+         * Converts an array of objects to a CSV string.
+         * @param {Array<Object>} rows - The data rows.
+         * @param {Array<{key: string, header: string}>} columns - Column configuration.
+         * @returns {string} The CSV content.
+         */
+        function toCsv(rows, columns) {
+            const escapeCsv = v => {
+                const s = v === null || v === undefined ? '' : String(v);
+                if (/[",\n]/.test(s)) return '"' + s.replaceAll('"', '""') + '"';
+                return s;
+            };
+            const header = columns.map(c => escapeCsv(c.header)).join(',');
+            const lines = rows.map(row => columns.map(c => escapeCsv(row[c.key])).join(','));
+            return [header, ...lines].join('\n');
         }
 
-        function renderCalculationPanel(finalData) {
-            const panel = document.getElementById('calc-panel');
-            if (!panel) return;
-            if (!finalData || !finalData.calculation) {
-                panel.innerHTML = '<div class="empty-state">אין נתונים להצגה</div>';
-                return;
-            }
-
-            let html = '';
-            html += '<div class="calc-section">';
-            html += '<div class="calc-title">חישובי חלוקה יחסית</div>';
-            const rel = finalData.calculation.relative || [];
-            if (rel.length === 0) {
-                html += '<div class="note">לא בוצעו חלוקות יחסיות בתקופה זו.</div>';
-            } else {
-                html += '<div class="calc-grid">';
-                rel.forEach((item, idx) => {
-                    html += '<div class="calc-card">';
-                    const taskHours = item.taskHours?.toFixed ? item.taskHours.toFixed(2) : item.taskHours;
-                    html += `<div class=\"calc-subtitle\">${idx+1}. ${item.taskName || 'משימה'} — ${taskHours} שעות (${item.method==='proportional' ? 'חלוקה יחסית' : 'חלוקה שווה'})</div>`;
-                    if (item.method === 'proportional') {
-                        const totalBase = item.totalBase?.toFixed ? item.totalBase.toFixed(2) : item.totalBase;
-                        html += `<div class=\"equation eq-line\">סה\"כ שעות בסיס = ${totalBase}</div>`;
-                    }
-                    if (Array.isArray(item.items)) {
-                        html += '<div class="chips">';
-                        item.items.forEach(it => {
-                            const baseStr = it.baseHours?.toFixed ? it.baseHours.toFixed(2) : it.baseHours;
-                            const wStr = it.weight?.toFixed ? it.weight.toFixed(4) : it.weight;
-                            html += `<span class=\"chip\">${it.researcher}: בסיס ${baseStr}${item.method==='proportional' ? ` • משקל ${wStr}` : ''}</span>`;
-                        });
-                        html += '</div>';
-                        item.items.forEach(it => {
-                            const baseStr = it.baseHours?.toFixed ? it.baseHours.toFixed(2) : it.baseHours;
-                            const totalBaseStr = item.totalBase?.toFixed ? item.totalBase.toFixed(2) : item.totalBase;
-                            const allocStr = it.allocated?.toFixed ? it.allocated.toFixed(2) : it.allocated;
-                            if (item.method === 'proportional') {
-                                html += `<div class=\"equation eq-line\">${it.researcher}: שעות להוספה = ${taskHours} × (${baseStr} / ${totalBaseStr}) = ${allocStr}</div>`;
-                            } else {
-                                const share = item.items.length ? (1/item.items.length).toFixed(2) : '—';
-                                html += `<div class=\"equation eq-line\">${it.researcher}: שעות להוספה = ${taskHours} × ${share} = ${allocStr}</div>`;
-                            }
-                        });
-                    }
-                    html += '</div>';
-                });
-                html += '</div>';
-            }
-            html += '</div>';
-            panel.innerHTML = html;
+        /**
+         * Triggers a file download in the browser.
+         * @param {string} filename - The desired name of the file.
+         * @param {string} content - The file content.
+         * @param {string} [type='text/csv;charset=utf-8'] - The MIME type.
+         */
+        function download(filename, content, type = 'text/csv;charset=utf-8') {
+            // Prepend UTF-8 BOM to ensure Hebrew renders correctly in Excel
+            const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+            const blob = new Blob([bom, content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(url);
+            a.remove();
         }
 
         function exportFinalReport() {
-    const employee = AppState.selectedEmployee;
-    const startDate = AppState.selectedStartDate.toLocaleDateString('he-IL');
-    const endDate = AppState.selectedEndDate.toLocaleDateString('he-IL');
+            // --- FIX: Check for data before proceeding to prevent the error ---
+            if (!AppState.finalReport || !AppState.selectedEmployee || !AppState.selectedStartDate || !AppState.selectedEndDate) {
+                alert('שגיאה: נתוני הדו"ח אינם זמינים. נסה להפיק את הדו"ח מחדש.');
+                console.error("exportFinalReport called without complete data in AppState.", AppState);
+                return;
+            }
 
-    alert(`דו"ח עבור ${employee.firstName} ${employee.lastName} לתקופה ${startDate} - ${endDate} הופק בהצלחה!`);
+            const { selectedEmployee, selectedStartDate, selectedEndDate, finalReport } = AppState;
 
-    // 🟢 אפס טווח בחירה
-    AppState.selectedStartDate = null;
-    AppState.selectedEndDate = null;
-    updateDateSelection();
-    updateGenerateButton();
-}
+            const employeeName = `${selectedEmployee.firstName} ${selectedEmployee.lastName}`;
+            const startDateStr = selectedStartDate.toLocaleDateString('he-IL');
+            const endDateStr = selectedEndDate.toLocaleDateString('he-IL');
+            const dateForFilename = new Date().toISOString().slice(0, 10);
+
+            let csvContent = '';
+
+            // 1. Add header info
+            csvContent += `דו"ח שעות עבור:,${employeeName}\n`;
+            csvContent += `תקופה:,${startDateStr} - ${endDateStr}\n\n`;
+
+            // 2. Add summary table
+            const summaryRows = [];
+            finalReport.categories.forEach((hours, category) => {
+                const percentage = finalReport.totalHours > 0 ? Math.round((hours / finalReport.totalHours) * 100) : 0;
+                summaryRows.push({
+                    category: category,
+                    hours: hours,
+                    percentage: `${percentage}%`
+                });
+            });
+            // Add total row
+            summaryRows.push({
+                category: 'סה"כ',
+                hours: finalReport.totalHours,
+                percentage: '100%'
+            });
+
+            const summaryColumns = [
+                { key: 'category', header: 'קטגוריה' },
+                { key: 'hours', header: 'סה"כ שעות' },
+                { key: 'percentage', header: 'אחוז מסך השעות' }
+            ];
+            csvContent += toCsv(summaryRows, summaryColumns);
+
+            csvContent += '\n\n'; // Add spacing
+
+            // 3. Add Missing Days
+            if (finalReport.missingDays.length > 0) {
+                const missingDaysRows = finalReport.missingDays.map(date => ({
+                    date: date.toLocaleDateString('he-IL')
+                }));
+                const missingDaysColumns = [{ key: 'date', header: 'ימים ללא דיווח' }];
+                csvContent += toCsv(missingDaysRows, missingDaysColumns);
+            } else {
+                csvContent += 'לא נמצאו ימים ללא דיווח בתקופה זו.\n';
+            }
+
+            // 4. Trigger download
+            const filename = `work_report_${employeeName.replace(' ', '_')}_${dateForFilename}.csv`;
+            download(filename, csvContent);
+        }
+
+        // ==========================================================
+        // ===== 🚀 END: CSV EXPORT IMPLEMENTATION 🚀 =====
+        // ==========================================================
 
 
         // Helpers
@@ -1706,23 +1809,33 @@
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Firebase auth state listener
-            window.firebaseApp.auth.onAuthStateChanged((user) => {
+            window.firebaseApp.auth.onAuthStateChanged(async (user) => {
                 AppState.currentUser = user;
                 if (user) {
-                    // Check if user is manager by trying to access manager-only resources
-                    // This relies on Firebase security rules rather than email checking
-                    checkManagerAccess().then(isManager => {
+                    checkManagerAccess().then(async isManager => {
                         AppState.isManager = isManager;
                         if (isManager) {
-                            AppState.managerName = user.displayName || user.email.split('@')[0] || 'מנהל/ת';
+                            // שינוי: טעינת שם מלא מהמסד נתונים במקום קידומת המייל
+                            try {
+                                const { db, ref, get } = window.firebaseApp;
+                                const userRef = ref(db, `users/${user.uid}`);
+                                const userSnapshot = await get(userRef);
 
-                            // Update header with manager name
+                                if (userSnapshot.exists()) {
+                                    const userData = userSnapshot.val();
+                                    AppState.managerName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || user.displayName || user.email.split('@')[0] || 'מנהל/ת';
+                                } else {
+                                    AppState.managerName = user.displayName || user.email.split('@')[0] || 'מנהל/ת';
+                                }
+                            } catch (error) {
+                                console.error('Error loading manager name:', error);
+                                AppState.managerName = user.displayName || user.email.split('@')[0] || 'מנהל/ת';
+                            }
+
                             document.querySelector('.header-title').innerHTML = `
                                 <div class="header-icon">🏠</div>
                                 ${AppState.managerName}
                             `;
-
                             renderEmployeesList();
                         } else {
                             document.getElementById('employees-list').innerHTML =
@@ -1741,26 +1854,19 @@
                         '<div class="empty-state">יש להתחבר כדי לגשת למערכת</div>';
                 }
             });
-
-            // Initialize calendar
             generateCalendar();
         });
 
-        // Check manager access based on Firebase security rules
         async function checkManagerAccess() {
             try {
                 const { db, ref, get } = window.firebaseApp;
-                // Try to read from a manager-only path
-                // If successful, user has manager permissions
                 const usersRef = ref(db, 'users');
                 await get(usersRef);
                 return true;
             } catch (error) {
-                // If access denied, user is not a manager
                 return false;
             }
         }
     </script>
 </body>
 </html>
-

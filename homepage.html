@@ -1751,31 +1751,51 @@
             return;
         }
 
-        fetch('guided_tour.html')
-            .then(response => response.text())
-            .then(html => {
-                const container = document.createElement('div');
-                container.id = 'guided-tour-container';
+        // Ensure we're on the main/home screen first so the tour can find elements there.
+        try {
+            if (typeof showScreen === 'function') {
+                // prefer the app's navigation helper
+                try { showScreen('main'); } catch(e) { /* ignore */ }
+            } else {
+                // fallback: show element with id 'main-screen' and hide others if they use 'hidden' class
+                const main = document.getElementById('main-screen');
+                if (main) {
+                    document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
+                    main.classList.remove('hidden');
+                }
+            }
+        } catch (err) {
+            console.warn('Could not navigate to main screen before tour:', err);
+        }
 
-                const doc = new DOMParser().parseFromString(html, 'text/html');
+        // wait briefly to allow UI to switch and elements to render, then inject the tour
+        setTimeout(() => {
+            fetch('guided_tour.html')
+                .then(response => response.text())
+                .then(html => {
+                    const container = document.createElement('div');
+                    container.id = 'guided-tour-container';
 
-                // 1. Append styles
-                const style = doc.head.querySelector('style');
-                if (style) container.appendChild(style.cloneNode(true));
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
 
-                // 2. Append script (must create a new script tag to execute)
-                const scriptContent = doc.body.querySelector('script').textContent;
-                const script = document.createElement('script');
-                script.textContent = scriptContent;
-                container.appendChild(script);
+                    // 1. Append styles
+                    const style = doc.head.querySelector('style');
+                    if (style) container.appendChild(style.cloneNode(true));
 
-                // 3. Append the whole container to the body
-                document.body.appendChild(container);
+                    // 2. Append script (must create a new script tag to execute)
+                    const scriptContent = doc.body.querySelector('script').textContent;
+                    const script = document.createElement('script');
+                    script.textContent = scriptContent;
+                    container.appendChild(script);
 
-            }).catch(error => {
-                console.error('Failed to load the guided tour.', error);
-                alert('מצטערים, לא ניתן היה לטעון את סיור ההדרכה.');
-            });
+                    // 3. Append the whole container to the body
+                    document.body.appendChild(container);
+
+                }).catch(error => {
+                    console.error('Failed to load the guided tour.', error);
+                    alert('מצטערים, לא ניתן היה לטעון את סיור ההדרכה.');
+                });
+        }, 800);
     }
 
     // **QA FIX:** More robust CSS to ensure proper layering of app elements during the tour.
@@ -1792,3 +1812,4 @@
 </script>
 </body>
 </html>
+
