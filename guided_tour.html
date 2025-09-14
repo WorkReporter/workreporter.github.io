@@ -3,721 +3,364 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Guided Tour — מערכת דיווח שעות (הדגמה)</title>
+    <title>Guided Tour (QA Enhanced) — מערכת דיווח שעות</title>
     <style>
-        html,body{height:100%;margin:0;font-family:Segoe UI, Arial, sans-serif;background:#f6f9ff}
-        .frame-wrap{position:fixed;inset:0;display:flex;flex-direction:column}
-        header{background:#0b3b76;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
-        header h1{font-size:16px;margin:0}
-        #appFrame{flex:1;border:6px solid rgba(11,59,118,0.08);border-radius:8px;margin:18px;box-shadow:0 8px 30px rgba(2,24,43,0.06)}
-
-        /* הסתרת הבאנר במצב הדרכה - מוסר כדי שהכותרת תישאר גלויה */
-        /* .tour-active header{
-            display: none;
-        } */
-
-        /* הכותרת במצב הדרכה - נשאר גלוי אך עם z-index גבוה יותר */
-        .tour-active header{
-            position: relative;
-            z-index: 1000010 !important; /* הגבהת z-index כדי להיות מעל הכל */
+        :root {
+            --tour-primary-color: #2563eb;
+            --tour-primary-dark: #1d4ed8;
+            --tour-text-color: #111827;
+            --tour-bg-color: #ffffff;
+            --tour-overlay-color: rgba(17, 24, 39, 0.7);
+            --tour-shadow-dark: rgba(17, 24, 39, 0.1);
         }
 
-        .tour-active #appFrame{
-            margin: 0;
-            border: none;
-            border-radius: 0;
-            box-shadow: none;
-        }
-
-        /* אינדיקטור דיסקרטי למצב הדרכה - מיקום מתחת לתפריט */
-        .tour-indicator{
+        /* --- Container for all tour elements --- */
+        .tour-overlay-container {
             position: fixed;
-            top: 120px; /* מתחת לכותרת והתפריט */
-            right: 10px;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 25px;
-            font-size: 13px;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-            z-index: 100; /* נמוך מאוד כדי להיות מתחת לכל הUI */
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            inset: 0;
+            z-index: 10000;
+            /* Clicks on the container (the shadow area) will be caught to close the tour */
+            pointer-events: none;
+        }
+        .tour-overlay-container.tour-active {
+            pointer-events: auto;
         }
 
-        .tour-indicator .close-tour-btn{
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: background 0.2s ease;
+        /* * QA FIX: Spotlight Effect using the box-shadow "hole-punch" technique.
+         * The highlight element itself is transparent, but it casts a giant shadow
+         * around itself, creating the overlay effect with a clear "hole".
+        */
+        .tour-highlight {
+            position: absolute;
+            z-index: 10001;
+            border-radius: 8px;
+            /* A small, colored shadow for the border, and a giant shadow for the overlay */
+            box-shadow: 0 0 0 3px var(--tour-primary-color), 0 0 0 500vmax var(--tour-overlay-color);
+            transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
+            /* Clicks should pass through the "hole" to the element underneath */
+            pointer-events: none;
         }
 
-        .tour-indicator .close-tour-btn:hover{
-            background: rgba(255, 255, 255, 0.3);
+        .tour-tooltip {
+            position: absolute;
+            z-index: 10002;
+            max-width: 380px;
+            min-width: 300px;
+            background: var(--tour-bg-color);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px var(--tour-shadow-dark);
+            border: 1px solid #e5e7eb;
+            transition: opacity 300ms ease, transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: auto; /* Tooltip itself is interactive */
         }
 
-        @media (max-width: 600px){
-            .tour-indicator{
-                top: 110px; /* מותאם למובייל - מתחת לתפריט */
-                right: 5px;
-                padding: 6px 12px;
-                font-size: 11px;
-                z-index: 100;
-            }
-
-            .tour-indicator .close-tour-btn{
-                padding: 3px 6px;
-                font-size: 10px;
-            }
+        .tour-tooltip.visible { opacity: 1; transform: translateY(0); }
+        .tour-arrow {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            transform: rotate(45deg);
+            background: var(--tour-bg-color);
+            border: 1px solid #e5e7eb;
+            z-index: -1;
         }
-
-        /* overlay - z-index גבוה יותר מהUI אבל עם מסגרת כחולה מעל האלמנטים */
-        .tour-overlay{position:fixed;inset:0;pointer-events:none;z-index: 1000008} /* מעל הUI */
-        .mask{position:absolute;inset:0;background:rgba(7,17,34,0.6);z-index: 1000008}
-        .highlight{
-            position:absolute;
-            border-radius:10px;
-            box-shadow:0 8px 40px rgba(35,118,209,0.35);
-            border:3px solid #3b82f6;
-            pointer-events:auto;
-            transition:all 350ms ease;
-            z-index: 1000011; /* מעל הכותרת והתפריט */
-            background: rgba(59, 130, 246, 0.1); /* רקע שקוף קל */
+        .tour-tooltip[data-placement^="bottom"] .tour-arrow { top: -8px; border-top-color: var(--tour-bg-color); border-left-color: var(--tour-bg-color); }
+        .tour-tooltip[data-placement^="top"] .tour-arrow { bottom: -8px; border-bottom-color: var(--tour-bg-color); border-right-color: var(--tour-bg-color); }
+        .tour-tooltip h3 { margin: 0 0 10px; font-size: 1.1rem; font-weight: 600; }
+        .tour-tooltip p { margin: 0 0 18px; font-size: 0.95rem; line-height: 1.6; color: #374155; }
+        .tour-controls { display: flex; justify-content: space-between; align-items: center; }
+        .tour-step-counter { font-size: 0.8rem; color: #6b7280; font-weight: 500; }
+        .tour-buttons { display: flex; gap: 10px; }
+        .tour-btn {
+            border: none; padding: 9px 18px; border-radius: 8px; cursor: pointer;
+            font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease;
         }
-
-        .tooltip{
-            position:absolute;
-            max-width:420px;
-            background:linear-gradient(180deg,#fff,#f2f7ff);
-            color:#0b2546;
-            padding:18px;
-            border-radius:12px;
-            box-shadow:0 15px 40px rgba(11,59,118,0.25);
-            pointer-events:auto;
-            transition:all 350ms ease;
-            z-index: 1000012; /* הגבוה ביותר */
-            border:2px solid rgba(59,130,246,0.3);
-            /* הבטחה שהטולטיפ לא יחפוף על הכותרת */
-            margin-top: 5px;
+        .tour-btn.primary { background-color: var(--tour-primary-color); color: white; }
+        .tour-btn.primary:hover { background-color: var(--tour-primary-dark); transform: translateY(-1px); }
+        .tour-btn.secondary { background-color: #f3f4f6; color: #374155; }
+        .tour-btn.secondary:hover { background-color: #e5e7eb; }
+        .tour-close-btn { position: absolute; top: 10px; left: 10px; background: transparent; border: none; cursor: pointer; font-size: 1.6rem; color: #9ca3af; padding: 0; line-height: 1; }
+        .tour-close-btn:hover { color: #4b5563; }
+        .final-step-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;
         }
-
-        .tooltip h3{margin:0 0 6px 0;font-size:15px}
-        .tooltip p{margin:0 0 12px 0;font-size:14px;color:#1f2d47;line-height:1.4}
-        .tooltip .controls{display:flex;gap:8px;justify-content:flex-end}
-        .btn{background:#165ea8;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
-        .btn.ghost{background:transparent;color:#cfe0ff;border:1px solid rgba(255,255,255,0.08)}
-        .close-link{background:transparent;border:none;color:#cbd5e1;cursor:pointer}
-        .arrow{position:absolute;width:28px;height:28px;transform:rotate(45deg);background:#fff;border-radius:4px;box-shadow:0 6px 18px rgba(11,59,118,0.18);z-index:999999}
-
-        .notes{font-size:12px;color:#e6eefc}
-        footer{padding:10px 18px;text-align:center;color:#64748b;font-size:13px}
-
-        /* רספונסיבי למובייל */
-        @media (max-width:900px){
-            .tooltip{
-                max-width:min(90vw, 350px);
-                padding:16px;
-                font-size:13px;
-                left:5vw !important;
-                right:5vw;
-                width:90vw;
-                max-width:90vw;
-            }
-            .tooltip p{font-size:13px}
-            .tooltip h3{font-size:14px}
-            header h1{font-size:14px}
-        }
-
-        @media (max-width:600px){
-            .tooltip{
-                max-width:min(95vw, 320px);
-                padding:14px;
-                left:2.5vw !important;
-                right:2.5vw;
-                width:95vw;
-                max-width:95vw;
-                bottom:20px !important;
-                top:auto !important;
-            }
-            .tooltip p{font-size:12px}
-            .tooltip h3{font-size:13px}
-            .tooltip .controls{
-                flex-direction:column;
-                gap:6px;
-            }
-            .btn{
-                padding:10px 16px;
-                font-size:14px;
-                width:100%;
-            }
-            header{padding:10px 12px}
-            header h1{font-size:12px}
-            #appFrame{margin:10px}
-
-            /* במובייל - הצב טולטיפ בתחתית המסך */
-            .arrow{display:none !important}
-        }
-
-        @media (max-width:420px){
-            .tooltip{
-                left:5px !important;
-                right:5px;
-                width:calc(100vw - 10px);
-                max-width:calc(100vw - 10px);
-                bottom:10px !important;
-                padding:12px;
-            }
-        }
-
-        /* וידוא שהטולטיפ תמיד נראה */
-        .tooltip{
-            min-height:80px;
-            display:flex !important;
-            flex-direction:column;
-            justify-content:space-between;
-        }
-
-        /* סגנון מיוחד לסיום הטור */
-        .tooltip.tour-complete{
-            position:fixed !important;
-            top:50% !important;
-            left:50% !important;
-            transform:translate(-50%, -50%) !important;
-            max-width:400px;
-            width:90vw;
-            z-index:1000001 !important;
-        }
-
-        @media (max-width:600px){
-            .tooltip.tour-complete{
-                width:95vw;
-                max-width:95vw;
-                top:50% !important;
-                bottom:auto !important;
-            }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @media (max-width: 600px) {
+            .tour-tooltip { position: fixed !important; bottom: 10px !important; left: 10px !important; right: 10px !important; top: auto !important; width: auto !important; max-width: none !important; transform: none !important; }
+            .tour-arrow { display: none !important; }
         }
     </style>
 </head>
 <body>
-    <div class="frame-wrap">
-        <header>
-            <h1>Guided Tour — הדגמת השימוש באתר</h1>
-            <div>
-                <button id="start-tour" class="btn">התחל סיור</button>
-                <button id="open-home" class="btn ghost">פתח דף בית לחלון</button>
-            </div>
-        </header>
-
-        <!-- iframe loads the real homepage (relative path) -->
-        <iframe id="appFrame" src="homepage.html" title="Homepage"></iframe>
-
-        <!-- אינדיקטור דיסקרטי למצב הדרכה -->
-        <div class="tour-indicator" id="tourIndicator" style="display:none">
-            <span>🎯 הדגמת השימוש באתר</span>
-            <button class="close-tour-btn" id="closeTourIndicator">סגור</button>
-        </div>
-
-        <div class="tour-overlay" id="tourOverlay" aria-hidden="true">
-            <div class="mask" id="mask"></div>
-            <div class="highlight" id="highlight" style="display:none"></div>
-            <div class="arrow" id="arrow" style="display:none"></div>
-            <div class="tooltip" id="tooltip" style="display:none" role="dialog" aria-modal="true">
-                <h3 id="tip-title"></h3>
-                <p id="tip-text"></p>
-                <div class="controls">
-                    <button class="btn" id="prev-btn" style="display:none">חזור</button>
-                    <button class="btn" id="next-btn">המשך</button>
-                    <button class="close-link" id="skip-btn">סגור</button>
-                </div>
-            </div>
-        </div>
-
-        <footer>סיור זה משתמש ב-iframe של homepage.html שנמצא בספריית הפרויקט. אם אינך רואה אלמנטים מסוימים - ודא ש-homepage.html נטען בהצלחה.</footer>
-    </div>
-
     <script>
-        (function(){
-            // support two modes:
-            // - standalone: guided_tour.html loads homepage in an iframe (#appFrame)
-            // - embedded: the overlay + script are injected into the host page (no #appFrame present)
-            const iframeEl = document.getElementById('appFrame');
-            const embeddedMode = !iframeEl; // if injected into another page there is no iframe
-            const iframe = iframeEl || null;
-            const startBtn = document.getElementById('start-tour');
-            const openHome = document.getElementById('open-home');
-            const overlay = document.getElementById('tourOverlay');
-            const highlight = document.getElementById('highlight');
-            const tooltip = document.getElementById('tooltip');
-            const arrow = document.getElementById('arrow');
-            const tipTitle = document.getElementById('tip-title');
-            const tipText = document.getElementById('tip-text');
-            const nextBtn = document.getElementById('next-btn');
-            const prevBtn = document.getElementById('prev-btn');
-            const skipBtn = document.getElementById('skip-btn');
-            const closeTourIndicator = document.getElementById('closeTourIndicator');
-            const tourIndicator = document.getElementById('tourIndicator');
+    const GuidedTour_QA_Enhanced = {
+        _steps: [],
+        _targetDoc: document,
+        _elements: {},
+        _currentStepIndex: -1,
+        _isActive: false,
 
-            // Steps: selector is searched inside iframe document. action: "click" means click it when advancing.
-            const steps = [
-                {
-                    id: 'main-screen',
-                    title: 'מסך ראשי - נקודת המוצא',
-                    text: 'זהו המסך הראשי. כאן תראו הודעות על דיווחים חסרים (עד 4 בשבוע), ותוכלו להוסיף דיווח חדש. שימו לב: בימים א-ד יפתח דיווח יומי, ביום ה\' תוכלו לבחור בין יומי לשבועי.',
-                    selector: "#main-screen",
-                    action: null
-                },
-                {
-                    id: 'add-report-main',
-                    title: 'כפתור הוספת דיווח',
-                    text: 'לחצן זה פותח טופס דיווח חדש. הסוג תלוי ביום: א\'-ד\' = דיווח יומי בלבד, יום ה\' = בחירה בין יומי לשבועי. לא ניתן לדווח בשישי-שבת.',
-                    selector: '#add-report-btn',
-                    action: 'click'
-                },
-                {
-                    id: 'daily-report-form',
-                    title: 'טופס דיווח יומי',
-                    text: 'דיווח יומי-שעתי: בחרו תאריך, עבדתי/לא עבדתי. אם עבדתם - בחרו חוקר מהרשימה ומספר שעות (שלמות או חצאי). ניתן להוסיף מספר שורות. חשוב: ניתן לערוך רק דיווחים מהשבוע הנוכחי!',
-                    selector: "#work-status-toggle",
-                    action: null
-                },
-                {
-                    id: 'reports-nav',
-                    title: 'מעבר לדוחות',
-                    text: 'כעת נעבור לעמוד הדוחות לראות איך מציגים את הנתונים שדיווחתם.',
-                    selector: ".nav-btn[onclick*='reports']",
-                    action: 'click'
-                },
-                {
-                    id: 'reports-screen',
-                    title: 'מסך דוחות חודשיים',
-                    text: 'כאן תוכלו לראות דוחות לפי חודש ושנה. הנתונים מגיעים מכל הדיווחים שביצעתם. הנתונים מבוגבים אוטומטית לגובל הדריב כל חודש.',
-                    selector: "#report-month",
-                    action: null
-                },
-                {
-                    id: 'calendar-nav',
-                    title: 'מעבר ליומן',
-                    text: 'כעת נעבור ליומן לראות מצב הדיווחים שלכם בצורה ויזואלית.',
-                    selector: ".nav-btn[onclick*='calendar']",
-                    action: 'click'
-                },
-                {
-                    id: 'calendar-screen',
-                    title: 'מסך יומן - מעקב ויזואלי',
-                    text: 'היומן מציג את החודש הנוכחי עם סימון היום הנוכחי ואינדיקציה לתאריכים עם דיווחים. המטרה: כל הימים יהיו מסומנים! ניתן ללחוץ על יום ללא דיווח כדי להוסיף דיווח לאותו תאריך (רק אם זה מהשבוע הנוכחי או שבוע קודם).',
-                    selector: "#calendar-grid",
-                    action: null
-                },
-                {
-                    id: 'researchers-nav',
-                    title: 'מעבר לחוקרים פעילים',
-                    text: 'כעת נראה את מסך ניהול החוקרים הפעילים.',
-                    selector: ".nav-btn[onclick*='active-researchers']",
-                    action: 'click'
-                },
-                {
-                    id: 'active-researchers',
-                    title: 'חוקרים פעילים - הגדרת רשימת העבודה',
-                    text: 'כאן תגדירו את רשימת החוקרים שאתם עובדים איתם. רק החוקרים המסומנים יופיעו ברשימה בעת הדיווח. בסוף הרשימה תמיד יופיעו "משימות אחרות" ו"סמינר/קורס/הכשרה" (לא ניתן לשנות). במשימות אלו תוכלו להוסיף הסבר בטקסט חופשי.',
-                    selector: "#researchers-list",
-                    action: null
-                },
-                {
-                    id: 'weekly-info',
-                    title: 'דיווח שבועי - מידע חשוב',
-                    text: 'דיווח שבועי זמין רק ביום חמישי! בדיווח שבועי מדווחים ימים (לא שעות) בקפיצות של 0.25, מקסימום 5 ימים. חשוב: אם יש דיווחים יומיים באותו שבוע, לא ניתן לעשות דיווח שבועי. ניתן לערוך רק דיווחים מהשבוע הנוכחי, אבל ניתן להוסיף דיווח חדש שבוע אחורה.',
-                    selector: "#researchers-list",
-                    action: null
-                },
-                {
-                    id: 'user-profile-nav',
-                    title: 'פרטי משתמש',
-                    text: 'לסיום, נבקר בפרטי המשתמש. לחצו על אייקון המשתמש בפינה.',
-                    selector: ".user-icon",
-                    action: 'click'
-                },
-                {
-                    id: 'user-profile',
-                    title: 'מסך פרטי משתמש',
-                    text: 'כאן מופיעים הפרטים שהוזנו בהרשמה. ניתן לערוך אותם בלחיצה על כפתור "ערוך".',
-                    selector: "#profile-first-name",
-                    action: null
-                },
-                {
-                    id: 'tour-complete',
-                    title: 'סיום ההדרכה',
-                    text: 'מעולה! סיימתם את ההדרכה. זכרו: דווחו בזמן (עד יום ה\'), ערכו רק דיווחים מהשבוע הנוכחי, והשתמשו ביומן למעקב ויזואלי. בהצלחה!',
-                    selector: "body",
-                    action: null
-                }
-            ];
-
-            let stepIndex = 0;
-            let iframeDoc = null;
-            let stepsHistory = []; // Track which screens we visited for proper back navigation
-
-            // helpers
-            function ensureIframeDoc(){
-                // In embedded mode we operate on the top-level document
-                if(embeddedMode){ iframeDoc = document; return true; }
-                try{
-                    iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                    return !!iframeDoc;
-                }catch(e){
-                    console.warn('Cannot access iframe document (cross-origin?)', e);
-                    return false;
-                }
-            }
-
-            function findInIframe(selector){
-                if(!ensureIframeDoc()) return null;
-                try{
-                    return iframeDoc.querySelector(selector);
-                }catch(e){
-                    return null;
-                }
-            }
-
-            function placeOverlayOnElement(el){
-                if(!el){ // hide
-                    highlight.style.display='none';
-                    tooltip.style.display='none';
-                    arrow.style.display='none';
-                    return;
-                }
-
-                const eRect = el.getBoundingClientRect();
-                const padding = 10;
-                let left, top, width, height, spaceAbove, spaceBelow;
-
-                // תיקון: במצב embedded אין צורך בהתאמות נוספות
-                left = eRect.left - padding;
-                top = eRect.top - padding;
-                width = eRect.width + padding*2;
-                height = eRect.height + padding*2;
-                spaceAbove = eRect.top;
-                spaceBelow = window.innerHeight - (eRect.top + eRect.height);
-
-                highlight.style.display='block';
-                highlight.style.left = left + 'px';
-                highlight.style.top = top + 'px';
-                highlight.style.width = width + 'px';
-                highlight.style.height = height + 'px';
-
-                // Tooltip placement - רספונסיבי
-                const isMobile = window.innerWidth <= 600;
-                tooltip.style.display='block';
-
-                if(isMobile) {
-                    // במובייל - מקם בתחתית המסך
-                    tooltip.style.left = '2.5vw';
-                    tooltip.style.right = '2.5vw';
-                    tooltip.style.top = 'auto';
-                    tooltip.style.bottom = '20px';
-                    tooltip.style.width = '95vw';
-                    tooltip.style.maxWidth = '95vw';
-                    tooltip.style.transform = 'none';
-                    arrow.style.display = 'none';
-                } else {
-                    // דסקטופ - הלוגיקה המתוקנת
-                    const tooltipWidth = Math.min(420, window.innerWidth * 0.9);
-                    const margin = 12;
-
-                    // Calculate available space on each side
-                    const spaceLeft = left;
-                    const spaceRight = window.innerWidth - (left + width);
-
-                    if(spaceAbove > 140){ // place above
-                        let tl;
-                        if(spaceRight >= tooltipWidth + 12){
-                            tl = left;
-                        } else if(spaceLeft >= tooltipWidth + 12){
-                            tl = left + width - tooltipWidth;
-                        } else {
-                            tl = Math.max(12, Math.min(left + width/2 - tooltipWidth/2, window.innerWidth - tooltipWidth - 12));
-                        }
-                        tooltip.style.left = tl + 'px';
-                        tooltip.style.top = (top - 160 - margin) + 'px'; // הגדלת המרווח למעלה
-                        tooltip.style.bottom = 'auto';
-                        tooltip.style.maxWidth = tooltipWidth + 'px';
-                        tooltip.style.width = 'auto';
-                        tooltip.style.transform = 'none';
-
-                        // מיקום החץ
-                        arrow.style.left = (left + width/2 - 14) + 'px';
-                        arrow.style.top = (top - 6) + 'px';
-                        arrow.style.display = 'block';
-                    }else{ // place below
-                        let tl;
-                        if(spaceRight >= tooltipWidth + 12){
-                            tl = left;
-                        } else if(spaceLeft >= tooltipWidth + 12){
-                            tl = left + width - tooltipWidth;
-                        } else {
-                            tl = Math.max(12, Math.min(left + width/2 - tooltipWidth/2, window.innerWidth - tooltipWidth - 12));
-                        }
-                        tooltip.style.left = tl + 'px';
-                        tooltip.style.top = (top + height + margin) + 'px';
-                        tooltip.style.bottom = 'auto';
-                        tooltip.style.maxWidth = tooltipWidth + 'px';
-                        tooltip.style.width = 'auto';
-                        tooltip.style.transform = 'none';
-
-                        // מיקום החץ
-                        arrow.style.left = (left + width/2 - 14) + 'px';
-                        arrow.style.top = (top + height + margin - 8) + 'px';
-                        arrow.style.display = 'block';
+        _waitForElement(selector, timeout = 5000) {
+            return new Promise((resolve, reject) => {
+                const startTime = Date.now();
+                const interval = setInterval(() => {
+                    const el = this._targetDoc.querySelector(selector);
+                    if (el && (el.offsetWidth > 0 || el.offsetHeight > 0)) {
+                        clearInterval(interval);
+                        resolve(el);
+                    } else if (Date.now() - startTime > timeout) {
+                        clearInterval(interval);
+                        reject(new Error(`Element "${selector}" not visible after ${timeout}ms`));
                     }
-                }
+                }, 100);
+            });
+        },
+
+        init(config) {
+            this._steps = config.steps;
+            this._targetDoc = config.targetDocument || document;
+            if (!document.querySelector('.tour-overlay-container')) {
+                this._createDOMElements();
+                this._bindEvents();
+            }
+        },
+
+        start() {
+            if (this._isActive) return;
+            this._isActive = true;
+            this._targetDoc.body.classList.add('tour-active');
+            this._elements.container.classList.add('tour-active');
+            this._showStep(0);
+        },
+
+        end() {
+            if (!this._isActive) return;
+            this._isActive = false;
+            this._targetDoc.body.classList.remove('tour-active');
+            this._elements.container.classList.remove('tour-active');
+            this._elements.tooltip.classList.remove('visible');
+        },
+
+        async _showStep(index) {
+            if (index < 0 || index >= this._steps.length) {
+                return this.end();
+            }
+            this._currentStepIndex = index;
+            const step = this._steps[index];
+
+            this._elements.tooltip.classList.remove('visible');
+            if (typeof step.onBeforeStep === 'function') {
+                await step.onBeforeStep();
             }
 
-            function showStep(i){
-                if(!ensureIframeDoc()){
-                    alert('אין גישה ל-iframe. ודא ש-guided_tour.html ו-homepage.html מאוחסנים באותו מקור (local).');
-                    return;
+            this._updateTooltipUI(step, index);
+
+            if (step.selector) {
+                try {
+                    const targetElement = await this._waitForElement(step.selector);
+                    this._elements.highlight.style.display = 'block';
+                    this._positionElements(targetElement, step.position);
+                } catch (error) {
+                    console.error(error);
+                    this._elements.highlight.style.display = 'none';
+                    this._elements.tooltip.classList.add('final-step-modal');
                 }
-                if(i<0 || i>=steps.length){endTour();return}
-                stepIndex = i;
-                const s = steps[i];
-                tipTitle.textContent = s.title || '';
-                tipText.textContent = s.text || '';
-
-                // find element
-                let el = findInIframe(s.selector);
-
-                // Debug logging
-                console.log('Step:', s.id, 'Selector:', s.selector, 'Found element:', el);
-                if(el) {
-                    const rect = el.getBoundingClientRect();
-                    console.log('Element position:', rect);
-                }
-
-                // fallback: try by id if selector was not found
-                if(!el && s.selector && s.selector.includes('#')){
-                    try{
-                        el = iframeDoc.getElementById(s.selector.replace('#',''));
-                        console.log('Fallback by ID found:', el);
-                    }catch(e){}
-                }
-
-                // if not found, attempt to search by text (hebrew) - best-effort
-                if(!el && s.title){
-                    const text = s.title.trim();
-                    const all = iframeDoc.querySelectorAll('button, a, div, span, select, input');
-                    for(const node of all){
-                        if(node.innerText && node.innerText.includes(text)){
-                            el = node;
-                            console.log('Found by text search:', el);
-                            break;
-                        }
-                    }
-                }
-
-                // Better fallback for navigation buttons
-                if(!el && s.selector && s.selector.includes("nav-btn")){
-                    // Try to find navigation buttons by their text content
-                    const navButtons = iframeDoc.querySelectorAll('.nav-btn');
-                    for(const btn of navButtons){
-                        const btnText = btn.textContent || btn.innerText;
-                        if((s.id === 'reports-nav' && btnText.includes('דוחות')) ||
-                           (s.id === 'calendar-nav' && btnText.includes('יומן')) ||
-                           (s.id === 'researchers-nav' && btnText.includes('חוקרים'))){
-                            el = btn;
-                            console.log('Found nav button by text:', el, btnText);
-                            break;
-                        }
-                    }
-                }
-
-                // show prev/next buttons
-                prevBtn.style.display = (i>0)?'inline-flex':'none';
-                nextBtn.textContent = (i===steps.length-1)?'סיום':'המשך';
-
-                // Special handling for final step - always center it
-                if(s.id === 'tour-complete'){
-                    highlight.style.display='none';
-                    tooltip.style.display='block';
-                    tooltip.classList.add('tour-complete');
-                    arrow.style.display='none';
-                } else {
-                    tooltip.classList.remove('tour-complete');
-                    if(el){
-                        placeOverlayOnElement(el);
-                    }else{
-                        console.warn('Element not found for step:', s.id, s.selector);
-                        // fallback - show tooltip at center
-                        highlight.style.display='none';
-                        tooltip.style.display='block';
-                        arrow.style.display='none';
-                        const isMobile = window.innerWidth <= 600;
-                        if(isMobile) {
-                            tooltip.style.left = '2.5vw';
-                            tooltip.style.top = '20%';
-                            tooltip.style.bottom = 'auto';
-                            tooltip.style.width = '95vw';
-                            tooltip.style.maxWidth = '95vw';
-                        } else {
-                            tooltip.style.left = (window.innerWidth/2 - 210) + 'px';
-                            tooltip.style.top = (120 + i*20) + 'px';
-                            tooltip.style.bottom = 'auto';
-                            tooltip.style.maxWidth = '420px';
-                            tooltip.style.width = 'auto';
-                        }
-                    }
-                }
-
-                // If action is click and we are moving forward, clicking will be executed when pressing next
+            } else {
+                this._elements.highlight.style.display = 'none';
+                this._elements.tooltip.classList.add('final-step-modal');
             }
 
-            function nextStep(){
-                const s = steps[stepIndex];
-                // Track current screen state before moving forward
-                if(s && s.action === 'click'){
-                    stepsHistory.push({
-                        stepIndex: stepIndex,
-                        screenState: getCurrentScreenState()
-                    });
-                }
+            this._elements.tooltip.classList.add('visible');
+            this._elements.tooltip.focus();
+        },
 
-                let el = s && ensureIframeDoc() ? findInIframe(s.selector) : null;
-                if(s && s.action==='click' && el){
-                    try{ el.click(); }catch(e){ console.warn('click failed', e); }
-                    // wait a bit for UI to update inside iframe
-                    setTimeout(()=> showStep(stepIndex+1), 600);
-                    return;
-                }
-                showStep(stepIndex+1);
-            }
+        _next() { this._showStep(this._currentStepIndex + 1); },
+        _prev() { this._showStep(this._currentStepIndex - 1); },
 
-            function prevStep(){
-                // Navigate back to previous screen state if available
-                if(stepsHistory.length > 0){
-                    const prevState = stepsHistory.pop();
-                    restorePreviousScreenState(prevState);
-                    setTimeout(()=> showStep(stepIndex-1), 300);
-                } else {
-                    showStep(stepIndex-1);
-                }
-            }
+        _createDOMElements() {
+            const container = document.createElement('div');
+            container.className = 'tour-overlay-container';
+            // The mask is no longer needed, highlight creates the effect
+            container.innerHTML = `
+                <div class="tour-highlight" style="display:none;"></div>
+                <div class="tour-tooltip" role="dialog" aria-modal="true" tabindex="-1" style="display:none;">
+                    <div class="tour-arrow"></div>
+                    <button class="tour-close-btn" aria-label="Close tour">&times;</button>
+                    <h3 class="tour-title"></h3>
+                    <p class="tour-text"></p>
+                    <div class="tour-controls">
+                        <span class="tour-step-counter"></span>
+                        <div class="tour-buttons">
+                            <button class="tour-btn secondary tour-prev-btn">הקודם</button>
+                            <button class="tour-btn primary tour-next-btn">הבא</button>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(container);
 
-            function getCurrentScreenState(){
-                // Detect which screen is currently visible
-                if(!ensureIframeDoc()) return 'unknown';
-                const screens = ['main-screen', 'daily-report-screen', 'reports-screen', 'calendar-screen', 'active-researchers-screen', 'user-profile-screen'];
-                for(const screen of screens){
-                    const el = iframeDoc.getElementById(screen);
-                    if(el && !el.classList.contains('hidden')){
-                        return screen;
-                    }
-                }
-                return 'main-screen'; // default
-            }
+            this._elements = {
+                container,
+                highlight: container.querySelector('.tour-highlight'),
+                tooltip: container.querySelector('.tour-tooltip'),
+                arrow: container.querySelector('.tour-arrow'),
+                title: container.querySelector('.tour-title'),
+                text: container.querySelector('.tour-text'),
+                counter: container.querySelector('.tour-step-counter'),
+                prevBtn: container.querySelector('.tour-prev-btn'),
+                nextBtn: container.querySelector('.tour-next-btn'),
+                closeBtn: container.querySelector('.tour-close-btn'),
+            };
+        },
 
-            function restorePreviousScreenState(state){
-                if(!ensureIframeDoc() || !state) return;
-                // Try to navigate back to the previous screen
-                const targetScreen = state.screenState;
-                const screenMap = {
-                    'main-screen': "button[onclick*='main']",
-                    'reports-screen': "button[onclick*='reports']",
-                    'calendar-screen': "button[onclick*='calendar']",
-                    'active-researchers-screen': "button[onclick*='active-researchers']",
-                    'user-profile-screen': ".user-icon"
-                };
-
-                const navSelector = screenMap[targetScreen];
-                if(navSelector){
-                    const navEl = iframeDoc.querySelector(navSelector);
-                    if(navEl){
-                        try{ navEl.click(); }catch(e){ console.warn('navigation back failed', e); }
-                    }
-                }
-            }
-
-            function startTour(){
-                // הפעלת מצב הדרכה - הסתרת הבאנר והצגת האינדיקטור
-                document.body.classList.add('tour-active');
-                tourIndicator.style.display = 'flex';
-                overlay.style.display='block';
-                overlay.setAttribute('aria-hidden','false');
-                // make sure iframe has loaded
-                if(!ensureIframeDoc()){ alert('ממתין לטעינת דף הבית...'); }
-                showStep(0);
-            }
-
-            function endTour(){
-                overlay.style.display='none';
-                highlight.style.display='none';
-                tooltip.style.display='none';
-                arrow.style.display='none';
-                tooltip.classList.remove('tour-complete');
-                tourIndicator.style.display = 'none';
-                // החזרת התצוגה הרגילה
-                document.body.classList.remove('tour-active');
-
-                // מחיקה מלאה של ה-overlay שנוצר במצב embedded
-                const guidedTourOverlay = document.getElementById('guided-tour-overlay');
-                if(guidedTourOverlay) {
-                    guidedTourOverlay.remove();
-                }
-
-                // אם זה השלב האחרון (tour-complete), נחזור לדף הבית הרגיל
-                if(stepIndex === steps.length - 1){
-                    // במקרה של מצב standalone, פשוט מסירים את מצב ההדרכה
-                    if(!embeddedMode && window.location.pathname.includes('guided_tour.html')){
-                        // אופציונלי: אפשר לנווט לדף הבית הרגיל
-                        // window.location.href = 'homepage.html';
-                    }
-                }
-            }
-
-            if(startBtn){
-                startBtn.addEventListener('click', startTour);
-            } else if(embeddedMode){
-                // when injected into the host page there is no start button — auto-open the tour
-                startTour();
-            }
-
-            skipBtn.addEventListener('click', endTour);
-            nextBtn.addEventListener('click', ()=>{ if(stepIndex===steps.length-1){ endTour(); } else nextStep(); });
-            prevBtn.addEventListener('click', prevStep);
-            closeTourIndicator.addEventListener('click', endTour);
-
-            if(openHome){ openHome.addEventListener('click', ()=>{ window.open('homepage.html','_blank'); }); }
-
-            // hide overlay initially (unless embeddedMode where we may auto-open)
-            if(!embeddedMode) overlay.style.display='none';
-
-            // Wait for iframe to load and then try to sync some basic styling
-            if(iframe) {
-                iframe.addEventListener('load', ()=>{
-                    try{
-                        // small courtesy: scroll iframe to top
-                        iframe.contentWindow.scrollTo(0,0);
-                    }catch(e){}
-                });
-            }
-
-            // Accessibility: close tour on ESC
-            window.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape') endTour(); });
-
-            // Handle window resize for responsive tooltip positioning
-            window.addEventListener('resize', ()=>{
-                if(overlay.style.display !== 'none') {
-                    showStep(stepIndex); // Re-position current step
+        _bindEvents() {
+            const el = this._elements;
+            el.nextBtn.addEventListener('click', () => this._next());
+            el.prevBtn.addEventListener('click', () => this._prev());
+            el.closeBtn.addEventListener('click', () => this.end());
+            // QA FIX: Clicking the dark overlay area (the container) closes the tour.
+            el.container.addEventListener('click', (e) => {
+                if (e.target === el.container) {
+                    this.end();
                 }
             });
+            window.addEventListener('keydown', e => {
+                if (!this._isActive) return;
+                if (e.key === 'Escape') this.end();
+                if (e.key === 'ArrowRight' && !e.target.matches('input, textarea')) this._next();
+                if (e.key === 'ArrowLeft' && !e.target.matches('input, textarea')) this._prev();
+            });
+            window.addEventListener('resize', () => {
+                if (this._isActive) this._showStep(this._currentStepIndex);
+            });
+        },
 
-        })();
-     </script>
+        _updateTooltipUI(step, index) {
+            const el = this._elements;
+            el.tooltip.style.display = 'block';
+            el.tooltip.classList.remove('final-step-modal');
+            el.title.textContent = step.title;
+            el.text.innerHTML = step.text;
+            el.counter.textContent = `${index + 1} / ${this._steps.length}`;
+            el.prevBtn.style.display = index === 0 ? 'none' : 'inline-block';
+            el.nextBtn.textContent = index === this._steps.length - 1 ? 'סיום' : 'הבא';
+        },
+
+        _positionElements(target, preferredPlacement = 'bottom') {
+            const rect = target.getBoundingClientRect();
+            const tt = this._elements.tooltip;
+            const space = {
+                top: rect.top, bottom: window.innerHeight - rect.bottom,
+                left: rect.left, right: window.innerWidth - rect.right,
+            };
+
+            let placement = preferredPlacement;
+            if (space[placement] < tt.offsetHeight + 20) {
+                placement = Object.keys(space).reduce((a, b) => space[a] > space[b] ? a : b);
+            }
+
+            tt.dataset.placement = placement;
+            const p = 4; // Smaller padding for a tighter fit
+            this._elements.highlight.style.cssText = `
+                display: block; top: ${rect.top - p}px; left: ${rect.left - p}px;
+                width: ${rect.width + 2 * p}px; height: ${rect.height + 2 * p}px;
+            `;
+
+            let pos = {};
+            switch (placement) {
+                case 'top': pos = { top: rect.top - tt.offsetHeight - 15, left: rect.left + rect.width / 2 - tt.offsetWidth / 2 }; break;
+                case 'left': pos = { top: rect.top + rect.height / 2 - tt.offsetHeight / 2, left: rect.left - tt.offsetWidth - 15 }; break;
+                case 'right': pos = { top: rect.top + rect.height / 2 - tt.offsetHeight / 2, left: rect.right + 15 }; break;
+                default: pos = { top: rect.bottom + 15, left: rect.left + rect.width / 2 - tt.offsetWidth / 2 }; break;
+            }
+
+            pos.left = Math.max(10, Math.min(pos.left, window.innerWidth - tt.offsetWidth - 10));
+            pos.top = Math.max(10, Math.min(pos.top, window.innerHeight - tt.offsetHeight - 10));
+
+            tt.style.top = `${pos.top}px`;
+            tt.style.left = `${pos.left}px`;
+        },
+    };
+
+    if (window.self !== window.top) {
+        const iframe = window.parent.document.getElementById('appFrame');
+        if (iframe) {
+            iframe.addEventListener('load', () => {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                initializeTour(iframeDoc);
+            });
+        }
+    } else {
+        initializeTour(document);
+    }
+
+    function initializeTour(doc) {
+        const navigateTo = async (selector) => {
+            const el = doc.querySelector(selector);
+            if (el) el.click();
+        };
+
+        const tourSteps = [
+            {
+                title: 'ברוכים הבאים למערכת 👋',
+                text: 'זהו המסך הראשי שלכם. מכאן תוכלו לראות במבט מהיר התראות על ימים בהם טרם דיווחתם, ולהתחיל דיווח חדש.',
+                selector: '#main-screen',
+            },
+            {
+                title: 'הוספת דיווח חדש',
+                text: 'הכפתור המרכזי לפתיחת טופס דיווח. <b>חשוב לדעת:</b> בימים א\'-ד\' תוכלו להוסיף דיווח <b>יומי-שעתי</b> בלבד. ביום חמישי, המערכת תציע לכם בחירה בין דיווח יומי לדיווח <b>שבועי</b> מרוכז.',
+                selector: '#add-report-btn',
+            },
+            {
+                title: 'סרגל הניווט הראשי',
+                text: 'מכאן תוכלו לעבור בקלות בין המסכים המרכזיים: דוחות, יומן חזותי, וניהול רשימת החוקרים שלכם. בואו נעבור עליהם במהירות.',
+                selector: '.navigation',
+                position: 'bottom',
+            },
+            {
+                title: 'מסך הדוחות 📄',
+                text: 'כאן תוכלו לסנן ולהפיק דוחות חודשיים ושנתיים. הדו"ח מפרט את סך השעות לכל חוקר, אחוז השעות מהסך הכל, ופירוט "משימות אחרות" שבוצעו.',
+                selector: '#reports-screen',
+                onBeforeStep: () => navigateTo(".nav-btn[onclick*='reports']"),
+            },
+            {
+                title: 'תצוגת יומן 📅',
+                text: 'היומן הוא הכלי שלכם למעקב חזותי. ימים עם דיווחים קיימים מסומנים בירוק, מה שמקל על זיהוי מהיר של ימים שבהם חסר דיווח.',
+                selector: '#calendar-grid',
+                position: 'top',
+                onBeforeStep: () => navigateTo(".nav-btn[onclick*='calendar']"),
+            },
+            {
+                title: 'ניהול חוקרים פעילים 🧑‍🔬',
+                text: 'זהו מסך חשוב מאוד! <b>רק החוקרים שתסמנו כאן יופיעו</b> ברשימת הבחירה בטופס הדיווח. זה חוסך זמן ומבטיח שהרשימה שלכם תמיד רלוונטית.',
+                selector: '#researchers-list',
+                position: 'top',
+                onBeforeStep: () => navigateTo(".nav-btn[onclick*='active-researchers']"),
+            },
+            {
+                title: 'כללים לדיווח שבועי 💡',
+                text: 'שימו לב: דיווח שבועי זמין <b>רק ביום חמישי</b>. בנוסף, אם כבר דיווחתם דיווחים יומיים במהלך השבוע, <b>לא תוכלו להגיש דיווח שבועי</b> עבור אותו שבוע ותצטרכו להמשיך בדיווח יומי.',
+                selector: '.navigation',
+                position: 'bottom',
+            },
+            {
+                title: 'סיימנו! 🚀',
+                text: 'אתם מוכנים להתחיל. זכרו לדווח בזמן ולהשתמש בכלים שהמערכת מציעה לכם. בהצלחה!',
+                onBeforeStep: () => navigateTo(".nav-btn[onclick*='main']"),
+            },
+        ];
+
+        GuidedTour_QA_Enhanced.init({
+            steps: tourSteps,
+            targetDocument: doc,
+        });
+
+        if (window.self === window.top) {
+            setTimeout(() => GuidedTour_QA_Enhanced.start(), 200);
+        }
+    }
+    </script>
 </body>
 </html>

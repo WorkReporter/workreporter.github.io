@@ -1743,200 +1743,52 @@
     <script src="/assets/js/admin.js"></script>
     <!-- Guided tour overlay injector (opens guided_tour.html inside the app window) -->
 <script>
-    // Minimal injector: fetch guided_tour.html and inject its body/styles/scripts into the current page
-    // Keeps the tour implementation inside guided_tour.html; only this small injector lives in homepage.html
-    function openGuidedTour(){
-        if(document.getElementById('guided-tour-overlay')) return; // already injected
-        fetch('guided_tour.html').then(r=>r.text()).then(html=>{
-            try{
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
+    // **QA FIX:** Streamlined, robust, and safe injection logic for the guided tour.
+    function openGuidedTour() {
+        // Prevent multiple injections
+        if (document.getElementById('guided-tour-container')) {
+            console.log("Tour is already active or injected.");
+            return;
+        }
 
-                // Inject styles from guided_tour head into current head (avoid duplicates by checking textContent)
-                const headStyles = Array.from(doc.head.querySelectorAll('style, link[rel="stylesheet"]'));
-                headStyles.forEach(node=>{
-                    // simple dedupe: skip if exact href/style already present
-                    if(node.tagName.toLowerCase()==='link'){
-                        const href = node.getAttribute('href');
-                        if(href && document.head.querySelector('link[href="'+href+'"]')) return;
-                        document.head.appendChild(node.cloneNode(true));
-                    } else {
-                        // style element
-                        const txt = node.textContent.trim();
-                        const exists = Array.from(document.head.querySelectorAll('style')).some(s=>s.textContent.trim()===txt);
-                        if(!exists) document.head.appendChild(node.cloneNode(true));
-                    }
-                });
+        fetch('guided_tour.html')
+            .then(response => response.text())
+            .then(html => {
+                const container = document.createElement('div');
+                container.id = 'guided-tour-container';
 
-                // הוספת סגנונות נוספים למצב embedded כדי לוודא מיקום נכון של הטולטיפים
-                const additionalStyles = document.createElement('style');
-                additionalStyles.textContent = `
-                    /* הכותרת במצב הדרכה - עם z-index גבוה יותר מהדרכה כדי להיות מעל הכל */
-                    body.tour-active .header {
-                        position: relative !important;
-                        z-index: 1000010 !important; /* הגבוה ביותר - מעל הכל */
-                        display: flex !important;
-                    }
+                const doc = new DOMParser().parseFromString(html, 'text/html');
 
-                    /* הניווט במצב הדרכה - גלוי אבל לא פעיל, מתחת לכותרת אבל מעל ההדרכה */
-                    body.tour-active .navigation {
-                        pointer-events: none !important;
-                        position: relative !important;
-                        z-index: 1000009 !important; /* מתחת לכותרת אבל מעל ההדרכה */
-                        opacity: 0.8 !important;
-                        filter: brightness(0.9) !important;
-                    }
+                // 1. Append styles
+                const style = doc.head.querySelector('style');
+                if (style) container.appendChild(style.cloneNode(true));
 
-                    /* האינדיקטור יהיה מתחת לכותרת והתפריט מבחינת מיקום ויזואלי */
-                    .tour-indicator {
-                        position: fixed !important;
-                        top: 140px !important; /* מתחת לכותרת והתפריט ב-Y axis */
-                        right: 10px !important;
-                        z-index: 100 !important; /* נמוך מאוד כדי להיות מתחת לכל הUI */
-                    }
+                // 2. Append script (must create a new script tag to execute)
+                const scriptContent = doc.body.querySelector('script').textContent;
+                const script = document.createElement('script');
+                script.textContent = scriptContent;
+                container.appendChild(script);
 
-                    /* הבטחה שהאינדיקטור יהיה מוצג */
-                    .tour-indicator[style*="display: flex"] {
-                        display: flex !important;
-                    }
+                // 3. Append the whole container to the body
+                document.body.appendChild(container);
 
-                    /* ה-overlay יהיה מעל הUI */
-                    .tour-overlay {
-                        z-index: 1000008 !important; /* מעל הUI */
-                    }
-
-                    /* המסגרת הכחולה תהיה מעל הכל כדי להדגיש את האלמנטים */
-                    .highlight {
-                        z-index: 1000011 !important; /* מעל הכותרת והתפריט */
-                        background: rgba(59, 130, 246, 0.1) !important; /* רקע שקוף קל */
-                    }
-
-                    /* הטולטיפים יהיו הגבוהים ביותר */
-                    .tooltip {
-                        z-index: 1000012 !important; /* הגבוה ביותר */
-                        /* הבטחה שהטולטיפ לא יחפוף על הכותרת מבחינת מיקום */
-                        margin-top: 10px !important;
-                    }
-
-                    /* התאמות נוספות למובייל */
-                    @media (max-width: 600px) {
-                        .tour-indicator {
-                            top: 130px !important; /* מתחת לכותרת והתפריט במובייל */
-                            right: 5px !important;
-                        }
-                    }
-
-                    /* הסתרת מסכי רקע שעלולים להפריע */
-                    body.tour-active #loading-screen {
-                        display: none !important;
-                    }
-
-                    /* וידוא שהכותרת תמיד תהיה בחזית במיקום העליון */
-                    .header {
-                        z-index: 1000010 !important;
-                        position: relative !important;
-                    }
-
-                    /* וידוא שהניווט יהיה מתחת לכותרת מבחינת z-index */
-                    .navigation {
-                        z-index: 1000009 !important;
-                        position: relative !important;
-                    }
-
-                    /* הבטחה שה-mask של ההדרכה לא יכסה את הכותרת */
-                    .mask {
-                        z-index: 1000008 !important;
-                    }
-                `;
-                document.head.appendChild(additionalStyles);
-
-                // Create overlay container and copy body children
-                const overlay = document.createElement('div');
-                overlay.id = 'guided-tour-overlay';
-                // remove the iframe from the fetched tour (we don't want to embed homepage inside homepage)
-                const cloneBody = doc.body.cloneNode(true);
-                const frame = cloneBody.querySelector('#appFrame');
-                if(frame) frame.remove();
-                // הסרת הבאנר העליון מההדרכה המוזרקת
-                const header = cloneBody.querySelector('header');
-                if(header) header.remove();
-                const footer = cloneBody.querySelector('footer');
-                if(footer) footer.remove();
-                overlay.innerHTML = cloneBody.innerHTML; // includes the tour DOM without iframe
-                 // make overlay cover page visually (guided_tour styles will apply)
-                 document.body.appendChild(overlay);
-
-                // Execute any scripts from the fetched document (in order)
-                const scripts = doc.querySelectorAll('script');
-                scripts.forEach(s=>{
-                    const newS = document.createElement('script');
-                    if(s.src){ newS.src = s.src; newS.async = false; }
-                    if(s.type) newS.type = s.type;
-                    if(!s.src) newS.textContent = s.textContent;
-                    document.body.appendChild(newS);
-                });
-
-                // small safety: if the injected tour contains a start button, trigger it so the tour opens immediately
-                setTimeout(()=>{
-                    const injectedStart = document.getElementById('start-tour');
-                    if(injectedStart){ try{ injectedStart.click(); }catch(e){} }
-
-                    // הוספת מחלקת tour-active לגוף הדף כדי להסתיר את הכותרת
-                    document.body.classList.add('tour-active');
-
-                    // וידוא שהאינדיקטור מוצג
-                    const tourIndicator = document.getElementById('tourIndicator');
-                    if(tourIndicator) {
-                        tourIndicator.style.display = 'flex';
-                        tourIndicator.style.zIndex = '1000002';
-                    }
-
-                    // הוספת מנגנון ניקוי כשההדרכה מסתיימת
-                    const cleanupTour = () => {
-                        document.body.classList.remove('tour-active');
-                        const guidedTourOverlay = document.getElementById('guided-tour-overlay');
-                        if(guidedTourOverlay) {
-                            guidedTourOverlay.remove();
-                        }
-                    };
-
-                    // האזנה לאירועי סגירה של ההדרכה
-                    const closeTourIndicator = document.getElementById('closeTourIndicator');
-                    const skipBtn = document.getElementById('skip-btn');
-                    const nextBtn = document.getElementById('next-btn');
-
-                    if(closeTourIndicator) {
-                        closeTourIndicator.addEventListener('click', cleanupTour);
-                    }
-                    if(skipBtn) {
-                        skipBtn.addEventListener('click', cleanupTour);
-                    }
-                    // כשלוחצים "סיום" בצעד האחרון
-                    if(nextBtn) {
-                        const originalNextClick = nextBtn.onclick;
-                        nextBtn.addEventListener('click', () => {
-                            // בדיקה אם זה הצעד האחרון
-                            const tooltip = document.getElementById('tooltip');
-                            if(tooltip && tooltip.classList.contains('tour-complete')) {
-                                setTimeout(cleanupTour, 100);
-                            }
-                        });
-                    }
-
-                    // האזנה ל-ESC key
-                    const escListener = (ev) => {
-                        if(ev.key === 'Escape') {
-                            cleanupTour();
-                            document.removeEventListener('keydown', escListener);
-                        }
-                    };
-                    document.addEventListener('keydown', escListener);
-
-                }, 150);
-
-            }catch(err){ console.error('Failed to inject guided tour', err); }
-        }).catch(err=>{ console.error('Could not load guided_tour.html', err); });
+            }).catch(error => {
+                console.error('Failed to load the guided tour.', error);
+                alert('מצטערים, לא ניתן היה לטעון את סיור ההדרכה.');
+            });
     }
+
+    // **QA FIX:** More robust CSS to ensure proper layering of app elements during the tour.
+    const tourStyleOverrides = document.createElement('style');
+    tourStyleOverrides.textContent = `
+        body.tour-active .header,
+        body.tour-active .navigation {
+            /* Ensure main UI is below the tour overlay but still visible if needed */
+            z-index: 9999 !important;
+            position: relative; /* z-index requires a position property */
+        }
+    `;
+    document.head.appendChild(tourStyleOverrides);
 </script>
 </body>
 </html>
