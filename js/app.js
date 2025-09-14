@@ -19,26 +19,6 @@
     window.auth = auth;
     window.database = database;
 
-    // small loading overlay helpers (show/hide)
-    function showLoading(message) {
-        try {
-            const overlay = document.getElementById('loading-screen');
-            const msgEl = document.getElementById('loading-message');
-            if (msgEl && message) msgEl.textContent = message;
-            if (overlay) overlay.classList.remove('hidden');
-        } catch (e) { /* ignore */ }
-    }
-    function hideLoading() {
-        try {
-            const overlay = document.getElementById('loading-screen');
-            if (overlay) overlay.classList.add('hidden');
-        } catch (e) { /* ignore */ }
-    }
-
-    // Expose for debugging if needed
-    window.showLoading = showLoading;
-    window.hideLoading = hideLoading;
-
     // Persistent login
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
 
@@ -63,9 +43,6 @@
     // ---------- Auth Flow ----------
     function init() {
         auth.onAuthStateChanged(async (user) => {
-            // show loading overlay while we resolve auth + initial data
-            showLoading('טוען את הנתונים שלך....');
-
             if (user) {
                 currentUser = user;
                 // Detect admin without exposing email: try privileged read allowed only to admin by rules
@@ -100,7 +77,7 @@
                         }
                     }
                     if (isAdmin) {
-                        window.location.href = '/admin-dashboard/manager_dashboard.html';
+                        window.location.href = '/admin-dashboard/index.html';
                     } else {
                         showScreen('main');
                     }
@@ -113,13 +90,10 @@
                         isAdmin = false;
                     }
                     if (isAdmin) {
-                        window.location.href = '/admin-dashboard/manager_dashboard.html';
+                        window.location.href = '/admin-dashboard/index.html';
                     } else {
                         showScreen('main');
                     }
-                }).finally(() => {
-                    // hide overlay after initial load attempts complete
-                    hideLoading();
                 });
             } else {
                 // cleanup listeners on sign-out
@@ -129,8 +103,6 @@
                 reports = [];
                 setAuthUIState(false);
                 showScreen('login');
-                // ensure overlay is hidden when showing login
-                hideLoading();
             }
         });
     }
@@ -269,19 +241,6 @@
             setInputValue('profile-last-name', userData.lastName || '');
             setInputValue('profile-position', userData.position || '');
             setInputValue('profile-email', userData.email || (currentUser ? currentUser.email : ''));
-            const profileMgr = document.getElementById('profile-my-manager');
-            if (profileMgr) {
-                // אם יש כבר שדות מפורקים השתמש בהם להרכבת הערך
-                if (userData.my_manager_email && userData.my_manager_fullName) {
-                    profileMgr.value = `${userData.my_manager_fullName}|${userData.my_manager_email}`;
-                } else {
-                    profileMgr.value = userData.my_manager || '';
-                }
-            }
-            // Update manager field visibility according to role
-            if (typeof updateManagerUIVisibility === 'function') {
-                updateManagerUIVisibility(userData.position || '');
-            }
         }).catch(() => {});
     }
 
@@ -659,7 +618,7 @@
             return false;
         });
 
-        // בדוק התנגשויות
+        // בדוק התנגשות
         const hasWeeklyReport = weekReports.some(r => r.type === 'weekly');
         const hasDailyReport = weekReports.some(r => r.type === 'daily');
 
@@ -716,7 +675,7 @@
                 return;
             }
         } else {
-            // אין דיוח - בודק אם ניתן ליצור חדש
+            // אין דיווח - בודק אם ניתן ליצור חדש
             const createValidation = canCreateNewReport(selectedDate);
             if (!createValidation.allowed) {
                 showError(createValidation.message);
@@ -746,49 +705,12 @@
             reportData.workStatus = workStatus;
 
             if (workStatus === 'worked') {
-                // Collect valid entries and validate them
-                const validEntries = [];
-                let hasValidationErrors = false;
-                let errorMessage = '';
-
-                document.querySelectorAll('#work-entries .work-entry').forEach((entry, index) => {
+                document.querySelectorAll('#work-entries .work-entry').forEach(entry => {
                     const researcher = entry.querySelector('.researcher-select')?.value || '';
                     const hours = parseFloat(entry.querySelector('.hours-input')?.value || '0') || 0;
-                    const detail = (entry.querySelector('textarea')?.value || '').trim();
-
-                    // Skip empty entries (no researcher selected)
-                    if (!researcher) return;
-
-                    // Validate hours > 0
-                    if (hours <= 0) {
-                        hasValidationErrors = true;
-                        errorMessage = `שורה ${index + 1}: חייב להזין מספר שעות גדול מ-0`;
-                        return;
-                    }
-
-                    // Validate required details for specific researcher types
-                    if ((researcher === 'משימות אחרות' || researcher === 'סמינר / קורס / הכשרה') && !detail) {
-                        hasValidationErrors = true;
-                        errorMessage = `שורה ${index + 1}: חייב להוסיף פירוט עבור "${researcher}"`;
-                        return;
-                    }
-
-                    validEntries.push({ researcher, hours, detail });
+                    const detail = (entry.querySelector('textarea')?.value) || '';
+                    if (researcher && hours > 0) reportData.entries.push({ researcher, hours, detail });
                 });
-
-                // Check for validation errors
-                if (hasValidationErrors) {
-                    showError(errorMessage);
-                    return;
-                }
-
-                // Check if no valid entries with hours
-                if (validEntries.length === 0) {
-                    showError('חייב להזין לפחות חוקר אחד עם מספר שעות גדול מ-0');
-                    return;
-                }
-
-                reportData.entries = validEntries;
             }
         } else {
             // דרישה: דיווח שבועי - הגעה אליו ביום ה' בלבד
@@ -801,39 +723,13 @@
             const week = getInputValue('report-week');
             reportData.week = week;
             const weeklyEntries = [];
-            let hasValidationErrors = false;
-            let errorMessage = '';
 
-            document.querySelectorAll('#weekly-entries .work-entry').forEach((entry, index) => {
+            document.querySelectorAll('#weekly-entries .work-entry').forEach(entry => {
                 const researcher = entry.querySelector('.researcher-select')?.value || '';
                 const days = parseFloat(entry.querySelector('.days-input')?.value || '0') || 0;
-                const detail = (entry.querySelector('textarea')?.value || '').trim();
-
-                // Skip empty entries (no researcher selected)
-                if (!researcher) return;
-
-                // Validate days > 0
-                if (days <= 0) {
-                    hasValidationErrors = true;
-                    errorMessage = `שורה ${index + 1}: חייב להזן מספר ימים גדול מ-0`;
-                    return;
-                }
-
-                // Validate required details for specific researcher types
-                if ((researcher === 'משימות אחרות' || researcher === 'סמינר / קורס / הכשרה') && !detail) {
-                    hasValidationErrors = true;
-                    errorMessage = `שורה ${index + 1}: חייב להוסיף פירוט עבור "${researcher}"`;
-                    return;
-                }
-
-                weeklyEntries.push({ researcher, days, detail });
+                const detail = (entry.querySelector('textarea')?.value) || '';
+                if (researcher && days > 0) weeklyEntries.push({ researcher, days, detail });
             });
-
-            // Check for validation errors
-            if (hasValidationErrors) {
-                showError(errorMessage);
-                return;
-            }
 
             if (weeklyEntries.length === 0) {
                 showError('אנא הזן לפחות שורה אחת לדיווח שבועי');
@@ -906,7 +802,7 @@
         const formTitle = document.querySelector('#daily-report-screen h2');
         if (formTitle) formTitle.textContent = 'עריכת דיווח קיים';
         const submitBtn = document.querySelector('#daily-report-screen .btn[onclick="submitReport()"]');
-        if (submitBtn) submitBtn.textContent = 'עדכן.י דיווח';
+        if (submitBtn) submitBtn.textContent = 'עדכן דיווח';
 
         // בחירת סוג הדיווח
         selectReportType(report.type);
@@ -1086,7 +982,7 @@
             </div>
             <div class="form-group detail-field" style="display: none;">
                 <label>פרט:</label>
-                <textarea rows="2" placeholder="הוספ.י פרטים נוספים..."></textarea>
+                <textarea rows="2" placeholder="הוסף פרטים נוספים..."></textarea>
             </div>
             <div class="form-group">
                 <label>שעות:</label>
@@ -1125,7 +1021,7 @@
             </div>
             <div class="form-group detail-field" style="display: none;">
                 <label>פרט:</label>
-                <textarea rows="2" placeholder="הוספ.י פרטים נוספים..."></textarea>
+                <textarea rows="2" placeholder="הוסף פרטים נוספים..."></textarea>
             </div>
             <div class="form-group">
                 <label>ימים:</label>
@@ -1280,7 +1176,7 @@
                 if (addBtnCalendar) {
                     const reportExists = div.classList.contains('has-report');
                     if (reportExists) {
-                        addBtnCalendar.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">edit</span>עריכת דיווח`;
+                        addBtnCalendar.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">edit</span>ערוך דיווח`;
                     } else {
                         addBtnCalendar.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add_circle</span>הוספת דיווח`;
                     }
@@ -1681,33 +1577,12 @@
         });
 
         const btn = document.querySelector('#user-profile-screen .btn');
-        if (btn) btn.textContent = isReadonly ? 'שמירה' : 'עריכה';
+        if (btn) btn.textContent = isReadonly ? 'שמור' : 'ערוך';
 
         // When toggling from editable back to readonly, save the values
         if (!isReadonly) {
 
-            const data = {
-                firstName: getInputValue('profile-first-name'),
-                lastName: getInputValue('profile-last-name'),
-                position: getInputValue('profile-position'),
-                email: getInputValue('profile-email')
-            };
-            if ((data.position || '') === 'מהנדס מחקר') {
-                const selVal = getInputValue('profile-my-manager') || '';
-                data.my_manager = selVal;
-                if (selVal.includes('|')) {
-                    const [fullName, email] = selVal.split('|');
-                    data.my_manager_fullName = fullName.trim();
-                    data.my_manager_email = email.trim();
-                } else {
-                    data.my_manager_fullName = '';
-                    data.my_manager_email = '';
-                }
-            } else {
-                data.my_manager = '';
-                data.my_manager_fullName = '';
-                data.my_manager_email = '';
-            }
+            const data = { firstName: getInputValue('profile-first-name'), lastName: getInputValue('profile-last-name'), position: getInputValue('profile-position'), email: getInputValue('profile-email') };
             if (currentUser) updateUserProfile(currentUser.uid, data).then(() => showPopup('הפרטים נשמרו'));
         }
     }
@@ -1787,29 +1662,7 @@
         }
         return auth.createUserWithEmailAndPassword(data.email, data.password).then(async (cred) => {
             const uid = cred.user.uid;
-            const payload = { firstName: data.firstName, lastName: data.lastName, position: data.position, email: data.email, createdAt: new Date().toISOString() };
-            if ((data.position || '') === 'מהנדס מחקר') {
-                payload.my_manager = data.my_manager || '';
-            }
-            await database.ref('users/' + uid).set(payload).catch(() => {});
-
-            // אם המשתמש הוא מנהל, הוסף אותו לרשימת המנהלים הגלובלית (לבחירה בלבד)
-            // הרשאות אמיתיות ניתנות רק דרך הכללים ב-firebase-rules.json
-            if (data.position === 'מנהל/ת') {
-                const managerData = {
-                    firstName: data.firstName,
-                    lastName: data.lastName,
-                    fullName: `${data.firstName} ${data.lastName}`,
-                    email: data.email,
-                    uid: uid,
-                    createdAt: new Date().toISOString(),
-                    isApproved: false // לא מאושר כמנהל אמיתי עד שלא יוסיף למיילים ב-rules
-                };
-                await database.ref('managers/' + uid).set(managerData).catch((error) => {
-                    console.error('Error adding manager to global list:', error);
-                });
-            }
-
+            await database.ref('users/' + uid).set({ firstName: data.firstName, lastName: data.lastName, position: data.position, email: data.email, createdAt: new Date().toISOString() }).catch(() => {});
             return cred;
         });
     }
@@ -1932,21 +1785,6 @@
         return `${startDate} - ${endDate}`;
     }
 
-    // Manager UI visibility helper (registration + profile)
-    function updateManagerUIVisibility(positionVal) {
-        // Registration screen
-        const regGroup = document.getElementById('register-my-manager-group');
-        const regWarn = document.getElementById('register-manager-warning');
-        if (regGroup) regGroup.style.display = (positionVal === 'מהנדס מחקר') ? '' : 'none';
-        if (regWarn) regWarn.style.display = (positionVal === 'מנהל/ת') ? '' : 'none';
-
-        // Profile screen
-        const profGroup = document.getElementById('profile-my-manager-group');
-        const profWarn = document.getElementById('profile-manager-warning');
-        const effectivePos = positionVal || (document.getElementById('profile-position')?.value || '');
-        if (profGroup) profGroup.style.display = (effectivePos === 'מהנדס מחקר') ? '' : 'none';
-        if (profWarn) profWarn.style.display = (effectivePos === 'מנהל/ת') ? '' : 'none';
-    }
     /**
      * מחזיר את מפתח האחסון לשבוע של תאריך נתון
      * @param {Date} date התאריך לבדיקה
@@ -1997,9 +1835,6 @@
             setHTML('register-messages', '');
 
             const data = { firstName: getInputValue('register-first-name'), lastName: getInputValue('register-last-name'), position: getInputValue('register-position'), email: getInputValue('register-email'), password: getInputValue('register-password') };
-            if (data.position === 'מהנדס מחקר') {
-                data.my_manager = getInputValue('register-my-manager') || '';
-            }
             const confirm = getInputValue('register-confirm-password');
             if (data.password !== confirm) { setHTML('register-messages', '<div class="error-message">סיסמאות אינן תואמות</div>'); if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'הרשמה'; } this.dataset.loading = '0'; return; }
 
@@ -2020,12 +1855,6 @@
                 this.dataset.loading = '0';
             }
         });
-        // Role-based manager UI
-        const regPos = document.getElementById('register-position');
-        if (regPos) {
-            regPos.addEventListener('change', function(){ updateManagerUIVisibility(this.value); });
-            updateManagerUIVisibility(regPos.value);
-        }
         const resetForm = document.getElementById('reset-password-form');
         if (resetForm) resetForm.addEventListener('submit', function (e) {
             e.preventDefault(); const email = getInputValue('reset-email'); auth.sendPasswordResetEmail(email).then(() => setHTML('forgot-password-messages', '<div class="success-message">קישור לשחזור סיסמה נשלח למייל שלך - (עשוי לקחת מספר דקות)</div>')).catch(err => setHTML('forgot-password-messages', `<div class="error-message">${translateErrorMessage(err)}</div>`));
@@ -2151,111 +1980,4 @@
         }
     }
     window.addNewResearcher = addNewResearcher;
-
-    // ---------- Manager Management Functions ----------
-
-    /**
-     * טוען רשימת מנהלים מ-Firebase
-     * @returns {Promise<Array>} רשימת מנהלים
-     */
-    async function loadManagersList() {
-        try {
-            const snapshot = await database.ref('managers').once('value');
-            const managers = snapshot.val() || {};
-
-            // המר את אובייקט המנהלים למערך
-            const managersList = Object.entries(managers).map(([id, manager]) => ({
-                id,
-                fullName: manager.fullName || `${manager.firstName} ${manager.lastName}`,
-                email: manager.email,
-                firstName: manager.firstName,
-                lastName: manager.lastName
-            }));
-
-            return managersList;
-        } catch (error) {
-            console.error('Error loading managers list:', error);
-            return [];
-        }
-    }
-
-    /**
-     * מעדכן את רשימת המנהלים ב-dropdown של הפרופיל
-     */
-    async function updateManagersDropdown() {
-        const managerSelect = document.getElementById('profile-my-manager');
-        const loadingElement = document.getElementById('manager-loading');
-
-        if (!managerSelect) return;
-
-        try {
-            if (loadingElement) loadingElement.style.display = 'block';
-
-            const managers = await loadManagersList();
-
-            // שמור את הבחירה הנוכחית
-            const currentValue = managerSelect.value;
-
-            // נקה את הרשימה הקיימת
-            managerSelect.innerHTML = '';
-
-
-
-            // הוסף מנהלים לרשימה
-            managers.forEach(manager => {
-                const option = document.createElement('option');
-                option.value = `${manager.fullName}|${manager.email}`;
-                option.textContent = `${manager.fullName} (${manager.email})`;
-                managerSelect.appendChild(option);
-            });
-
-            // החזר את הבחירה הקיימת אם קיימת
-            if (currentValue) {
-                managerSelect.value = currentValue;
-            }
-
-            if (loadingElement) loadingElement.style.display = 'none';
-
-        } catch (error) {
-            console.error('Error updating managers dropdown:', error);
-            if (loadingElement) {
-                loadingElement.textContent = 'שגיאה בטעינת רשימת מנהלים';
-                loadingElement.style.color = '#dc2626';
-            }
-        }
-    }
-
-    /**
-     * מעדכן את הנראות של שדה המנהל לפי התפקיד
-     * @param {string} position התפקיד
-     */
-    function updateManagerUIVisibility(position) {
-        const managerGroup = document.getElementById('profile-my-manager-group');
-        const managerWarning = document.getElementById('profile-manager-warning');
-        const registerManagerNote = document.getElementById('register-manager-selection-note');
-        const registerManagerWarning = document.getElementById('register-manager-warning');
-
-        if (position === 'מהנדס מחקר') {
-            if (managerGroup) {
-                managerGroup.style.display = 'block';
-                updateManagersDropdown(); // טען רשימת מנהלים
-            }
-            if (managerWarning) managerWarning.style.display = 'none';
-            if (registerManagerNote) registerManagerNote.style.display = 'block';
-            if (registerManagerWarning) registerManagerWarning.style.display = 'none';
-        } else if (position === 'מנהל/ת') {
-            if (managerGroup) managerGroup.style.display = 'none';
-            if (managerWarning) managerWarning.style.display = 'block';
-            if (registerManagerNote) registerManagerNote.style.display = 'none';
-            if (registerManagerWarning) registerManagerWarning.style.display = 'block';
-        } else {
-            if (managerGroup) managerGroup.style.display = 'none';
-            if (managerWarning) managerWarning.style.display = 'none';
-            if (registerManagerNote) registerManagerNote.style.display = 'none';
-            if (registerManagerWarning) registerManagerWarning.style.display = 'none';
-        }
-    }
-
-    // חשוף את הפונקציה לשימוש גלובלי
-    window.updateManagerUIVisibility = updateManagerUIVisibility;
 })();

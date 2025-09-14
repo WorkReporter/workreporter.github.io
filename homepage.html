@@ -1376,9 +1376,25 @@
         .total-display { background: linear-gradient(180deg, var(--brand-blue-050) 0%, var(--neutral-100) 100%); }
 
         .footer { color: var(--neutral-500); }
+
+        /* Loading overlay styles */
+        .loading-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(7, 17, 34, 0.55); z-index: 20000; }
+        .loading-overlay.hidden { display: none; }
+        .loading-box { background: linear-gradient(180deg, var(--white, #fff) 0%, rgba(245, 249, 255, 0.95) 100%); padding: 20px 28px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 12px 40px rgba(2, 24, 43, 0.25); border: 1px solid rgba(0,0,0,0.04); max-width: 90%; }
+        .loading-box p { color: var(--neutral-700, #334155); font-weight: 600; }
+        .spinner { width: 48px; height: 48px; border-radius: 50%; border: 5px solid rgba(74, 155, 224, 0.25); border-top-color: var(--brand-blue-700, #165ea8); animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
+    <!-- Loading overlay shown during initial auth/data load -->
+    <div id="loading-screen" class="loading-overlay hidden" role="status" aria-live="polite">
+        <div class="loading-box" role="document">
+            <div class="spinner" aria-hidden="true"></div>
+            <p id="loading-message">טוען את הנתונים שלך....</p>
+        </div>
+    </div>
+
     <div class="header">
         <div class="user-icon" onclick="showScreen('user-profile')"><span class="material-symbols-outlined" aria-hidden="true">account_circle</span></div>
         <h1>מערכת דיווח שעות - המכון להנדסת מערכות חקלאיות וביולוגיות</h1>
@@ -1388,13 +1404,14 @@
         </div>
     </div>
 
+
             <div class="navigation" style="display:none;">
             <button class="nav-btn active" onclick="showScreen('main')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">home</span>בית</button>
             <button class="nav-btn" onclick="showScreen('active-researchers')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">group</span>חוקרים פעילים</button>
             <button class="nav-btn" onclick="showScreen('calendar')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">calendar_month</span>יומן</button>
             <button class="nav-btn" onclick="showScreen('reports')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">insights</span>דוחות</button>
             <button class="nav-btn" onclick="showScreen('about')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">info</span>אודות</button>
-            <button id="admin-nav-btn" class="nav-btn" onclick="showScreen('admin')" style="display:none;"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">admin_panel_settings</span>ממשק מנהל</button>
+            <button id="admin-nav-btn" class="nav-btn" onclick="showScreen('admin')" style="display:none;"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">admin_panel_settings</span>ממשק מנהל/ת</button>
         </div>
 
     <div id="login-screen" class="auth-container">
@@ -1427,9 +1444,16 @@
                 <div class="form-group"><label>שם פרטי:</label><input type="text" id="register-first-name" required></div>
                 <div class="form-group"><label>שם משפחה:</label><input type="text" id="register-last-name" required></div>
                 <div class="form-group"><label>תפקיד:</label><select id="register-position" required>
-                    <option value="מנהל">מנהל</option>
                     <option value="מהנדס מחקר">מהנדס מחקר</option>
+                                        <option value="מנהל/ת">מנהל/ת</option>
+
                 </select></div>
+                <div id="register-manager-warning" class="info-message" style="display:none; margin-top:10px;">
+                    ⚠️ שים/י לב! ההרשאות בפועל למנהל/ת ניתנות במערכת. אם את/ה לא באמת מנהל/ת לא תוכל/י להשתמש במערכת.
+                </div>
+                <div class="info-message" id="register-manager-selection-note" style="display:none; margin-top:10px; background:#e3f2fd; border-color:#2196f3; color:#1976d2;">
+                    📋 בחירת מנהל/ת שלך תתבצע לאחר ההתחברות בעמוד "פרטי עובד"
+                </div>
                 <div class="form-group"><label>אימייל ארגוני:</label><input type="email" id="register-email" required></div>
                 <div class="form-group"><label>סיסמה:</label><input type="password" id="register-password" required minlength="6"></div>
                 <div class="form-group"><label>אימות סיסמה:</label><input type="password" id="register-confirm-password" required minlength="6"></div>
@@ -1462,9 +1486,21 @@
         <div class="form-group"><label>שם משפחה:</label><input type="text" id="profile-last-name" readonly style="background-color: #f9fafb;"></div>
         <div class="form-group"><label>תפקיד:</label>
             <select id="profile-position" disabled style="background-color: #f9fafb;">
-                <option value="מנהל">מנהל</option>
+                <option value="מנהל/ת">מנהל/ת</option>
                 <option value="מהנדס מחקר">מהנדס מחקר</option>
             </select>
+        </div>
+        <div id="profile-manager-warning" class="info-message" style="display:none; margin-top:10px;">
+            ⚠️ שים/י לב! ההרשאות בפועל למנהל/ת ניתנות במערכת. אם את/ה לא באמת מנהל/ת לא תוכל/י להשתמש במערכת.
+        </div>
+        <div class="form-group" id="profile-my-manager-group" style="display:none;">
+            <label>מנהל/ת שלי:</label>
+            <select id="profile-my-manager" disabled style="background-color: #f9fafb;">
+                <option value="">בחר/י מנהל/ת</option>
+            </select>
+            <div id="manager-loading" style="display:none; color: #64748b; font-size: 14px; margin-top: 5px;">
+                טוען רשימת מנהלים...
+            </div>
         </div>
         <div class="form-group"><label>אי-מייל:</label><input type="email" id="profile-email" readonly style="background-color: #f9fafb;"></div>
         <button class="btn" onclick="editProfile()">להפוך עריכה לזמינה</button>
@@ -1546,7 +1582,7 @@
                     <div style="display: flex; align-items: flex-start; gap: 10px;">
                         <span class="material-symbols-outlined" style="color: #059669; margin-top: 2px;">admin_panel_settings</span>
                         <div>
-                            <strong>ממשק מנהל</strong>
+                            <strong>ממשק מנהל/ת</strong>
                             <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">כלי ניהול מתקדמים למנהלי המערכת</p>
                         </div>
                     </div>
@@ -1618,7 +1654,7 @@
     </div>
 
     <div id="admin-screen" class="container hidden">
-        <h2 style="text-align: center; margin-bottom: 20px;">ממשק מנהל</h2>
+        <h2 style="text-align: center; margin-bottom: 20px;">ממשק ניהול</h2>
         <div id="admin-messages" style="margin-bottom:15px;"></div>
         <div class="form-group">
             <label>חודש:</label>
@@ -1701,6 +1737,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/assets/js/config.js"></script>
+    <script src="/admin-dashboard/managers_admin.js"></script>
     <script src="/assets/js/app.js"></script>
     <script src="/assets/js/admin.js"></script>
 </body>
