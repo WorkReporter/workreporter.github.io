@@ -1,244 +1,386 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>דו"ח PDF - מערכת דיווח שעות</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>דו"ח שעות מסכם - מערכת דיווח שעות</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg-page: #f9fafb;
+            --bg-card: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --border-color: #e5e7eb;
+            --brand-primary: #2563eb;
+            --brand-secondary: #4f46e5;
+            --kpi-accent-1: #22c55e; /* Green */
+            --kpi-accent-2: #f97316; /* Orange */
+            --kpi-accent-3: #ef4444; /* Red */
+            --font-family: 'Heebo', system-ui, -apple-system, sans-serif;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
         }
-
+        * { box-sizing: border-box; margin:0; padding:0; }
         body {
-            font-family: 'Heebo', system-ui, -apple-system, sans-serif;
-            background: #f8fafc;
-            color: #334155;
-            line-height: 1.6;
-            min-height: 100vh;
-            padding: 2rem;
+            font-family: var(--font-family);
+            background: #e5e7eb; /* Background for the page outside the report */
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-
-        .header {
-            background: white;
-            padding: 1rem 2rem;
-            border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-
-        .header-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1e293b;
-        }
-
-        .container {
-            max-width: 800px;
+        .ui-container {
+            max-width: 1200px;
             margin: 0 auto;
-        }
-
-        .report-container {
-            background: white;
-            border-radius: 16px;
             padding: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
         }
-
-        .loading {
-            text-align: center;
-            padding: 3rem;
-            color: #64748b;
-        }
-
-        .loading::after {
-            content: '';
-            width: 40px;
-            height: 40px;
-            border: 3px solid #f1f5f9;
-            border-top: 3px solid #3b82f6;
-            border-radius: 50%;
-            margin: 1rem auto;
-            animation: spin 1s linear infinite;
-            display: block;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .stats-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 2rem;
-        }
-
-        .stats-table th,
-        .stats-table td {
-            padding: 1rem;
-            text-align: right;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .stats-table th {
-            background: #f8fafc;
-            font-weight: 600;
-            color: #374151;
-        }
-
-        .stats-table td {
-            color: #1e293b;
-        }
-
-        .percentage-cell {
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid #f1f5f9;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .btn {
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-
-        .btn-primary {
-            background: #3b82f6;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-        }
-
-        .btn-secondary:hover {
-            background: #e2e8f0;
-        }
-
-        .hours-item {
+        .ui-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem;
-            background: #f8fafc;
-            border-radius: 8px;
-            margin-bottom: 0.75rem;
-            border-right: 4px solid #3b82f6;
-        }
-
-        .hours-label {
-            font-weight: 500;
-            color: #374151;
-        }
-
-        .hours-value {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: #1e293b;
-        }
-
-        .pdf-content {
-            padding: 2rem;
-            background: white;
-            min-height: 800px;
-        }
-
-        .report-header {
-            text-align: center;
+            background: var(--bg-card);
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
             margin-bottom: 2rem;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 1rem;
+        }
+        .ui-header .title { font-weight: 800; font-size: 1.5rem; }
+
+        /* The printable report area */
+        .report-page {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: var(--bg-page);
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
-        .report-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
+        /* 1. Header & Profile */
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
         }
+        .report-header .logo { font-size: 1.8rem; font-weight: 800; color: var(--brand-primary); }
+        .report-header .company-info { text-align: left; }
+        .report-header .company-info h2 { font-size: 1.8rem; font-weight: 700; }
+        .report-header .company-info p { font-size: 1rem; color: var(--text-secondary); }
 
-        .report-subtitle {
+        .profile-card {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            margin-top: 2rem;
+            border: 1px solid var(--border-color);
+        }
+        .profile-item .label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+        .profile-item .value {
             font-size: 1.1rem;
-            color: #64748b;
+            font-weight: 600;
         }
 
+        /* Section Titles */
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 2.5rem 0 1.5rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* 2. KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+        .kpi-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-left: 5px solid var(--brand-primary);
+            transition: all 0.2s ease-in-out;
+        }
+        .kpi-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .kpi-card .icon { font-size: 1.75rem; margin-bottom: 1rem; opacity: 0.85; }
+        .kpi-card .value { font-size: 2.25rem; font-weight: 800; line-height: 1.1; }
+        .kpi-card .label { font-size: 1rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+        /* Specific KPI Colors */
+        .kpi-card.total-hours { border-left-color: var(--brand-primary); }
+        .kpi-card.total-hours .icon { color: var(--brand-primary); }
+        .kpi-card.top-category { border-left-color: var(--kpi-accent-1); }
+        .kpi-card.top-category .icon { color: var(--kpi-accent-1); }
+        .kpi-card.missing-days { border-left-color: var(--kpi-accent-3); }
+        .kpi-card.missing-days .icon { color: var(--kpi-accent-3); }
+
+        /* 3. Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        .chart-container {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            height: 450px; /* Control height */
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* 4. Tables */
+        .table-container {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+        }
+        .table-bi {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-bi th, .table-bi td {
+            padding: 1rem;
+            text-align: right;
+        }
+        .table-bi thead th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-bottom: 2px solid var(--border-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .table-bi tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .table-bi tbody td {
+            border-bottom: 1px solid var(--border-color);
+        }
+        .table-bi tfoot td {
+            font-weight: 700;
+            font-size: 1.1rem;
+            background-color: #f3f4f6;
+            border-top: 2px solid var(--border-color);
+        }
+        .percentage-cell {
+            font-weight: 600;
+        }
+
+        /* Other sections */
+        .details-section {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+        }
+        .details-section h4 { font-size: 1.1rem; margin-bottom: 1rem; }
+        .missing-days-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .missing-day-chip {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .report-footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* UI Controls (not printed) */
+        .action-buttons {
+            display:flex;
+            gap:10px;
+            justify-content:flex-end;
+        }
+        .btn {
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-md);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        .btn-primary { background:var(--brand-primary); color:#fff; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-ghost { background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-color); }
+        .btn-ghost:hover { background: #f9fafb; }
+        .loading { text-align:center; padding:36px; color:var(--text-secondary); }
+
+        /* --- FIX: Print Styles for PDF generation --- */
         @media print {
             body { background: white; }
-            .header, .action-buttons { display: none; }
-            .container { max-width: none; margin: 0; }
+            .ui-container { padding: 0; }
+            .ui-header { display: none; }
+            .report-page { max-width: 100%; box-shadow: none; padding: 0; }
+
+            /* This is the key change: tells the printer not to break these elements */
+            .printable-section, .chart-container, .table-container {
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-title">הפקת דו"ח PDF</div>
-    </div>
 
-    <div class="container">
-        <div class="report-container">
-            <div id="loading" class="loading">טוען נתוני דו"ח...</div>
-
-            <div id="pdf-content" class="pdf-content" style="display: none;">
-                <div class="report-header">
-                    <div class="report-title" id="pdf-title">דו"ח שעות עבודה</div>
-                    <div class="report-subtitle" id="pdf-subtitle">תקופה: </div>
-                </div>
-
-                <div id="pdf-report-content">
-                    <!-- תוכן הדו"ח יתווסף כאן -->
-                </div>
+    <div class="ui-container">
+        <div class="ui-header">
+            <div>
+                <div class="title">הפקת דו"ח שעות</div>
+                <div id="generated-info" style="color: var(--text-secondary);">מוכן להורדה / הדפסה</div>
             </div>
-
-            <div class="action-buttons" id="action-buttons" style="display: none;">
+            <div class="action-buttons">
                 <button class="btn btn-primary" onclick="generatePDF()">הורדת PDF</button>
-                <button class="btn btn-primary" onclick="printReport()">הדפסה</button>
-                <button class="btn btn-secondary" onclick="goBack()">חזרה</button>
+                <button class="btn btn-ghost" onclick="printReport()">הדפסה</button>
+                <button class="btn btn-ghost" onclick="goBack()">חזרה</button>
             </div>
+        </div>
+
+        <div id="loading" class="loading">טוען נתוני דו"ח...</div>
+
+        <div class="report-page" id="report-page" style="display:none;">
+
+            <header class="report-header">
+                <div class="logo">workreporter.github.io</div>
+                <div class="company-info">
+                    <h2>דו"ח נוכחות מסכם</h2>
+                    <p>הופק באמצעות מערכת דיווח שעות</p>
+                </div>
+            </header>
+
+            <section class="profile-card printable-section">
+                <div class="profile-item">
+                    <div class="label">שם העובד/ת</div>
+                    <div class="value" id="profile-name">--</div>
+                </div>
+                <div class="profile-item">
+                    <div class="label">מזהה</div>
+                    <div class="value" id="profile-id">--</div>
+                </div>
+                <div class="profile-item">
+                    <div class="label">מחלקה</div>
+                    <div class="value" id="profile-department">מינהל המחקר</div>
+                </div>
+                <div class="profile-item">
+                    <div class="label">תפקיד</div>
+                    <div class="value" id="profile-role">עוזר/ת מחקר</div>
+                </div>
+                 <div class="profile-item" style="grid-column: 1 / -1;">
+                    <div class="label">תקופת הדיווח</div>
+                    <div class="value" id="profile-period">--</div>
+                </div>
+            </section>
+
+            <section class="printable-section">
+                <h3 class="section-title">מדדים מרכזיים</h3>
+                <div class="kpi-grid">
+                    <div class="kpi-card total-hours">
+                        <div class="icon">⏱️</div>
+                        <div class="value" id="kpi-total-hours">0</div>
+                        <div class="label">סה"כ שעות בתקופה</div>
+                    </div>
+                    <div class="kpi-card top-category">
+                        <div class="icon">⭐</div>
+                        <div class="value" id="kpi-top-category">—</div>
+                        <div class="label">קטגוריה מובילה</div>
+                    </div>
+                    <div class="kpi-card missing-days">
+                        <div class="icon">⚠️</div>
+                        <div class="value" id="kpi-missing-days">0</div>
+                        <div class="label">ימים ללא דיווח</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="printable-section">
+                <h3 class="section-title">ניתוח גרפי</h3>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <canvas id="pieChart" aria-label="גרף עוגה - חלוקת שעות"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="barChart" aria-label="גרף עמודות - סך שעות לכל קטגוריה"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section class="printable-section">
+                <h3 class="section-title">סיכום שעות לפי קטגוריה</h3>
+                <div class="table-container">
+                    <table class="table-bi" id="summary-table">
+                        <thead>
+                            <tr>
+                                <th>קטגוריה</th>
+                                <th>סה"כ שעות</th>
+                                <th>אחוז מסך השעות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-body"></tbody>
+                        <tfoot id="summary-foot"></tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="printable-section">
+                 <h3 class="section-title">פירוט נוסף</h3>
+                 <div class="details-section">
+                    <h4>ימים ללא דיווח</h4>
+                    <div class="missing-days-list" id="missing-days-list">
+                         <div class="note">לא נמצאו ימים ללא דיווח.</div>
+                    </div>
+                 </div>
+            </section>
+
+            <footer class="report-footer">
+                דו"ח זה הופק בתאריך <span id="generation-date"></span>.
+                <div>WorkReport Systems © 2025</div>
+            </footer>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-        import { getDatabase } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
-        // Firebase configuration
+    <script type="module">
+        // Firebase is not strictly needed here for rendering, but kept for consistency
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
         const firebaseConfig = {
             apiKey: "AIzaSyDpzAnHPl8trZDQwC-G5twRWSwdweko_T8",
             authDomain: "work-report-volcani.firebaseapp.com",
@@ -249,16 +391,13 @@
             measurementId: "G-M5Z4R1FB40",
             databaseURL: "https://work-report-volcani-default-rtdb.firebaseio.com/"
         };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
+        try { initializeApp(firebaseConfig); } catch (e) { /* Already initialized */ }
 
         // Global state
         let reportData = null;
         let employeeData = null;
+        let charts = { pie: null, bar: null };
 
-        // Extract data from URL parameters
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
             return {
@@ -269,220 +408,255 @@
             };
         }
 
-        // Load and display report
-        async function loadReport() {
+        function normalizeReportData(raw) {
+            if (!raw || typeof raw !== 'object') return {};
+            const out = JSON.parse(JSON.stringify(raw));
+            if (Array.isArray(out.categories)) {
+                out.categories = new Map(out.categories);
+            } else if (typeof out.categories === 'object' && !(out.categories instanceof Map)) {
+                out.categories = new Map(Object.entries(out.categories));
+            } else {
+                out.categories = new Map();
+            }
+            out.missingDays = Array.isArray(out.missingDays) ? out.missingDays.map(d => new Date(d)) : [];
+            out.totalHours = Number(out.totalHours || 0);
+            return out;
+        }
+
+        // --- Main Initialization ---
+        (function init() {
             try {
                 const params = getUrlParams();
-
-                if (!params.employee || !params.startDate || !params.endDate || !params.reportData) {
-                    throw new Error('חסרים פרמטרים נדרשים');
+                if (!params.employee || !params.reportData) {
+                    throw new Error('Missing required URL parameters.');
                 }
 
                 employeeData = JSON.parse(decodeURIComponent(params.employee));
-                reportData = JSON.parse(decodeURIComponent(params.reportData));
-
-                // --- Normalization of serialized structures ---
-                // Rebuild categories Map if it was serialized as array or plain object
-                if (reportData.categories) {
-                    if (Array.isArray(reportData.categories)) {
-                        reportData.categories = new Map(reportData.categories);
-                    } else if (!(reportData.categories instanceof Map) && typeof reportData.categories === 'object') {
-                        reportData.categories = new Map(Object.entries(reportData.categories));
-                    }
-                } else {
-                    reportData.categories = new Map();
-                }
-                // Convert missingDays strings back to Date objects
-                if (Array.isArray(reportData.missingDays)) {
-                    reportData.missingDays = reportData.missingDays.map(d => {
-                        try { return new Date(d); } catch { return d; }
-                    });
-                } else {
-                    reportData.missingDays = [];
-                }
-                // Ensure categorizedTasks array
-                if (!Array.isArray(reportData.categorizedTasks)) reportData.categorizedTasks = [];
-                // Ensure totalHours numeric
-                reportData.totalHours = Number(reportData.totalHours || 0);
-                // --- End normalization ---
+                reportData = normalizeReportData(JSON.parse(decodeURIComponent(params.reportData)));
 
                 const startDate = new Date(params.startDate);
                 const endDate = new Date(params.endDate);
 
-                // Update title and subtitle
-                document.getElementById('pdf-title').textContent =
-                    `דו"ח שעות עבודה - ${employeeData.firstName} ${employeeData.lastName}`;
-                document.getElementById('pdf-subtitle').textContent =
-                    `תקופה: ${startDate.toLocaleDateString('he-IL')} - ${endDate.toLocaleDateString('he-IL')}`;
-
-                // Generate report content
+                // Populate report content
+                populateProfileAndHeader(employeeData, startDate, endDate);
                 generateReportContent();
 
-                // Show content and hide loading
+                // Show report
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('pdf-content').style.display = 'block';
-                document.getElementById('action-buttons').style.display = 'flex';
+                document.getElementById('report-page').style.display = 'block';
 
-            } catch (error) {
-                console.error('Error loading report:', error);
-                document.getElementById('loading').innerHTML =
-                    '<div style="color: #ef4444;">שגיאה בטעינת הדו"ח</div>';
+            } catch (err) {
+                console.error("Initialization Error:", err);
+                document.getElementById('loading').innerHTML = `<div style="color:#ef4444; font-weight:600;">שגיאה חמורה בטעינת הדו"ח. ודא שהנתונים הועברו כראוי.</div>`;
             }
+        })();
+
+        // --- Data Population Functions ---
+
+        function populateProfileAndHeader(employee, startDate, endDate) {
+            document.getElementById('profile-name').textContent = `${employee.firstName || ''} ${employee.lastName || ''}`;
+            document.getElementById('profile-id').textContent = employee.idNumber || 'N/A'; // Assuming idNumber exists
+            document.getElementById('profile-period').textContent = `${startDate.toLocaleDateString('he-IL')} - ${endDate.toLocaleDateString('he-IL')}`;
+            document.getElementById('generation-date').textContent = new Date().toLocaleDateString('he-IL');
         }
 
         function generateReportContent() {
-            let html = '';
+            // 1. Compute Data Series
+            const catSeries = computeCategorySeries(reportData);
+            let totalHours = reportData.totalHours || catSeries.values.reduce((a, b) => a + b, 0);
+            totalHours = Math.round(totalHours * 100) / 100;
 
-            // Summary table
-            html += `
-                <div class="section">
-                    <h3 class="section-title">סיכום שעות עבודה</h3>
-                    <table class="stats-table">
-                        <thead>
-                            <tr>
-                                <th>קטגוריה</th>
-                                <th>סה"כ שעות</th>
-                                <th>אחוז מסך השעות</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+            const missingDaysCount = reportData.missingDays.length;
+            const topCategory = catSeries.labels.length > 0 ? catSeries.labels[0] : '—';
 
-            if (reportData.categories instanceof Map) {
-                reportData.categories.forEach((hours, category) => {
-                    const percentage = reportData.totalHours > 0 ?
-                        Math.round((hours / reportData.totalHours) * 100) : 0;
-                    html += `
-                        <tr>
-                            <td style="font-weight: 500;">${category}</td>
-                            <td style="text-align: center;">${hours}</td>
-                            <td class="percentage-cell">${percentage}%</td>
-                        </tr>
-                    `;
-                });
-            }
+            // 2. Populate KPIs
+            document.getElementById('kpi-total-hours').textContent = totalHours;
+            document.getElementById('kpi-top-category').textContent = topCategory;
+            document.getElementById('kpi-missing-days').textContent = missingDaysCount;
 
-            html += `
-                            <tr style="font-weight: 600; background: #f8fafc;">
-                                <td>סה"כ</td>
-                                <td style="text-align: center;">${reportData.totalHours || 0}</td>
-                                <td class="percentage-cell">${reportData.totalHours ? '100%' : '0%'}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            `;
+            // 3. Render Table & Details
+            renderSummaryTable(catSeries.labels, catSeries.values, totalHours);
+            renderMissingDays(reportData.missingDays);
 
-            // Categorized tasks
-            if (reportData.categorizedTasks && reportData.categorizedTasks.length > 0) {
-                html += `
-                    <div class="section">
-                        <h3 class="section-title">פירוט משימות</h3>
-                `;
-
-                reportData.categorizedTasks.forEach(task => {
-                    html += `
-                        <div class="hours-item">
-                            <span class="hours-label">${task.name} → ${task.category}</span>
-                            <span class="hours-value">${task.hours}</span>
-                        </div>
-                    `;
-                });
-
-                html += '</div>';
-            }
-
-            // Missing days
-            if (reportData.missingDays && reportData.missingDays.length > 0) {
-                html += `
-                    <div class="section">
-                        <h3 class="section-title">ימים ללא דיווח (${reportData.missingDays.length} ימים)</h3>
-                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                `;
-
-                reportData.missingDays.forEach(dateObj => {
-                    const d = (dateObj instanceof Date) ? dateObj : new Date(dateObj);
-                    html += `
-                        <div style="background: #f1f5f9; padding: 4px 10px; border-radius: 15px; font-size: 0.9rem;">
-                            ${isNaN(d.getTime()) ? '' : d.toLocaleDateString('he-IL')}
-                        </div>
-                    `;
-                });
-
-                html += `
-                        </div>
-                    </div>
-                `;
-            } else {
-                html += `
-                    <div class="section">
-                        <h3 class="section-title">ימים ללא דיווח</h3>
-                        <div style="color: #22c55e; font-weight: 500;">אין ימים חסרים בתקופה זו</div>
-                    </div>
-                `;
-            }
-
-            document.getElementById('pdf-report-content').innerHTML = html;
+            // 4. Render Charts
+            renderCharts(catSeries);
         }
 
-        // PDF generation function
-        window.generatePDF = async function() {
-            try {
-                const { jsPDF } = window.jspdf;
-                const content = document.getElementById('pdf-content');
+        function computeCategorySeries(rd) {
+            const map = new Map();
+            rd.categories.forEach((v,k) => {
+                if (Number(v) > 0) map.set(k, Number(v));
+            });
+            const sorted = Array.from(map.entries()).sort((a,b) => b[1] - a[1]);
+            const labels = sorted.map(item => item[0]);
+            const values = sorted.map(item => Number(item[1].toFixed(2)));
+            return { labels, values };
+        }
 
-                // Generate canvas from HTML
-                const canvas = await html2canvas(content, {
-                    scale: 2,
+        // --- Rendering Functions ---
+
+        function renderSummaryTable(labels, values, totalHours) {
+            const tbody = document.getElementById('summary-body');
+            const tfoot = document.getElementById('summary-foot');
+            tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+
+            labels.forEach((label, i) => {
+                const value = values[i];
+                const percent = totalHours > 0 ? Math.round((value / totalHours) * 100) : 0;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${escapeHtml(label)}</td>
+                    <td>${value}</td>
+                    <td class="percentage-cell">${percent}%</td>`;
+                tbody.appendChild(tr);
+            });
+
+            const totalRow = document.createElement('tr');
+            totalRow.innerHTML = `
+                <td>סה"כ</td>
+                <td>${totalHours}</td>
+                <td class="percentage-cell">100%</td>`;
+            tfoot.appendChild(totalRow);
+        }
+
+        function renderMissingDays(days) {
+            const container = document.getElementById('missing-days-list');
+            if (!days || days.length === 0) {
+                container.innerHTML = '<span style="color: var(--text-secondary);">לא נמצאו ימים ללא דיווח.</span>';
+                return;
+            }
+            container.innerHTML = days.map(d =>
+                `<div class="missing-day-chip">${d.toLocaleDateString('he-IL')}</div>`
+            ).join('');
+        }
+
+        function destroyCharts() {
+            Object.values(charts).forEach(chart => chart?.destroy());
+        }
+
+        function renderCharts(catSeries) {
+            destroyCharts();
+
+            const colors = [
+                '#2563eb', '#16a34a', '#f97316', '#9333ea', '#db2777',
+                '#4f46e5', '#059669', '#d97706', '#7e22ce', '#be185d'
+            ];
+
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            charts.pie = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: catSeries.labels,
+                    datasets: [{ data: catSeries.values, backgroundColor: colors }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: { display: true, text: 'התפלגות שעות לפי קטגוריה', font: { size: 16, weight: '600' } }
+                    }
+                }
+            });
+
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            charts.bar = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: catSeries.labels,
+                    datasets: [{
+                        label: 'סה"כ שעות',
+                        data: catSeries.values,
+                        backgroundColor: colors[0]
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'שעות' } } },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'סה"כ שעות לפי קטגוריה', font: { size: 16, weight: '600' } }
+                    }
+                }
+            });
+        }
+
+        // --- Action Functions ---
+
+        async function generatePDF() {
+            const btn = document.querySelector('.btn-primary');
+            const infoEl = document.getElementById('generated-info');
+
+            btn.disabled = true;
+            infoEl.textContent = 'מייצר PDF, נא להמתין...';
+
+            try {
+                // Wait for charts to render fully
+                await new Promise(r => setTimeout(r, 400));
+
+                const element = document.getElementById('report-page');
+                const { jsPDF } = window.jspdf;
+
+                const canvas = await html2canvas(element, {
+                    scale: 2, // Higher resolution
                     useCORS: true,
-                    allowTaint: true
+                    windowWidth: element.scrollWidth,
+                    windowHeight: element.scrollHeight,
                 });
 
                 const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
 
-                const imgWidth = 210;
-                const pageHeight = 295;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                let heightLeft = imgHeight;
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+                const ratio = imgWidth / pdfWidth;
+                const finalImgHeight = imgHeight / ratio;
 
+                let heightLeft = finalImgHeight;
                 let position = 0;
 
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, finalImgHeight);
+                heightLeft -= pdfHeight;
 
-                while (heightLeft >= 0) {
-                    position = heightLeft - imgHeight;
+                while (heightLeft > 0) {
+                    position = position - pdfHeight;
                     pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, finalImgHeight);
+                    heightLeft -= pdfHeight;
                 }
 
-                const filename = `work_report_${employeeData.firstName}_${employeeData.lastName}_${new Date().toISOString().slice(0, 10)}.pdf`;
-                pdf.save(filename);
+                const employeeName = `${employeeData.firstName}_${employeeData.lastName}`.replace(/\s+/g, '_');
+                const dateStr = new Date().toISOString().slice(0, 10);
+                pdf.save(`report_${employeeName}_${dateStr}.pdf`);
 
             } catch (error) {
-                console.error('Error generating PDF:', error);
-                alert('שגיאה בהפקת הPDF');
+                console.error("PDF Generation failed:", error);
+                infoEl.textContent = 'שגיאה ביצירת ה-PDF.';
+            } finally {
+                btn.disabled = false;
+                infoEl.textContent = 'ההורדה הושלמה.';
+                setTimeout(() => { infoEl.textContent = 'מוכן להורדה / הדפסה'; }, 3000);
             }
-        };
+        }
 
-        // Print function
-        window.printReport = function() {
-            window.print();
-        };
+        function printReport() { window.print(); }
 
-        // Go back function
-        window.goBack = function() {
-            if (window.opener) {
-                window.close();
-            } else {
-                window.history.back();
-            }
-        };
+        function goBack() {
+            if (window.opener) window.close();
+            else history.back();
+        }
 
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', loadReport);
+        function escapeHtml(s) {
+            return String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#039;'})[m]);
+        }
+
+        // Expose to global scope for HTML onclick
+        window.generatePDF = generatePDF;
+        window.printReport = printReport;
+        window.goBack = goBack;
+
     </script>
 </body>
 </html>

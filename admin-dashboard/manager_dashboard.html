@@ -552,6 +552,75 @@
             color: #64748b;
         }
 
+        /* Action buttons layout */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-family: inherit;
+            min-height: 56px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .action-btn.csv {
+            background: #3b82f6;
+            color: white;
+        }
+        .action-btn.csv:hover {
+            background: #2563eb;
+        }
+
+        .action-btn.pdf {
+            background: #dc2626;
+            color: white;
+        }
+        .action-btn.pdf:hover {
+            background: #b91c1c;
+        }
+
+        .action-btn.database {
+            background: #059669;
+            color: white;
+        }
+        .action-btn.database:hover {
+            background: #047857;
+        }
+
+        .action-btn.back {
+            background: #f1f5f9;
+            color: #475569;
+            border: 2px solid #e2e8f0;
+        }
+        .action-btn.back:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+        }
+
+        .action-btn-icon {
+            font-size: 1.25rem;
+            opacity: 0.9;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -571,11 +640,13 @@
             }
 
             .action-buttons {
-                flex-direction: column;
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
             }
 
-            .action-buttons .back-btn {
-                flex: 1;
+            .action-btn {
+                padding: 0.875rem 1.25rem;
+                font-size: 0.95rem;
             }
         }
 
@@ -744,22 +815,37 @@
                     <div class="loading">מכין דו"ח סופי...</div>
                 </div>
 
+                <!-- Pie Chart Container -->
+                <div class="report-section" id="chart-section" style="display: none;">
+                    <h3 class="section-title">התפלגות שעות</h3>
+                    <div style="max-width: 600px; margin: 0 auto; position: relative; height: 400px;">
+                        <canvas id="hoursChart"></canvas>
+                    </div>
+                </div>
+
                 <div class="action-buttons" id="final-actions" style="display: none;">
-                    <button class="generate-report-btn" onclick="exportFinalReport()">
-                        הפקת דו"ח CSV מעובד
+                    <button class="action-btn csv" onclick="exportFinalReport()">
+                        <span class="action-btn-icon">📊</span>
+                        <span>הפקת דו"ח CSV מעובד</span>
                     </button>
-                    <button class="generate-report-btn" onclick="openPdfReport()" style="background: #dc2626; margin-bottom: 1rem;">
-                        הפקת דו"ח PDF
+                    <button class="action-btn pdf" onclick="openPdfReport()">
+                        <span class="action-btn-icon">📄</span>
+                        <span>הפקת דו"ח PDF</span>
                     </button>
-                    <button class="generate-report-btn" onclick="openDbReport()" style="background: #059669; margin-bottom: 1rem;">
-                        דו"ח נתונים גולמיים
+                    <button class="action-btn database" onclick="openDbReport()">
+                        <span class="action-btn-icon">🗄️</span>
+                        <span>דו"ח נתונים גולמיים</span>
                     </button>
-                    <button class="back-btn" onclick="showIntermediateScreen()">חזרה</button>
+                    <button class="action-btn back" onclick="showIntermediateScreen()">
+                        <span class="action-btn-icon">↩️</span>
+                        <span>חזרה</span>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script>
         // Global state management
         const AppState = {
@@ -1687,7 +1773,105 @@
             `;
 
             document.getElementById('final-content').innerHTML = html;
+            document.getElementById('chart-section').style.display = 'block';
             document.getElementById('final-actions').style.display = 'flex';
+
+            // Create pie chart
+            createPieChart(data);
+        }
+        function createPieChart(data) {
+            const ctx = document.getElementById('hoursChart').getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (window.hoursChartInstance) {
+                window.hoursChartInstance.destroy();
+            }
+
+            const labels = [];
+            const chartData = [];
+            const colors = [
+                '#3b82f6', '#dc2626', '#059669', '#f59e0b',
+                '#8b5cf6', '#06b6d4', '#84cc16', '#f97316',
+                '#ec4899', '#6366f1', '#10b981', '#ef4444'
+            ];
+
+            let colorIndex = 0;
+            data.categories.forEach((hours, category) => {
+                if (hours > 0) {
+                    labels.push(category);
+                    chartData.push(hours);
+                }
+            });
+
+            window.hoursChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    family: 'Heebo'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label;
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} שעות (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    elements: {
+                        arc: {
+                            borderWidth: 2
+                        }
+                    }
+                },
+                plugins: [{
+                    afterDatasetsDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        chart.data.datasets.forEach((dataset, i) => {
+                            const meta = chart.getDatasetMeta(i);
+                            meta.data.forEach((element, index) => {
+                                const data = dataset.data[index];
+                                const total = dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((data / total) * 100);
+
+                                // Only show label if slice is big enough
+                                if (percentage > 5) {
+                                    const {x, y} = element.tooltipPosition();
+
+                                    ctx.fillStyle = '#fff';
+                                    ctx.font = 'bold 14px Heebo';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(`${data}`, x, y - 5);
+                                    ctx.fillText(`שעות`, x, y + 10);
+                                }
+                            });
+                        });
+                    }
+                }]
+            });
         }
 
         // ==========================================================
