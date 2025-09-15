@@ -137,29 +137,6 @@
             color: #92400e;
         }
 
-        .work-status {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .work-status.office {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .work-status.home {
-            background: #fce7f3;
-            color: #be185d;
-        }
-
-        .work-status.hybrid {
-            background: #f3e8ff;
-            color: #7c3aed;
-        }
-
         .action-buttons {
             display: flex;
             gap: 1rem;
@@ -317,12 +294,10 @@
 
             <div id="raw-content" style="display: none;">
                 <div id="employee-info" class="stats-card">
-                    <!-- פרטי עובד -->
-                </div>
+                    </div>
 
                 <div class="stats-grid" id="stats-grid">
-                    <!-- סטטיסטיקות -->
-                </div>
+                    </div>
 
                 <div class="collapsible" id="reports-section">
                     <div class="collapsible-header" onclick="toggleCollapsible('reports-section')">
@@ -577,7 +552,6 @@
                         <tr>
                             <th>תאריך</th>
                             <th>סוג דיווח</th>
-                            <th>מצב עבודה</th>
                             <th>מספר רשומות</th>
                             <th>חוקרים</th>
                             <th>סה"כ שעות</th>
@@ -597,11 +571,6 @@
                         <td>
                             <span class="report-type ${report.type}">
                                 ${report.type === 'daily' ? 'יומי' : 'שבועי'}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="work-status ${report.workStatus || 'office'}">
-                                ${getWorkStatusText(report.workStatus)}
                             </span>
                         </td>
                         <td>${Array.isArray(report.entries) ? report.entries.length : 0}</td>
@@ -656,15 +625,6 @@
             return Array.from(researchers);
         }
 
-        function getWorkStatusText(status) {
-            switch (status) {
-                case 'home': return 'בית';
-                case 'office': return 'משרד';
-                case 'hybrid': return 'משולב';
-                default: return 'משרד';
-            }
-        }
-
         function generateJSONViewer() {
             const jsonData = {
                 employee: employeeData,
@@ -702,7 +662,7 @@
         };
 
         function generateCSVData() {
-            const headers = ['תאריך', 'סוג דיווח', 'מצב עבודה', 'חוקר', 'פרטים', 'שעות', 'ID דיווח'];
+            const headers = ['תאריך', 'סוג דיווח', 'חוקר', 'פרטים', 'שעות', 'ID דיווח'];
             const rows = [headers];
 
             rawReports.forEach(report => {
@@ -725,7 +685,6 @@
                             rows.push([
                                 report.dateFormatted,
                                 report.type === 'daily' ? 'יומי' : 'שבועי',
-                                getWorkStatusText(report.workStatus),
                                 entry.researcher || '',
                                 entry.detail || '',
                                 hours,
@@ -737,7 +696,6 @@
                     rows.push([
                         report.dateFormatted,
                         report.type === 'daily' ? 'יומי' : 'שבועי',
-                        getWorkStatusText(report.workStatus),
                         '',
                         'אין רשומות',
                         0,
