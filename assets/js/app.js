@@ -1692,7 +1692,7 @@
                 position: getInputValue('profile-position'),
                 email: getInputValue('profile-email')
             };
-            if ((data.position || '') === 'מהנדס מחקר') {
+            if ((data.position || '') === 'מהנדס/ת מחקר') {
                 const selVal = getInputValue('profile-my-manager') || '';
                 data.my_manager = selVal;
                 if (selVal.includes('|')) {
@@ -1788,7 +1788,7 @@
         return auth.createUserWithEmailAndPassword(data.email, data.password).then(async (cred) => {
             const uid = cred.user.uid;
             const payload = { firstName: data.firstName, lastName: data.lastName, position: data.position, email: data.email, createdAt: new Date().toISOString() };
-            if ((data.position || '') === 'מהנדס מחקר') {
+            if ((data.position || '') === 'מהנדס/ת מחקר') {
                 payload.my_manager = data.my_manager || '';
             }
             await database.ref('users/' + uid).set(payload).catch(() => {});
@@ -1937,14 +1937,14 @@
         // Registration screen
         const regGroup = document.getElementById('register-my-manager-group');
         const regWarn = document.getElementById('register-manager-warning');
-        if (regGroup) regGroup.style.display = (positionVal === 'מהנדס מחקר') ? '' : 'none';
+        if (regGroup) regGroup.style.display = (positionVal === 'מהנדס/ת מחקר') ? '' : 'none';
         if (regWarn) regWarn.style.display = (positionVal === 'מנהל/ת') ? '' : 'none';
 
         // Profile screen
         const profGroup = document.getElementById('profile-my-manager-group');
         const profWarn = document.getElementById('profile-manager-warning');
         const effectivePos = positionVal || (document.getElementById('profile-position')?.value || '');
-        if (profGroup) profGroup.style.display = (effectivePos === 'מהנדס מחקר') ? '' : 'none';
+        if (profGroup) profGroup.style.display = (effectivePos === 'מהנדס/ת מחקר') ? '' : 'none';
         if (profWarn) profWarn.style.display = (effectivePos === 'מנהל/ת') ? '' : 'none';
     }
     /**
@@ -1997,7 +1997,7 @@
             setHTML('register-messages', '');
 
             const data = { firstName: getInputValue('register-first-name'), lastName: getInputValue('register-last-name'), position: getInputValue('register-position'), email: getInputValue('register-email'), password: getInputValue('register-password') };
-            if (data.position === 'מהנדס מחקר') {
+            if (data.position === 'מהנדס/ת מחקר') {
                 data.my_manager = getInputValue('register-my-manager') || '';
             }
             const confirm = getInputValue('register-confirm-password');
@@ -2235,7 +2235,7 @@
         const registerManagerNote = document.getElementById('register-manager-selection-note');
         const registerManagerWarning = document.getElementById('register-manager-warning');
 
-        if (position === 'מהנדס מחקר') {
+        if (position === 'מהנדס/ת מחקר') {
             if (managerGroup) {
                 managerGroup.style.display = 'block';
                 updateManagersDropdown(); // טען רשימת מנהלים
