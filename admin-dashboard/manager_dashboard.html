@@ -652,7 +652,7 @@
 
     <div class="header">
         <div class="header-title">
-            <a href="index.html" class="home-link" id="home-link" title="עמוד ראשי" aria-label="עמוד ראשי">
+            <a href="#" class="home-link" id="home-link" title="עמוד ראשי" aria-label="עמוד ראשי" onclick="showEmployeesScreen(); return false;">
                 <div class="header-icon">🏠</div>
                 <span id="header-name">שם מנהל/ת</span>
             </a>
@@ -1520,7 +1520,7 @@
                     case 'seminar':
                         const prevSem = finalData.categories.get('סמינר') || 0;
                         finalData.categories.set('סמינר', prevSem + task.hours);
-                        categoryName = 'סמי��ר';
+                        categoryName = 'סמינר';
                         displayName = 'סמינר';
                         break;
                     case 'custom':
