@@ -746,7 +746,13 @@
 
                 <div class="action-buttons" id="final-actions" style="display: none;">
                     <button class="generate-report-btn" onclick="exportFinalReport()">
-                        הפקת דו"ח
+                        הפקת דו"ח CSV מעובד
+                    </button>
+                    <button class="generate-report-btn" onclick="openPdfReport()" style="background: #dc2626; margin-bottom: 1rem;">
+                        הפקת דו"ח PDF
+                    </button>
+                    <button class="generate-report-btn" onclick="openDbReport()" style="background: #059669; margin-bottom: 1rem;">
+                        דו"ח נתונים גולמיים
                     </button>
                     <button class="back-btn" onclick="showIntermediateScreen()">חזרה</button>
                 </div>
@@ -1306,10 +1312,12 @@
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'active', this)">חוקר פעיל <span class="dropdown-arrow">▾</span></button>
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'relative', this)">חלוקה יחסית</button>
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'custom', this)">חיוב חדש</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                                 </div>
+                                 <!-- free-text input for 'חיוב חדש' (hidden by default) -->
+                                 <input id="${key}_custom" class="custom-input" style="display:none; margin-top:0.75rem;" placeholder="הכנס הסבר או חוקר/ת לחיוב חדש..." value="${AppState.categorizations.get(`${key}_custom`) || ''}" oninput="AppState.categorizations.set('${key}_custom', this.value)" />
+                             </div>
+                         </div>
+                     `;
                 });
                 html += '</div>';
             }
@@ -1333,10 +1341,12 @@
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'active', this)">חוקר פעיל <span class="dropdown-arrow">▾</span></button>
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'equal', this)">חלוקה שווה</button>
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'custom', this)">חיוב חדש</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                                 </div>
+                                 <!-- free-text input for 'חיוב חדש' (hidden by default) -->
+                                 <input id="${key}_custom" class="custom-input" style="display:none; margin-top:0.75rem;" placeholder="הכנס הסבר לחיוב חדש..." value="${AppState.categorizations.get(`${key}_custom`) || ''}" oninput="AppState.categorizations.set('${key}_custom', this.value)" />
+                             </div>
+                         </div>
+                     `;
                 });
 
                 html += '</div>';
@@ -1357,27 +1367,24 @@
             AppState.categorizations.set(taskIndex, type);
 
             const item = button.closest('.categorization-item');
-            let input = item.querySelector('.custom-input');
+            // find existing elements inside the item
+            let input = item.querySelector(`#${taskIndex}_custom`);
             let activeSelect = item.querySelector('.active-select');
 
+            // hide both by default
             if (input) input.style.display = 'none';
             if (activeSelect) activeSelect.style.display = 'none';
 
             if (type === 'custom') {
-                if (!input) {
-                    input = document.createElement('input');
-                    input.className = 'custom-input';
-                    input.placeholder = 'הכנס הסבר לחיוב חדש...';
-                    input.addEventListener('input', (e) => {
-                        AppState.categorizations.set(`${taskIndex}_custom`, e.target.value);
-                    });
-                    item.appendChild(input);
+                // Show the pre-rendered free-text input for custom charge
+                if (input) {
+                    input.style.display = 'block';
+                    input.focus();
                 }
-                input.style.display = 'block';
-                input.focus();
             } else if (type === 'active') {
                 const activeList = (AppState.selectedEmployee && Array.isArray(AppState.selectedEmployee.activeResearchers)) ? AppState.selectedEmployee.activeResearchers : [];
                 if (activeList.length > 0) {
+                    // If a select isn't present, create it once and append
                     if (!activeSelect) {
                         activeSelect = document.createElement('select');
                         activeSelect.className = 'active-select custom-input';
@@ -1477,12 +1484,14 @@
                         break;
 
                     case 'relative':
-                        if (activeList.length > 0) {
-                            const weights = activeList.map(r => ({ name: r, base: data.researchers.get(r) || 0 }));
+                        // שינוי: חלוקה יחסית בין החוקרים שמופיעים באותה תקופה
+                        const reportResearchers = Array.from(data.researchers.keys()).filter(r => r && r !== 'משימות אחרות');
+                        if (reportResearchers.length > 0) {
+                            const weights = reportResearchers.map(r => ({ name: r, base: data.researchers.get(r) || 0 }));
                             const totalBase = weights.reduce((s, w) => s + w.base, 0);
 
                             if (totalBase > 0) {
-                                const detail = { type:'relative', method:'proportional', taskName: task.name, taskHours: +task.hours, totalBase: +totalBase.toFixed(2), items: [] };
+                                const detail = { type:'relative', method:'proportional', taskName: task.name, taskHours: +task.hours, totalBase: +totalBase.toFixed(2), items: [], note: 'חלוקה יחסית בין החוקרים המופיעים באותה תקופה' };
                                 let remaining = task.hours;
                                 weights.forEach((w, idx) => {
                                     const raw = task.hours * (w.base / totalBase);
@@ -1494,27 +1503,27 @@
                                 });
                                 finalData.calculation.relative.push(detail);
                                 categoryName = 'חלוקה יחסית';
-                                displayName = `חלוקה יחסית לפי שעות פעילות (${totalBase.toFixed(2)} ש"ע בסיס)`;
+                                displayName = `חלוקה יחסית לפי שעות פעילות בתקופה (${totalBase.toFixed(2)} שעות בסיס)`;
                             } else {
-                                const portion = task.hours / activeList.length;
-                                const detail = { type:'relative', method:'equal', taskName: task.name, taskHours: +task.hours, totalBase: 0, items: [] };
+                                const portion = task.hours / reportResearchers.length;
+                                const detail = { type:'relative', method:'equal', taskName: task.name, taskHours: +task.hours, totalBase: 0, items: [], note: 'חלוקה שווה בין החוקרים המופיעים באותה תקופה (אין שעות בסיס)' };
                                 let remaining = task.hours;
-                                activeList.forEach((r, idx) => {
-                                    const add = (idx === activeList.length - 1) ? +remaining.toFixed(2) : +portion.toFixed(2);
+                                reportResearchers.forEach((r, idx) => {
+                                    const add = (idx === reportResearchers.length - 1) ? +remaining.toFixed(2) : +portion.toFixed(2);
                                     remaining = +(remaining - add).toFixed(2);
                                     const prev = finalData.categories.get(r) || 0;
                                     finalData.categories.set(r, +(prev + add).toFixed(2));
-                                    detail.items.push({ researcher: r, baseHours: 0, weight: +(1/activeList.length).toFixed(4), allocated: +add.toFixed(2) });
+                                    detail.items.push({ researcher: r, baseHours: 0, weight: +(1/reportResearchers.length).toFixed(4), allocated: +add.toFixed(2) });
                                 });
                                 finalData.calculation.relative.push(detail);
                                 categoryName = 'חלוקה יחסית (שווה בהעדר בסיס)';
-                                displayName = 'חלוקה יחסית (אין שעות בסיס)';
+                                displayName = 'חלוקה יחסית בין החוקרים המופיעים באותה תקופה (אין שעות בסיס)';
                             }
                         } else {
                             categoryName = 'חלוקה יחסית (ללא חוקרים)';
                             const prev = finalData.categories.get(categoryName) || 0;
                             finalData.categories.set(categoryName, prev + task.hours);
-                            displayName = 'חלוקה יחסית (אין חוקרים פעילים להקצות)';
+                            displayName = 'חלוקה יחסית (אין חוקרים להקצות באותה תקופה)';
                         }
                         break;
                     case 'seminar':
@@ -1798,6 +1807,41 @@
             return sunday;
         }
 
+        // === Added: report windows (PDF / Raw data) ===
+        window.openPdfReport = function() {
+            if (!AppState.finalReport || !AppState.selectedEmployee || !AppState.selectedStartDate || !AppState.selectedEndDate) {
+                alert('שגיאה: נתוני הדו"ח אינם זמינים.');
+                return;
+            }
+            // Serialize Map and Date objects safely
+            const serializableReport = {
+                totalHours: AppState.finalReport.totalHours,
+                categorizedTasks: AppState.finalReport.categorizedTasks,
+                missingDays: (AppState.finalReport.missingDays || []).map(d => (d instanceof Date ? d.toISOString() : d)),
+                categories: Array.from(AppState.finalReport.categories.entries())
+            };
+            const employeeData = encodeURIComponent(JSON.stringify(AppState.selectedEmployee));
+            const reportData = encodeURIComponent(JSON.stringify(serializableReport));
+            const startDate = AppState.selectedStartDate.toISOString();
+            const endDate = AppState.selectedEndDate.toISOString();
+            const url = `pdf_report.html?employee=${employeeData}&startDate=${startDate}&endDate=${endDate}&reportData=${reportData}`;
+            window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
+        };
+
+        window.openDbReport = function() {
+            if (!AppState.selectedEmployee || !AppState.selectedStartDate || !AppState.selectedEndDate) {
+                alert('שגיאה: פרטי העובד או התאריכים אינם זמינים.');
+                return;
+            }
+            const employeeData = encodeURIComponent(JSON.stringify(AppState.selectedEmployee));
+            const employeeId = AppState.selectedEmployee.id;
+            const startDate = AppState.selectedStartDate.toISOString();
+            const endDate = AppState.selectedEndDate.toISOString();
+            const url = `raw_data_report.html?employeeId=${employeeId}&employee=${employeeData}&startDate=${startDate}&endDate=${endDate}`;
+            window.open(url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+        };
+        // === End added ===
+
         function toLocalDateStr(dt) {
             return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
         }
@@ -1834,6 +1878,12 @@
                     html += '<div class="calc-card">';
                     const taskHours = item.taskHours?.toFixed ? item.taskHours.toFixed(2) : item.taskHours;
                     html += `<div class=\"calc-subtitle\">${idx+1}. ${item.taskName || 'משימה'} — ${taskHours} שעות (${item.method==='proportional' ? 'חלוקה יחסית' : 'חלוקה שווה'})</div>`;
+
+                    // הוספת הערה על החלוקה היחסית
+                    if (item.note) {
+                        html += `<div class=\"note\">${item.note}</div>`;
+                    }
+
                     if (item.method === 'proportional') {
                         const totalBase = item.totalBase?.toFixed ? item.totalBase.toFixed(2) : item.totalBase;
                         html += `<div class=\"equation eq-line\">סה\"כ שעות בסיס = ${totalBase}</div>`;
@@ -1848,7 +1898,7 @@
                         html += '</div>';
                         item.items.forEach(it => {
                             const baseStr = it.baseHours?.toFixed ? it.baseHours.toFixed(2) : it.baseHours;
-                            const totalBaseStr = item.totalBase?.toFixed ? item.totalBase.toFixed(2) : item.totalBase;
+                            const totalBaseStr = item.totalBase?.toFixed ? item.totalBase.toFixed(2) : item.total;
                             const allocStr = it.allocated?.toFixed ? it.allocated.toFixed(2) : it.allocated;
                             if (item.method === 'proportional') {
                                 html += `<div class=\"equation eq-line\">${it.researcher}: שעות להוספה = ${taskHours} × (${baseStr} / ${totalBaseStr}) = ${allocStr}</div>`;

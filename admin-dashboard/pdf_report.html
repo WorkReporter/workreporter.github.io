@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>דו"ח PDF - מערכת דיווח שעות</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Heebo', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .report-container {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .loading::after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f1f5f9;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            margin: 1rem auto;
+            animation: spin 1s linear infinite;
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 1rem;
+            text-align: right;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .stats-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .stats-table td {
+            color: #1e293b;
+        }
+
+        .percentage-cell {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .hours-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border-right: 4px solid #3b82f6;
+        }
+
+        .hours-label {
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .hours-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1e293b;
+        }
+
+        .pdf-content {
+            padding: 2rem;
+            background: white;
+            min-height: 800px;
+        }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1rem;
+        }
+
+        .report-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .report-subtitle {
+            font-size: 1.1rem;
+            color: #64748b;
+        }
+
+        @media print {
+            body { background: white; }
+            .header, .action-buttons { display: none; }
+            .container { max-width: none; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">הפקת דו"ח PDF</div>
+    </div>
+
+    <div class="container">
+        <div class="report-container">
+            <div id="loading" class="loading">טוען נתוני דו"ח...</div>
+
+            <div id="pdf-content" class="pdf-content" style="display: none;">
+                <div class="report-header">
+                    <div class="report-title" id="pdf-title">דו"ח שעות עבודה</div>
+                    <div class="report-subtitle" id="pdf-subtitle">תקופה: </div>
+                </div>
+
+                <div id="pdf-report-content">
+                    <!-- תוכן הדו"ח יתווסף כאן -->
+                </div>
+            </div>
+
+            <div class="action-buttons" id="action-buttons" style="display: none;">
+                <button class="btn btn-primary" onclick="generatePDF()">הורדת PDF</button>
+                <button class="btn btn-primary" onclick="printReport()">הדפסה</button>
+                <button class="btn btn-secondary" onclick="goBack()">חזרה</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+        import { getDatabase } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDpzAnHPl8trZDQwC-G5twRWSwdweko_T8",
+            authDomain: "work-report-volcani.firebaseapp.com",
+            projectId: "work-report-volcani",
+            storageBucket: "work-report-volcani.firebasestorage.app",
+            messagingSenderId: "569559789764",
+            appId: "1:569559789764:web:d11b9c0e43ff78a66dd991",
+            measurementId: "G-M5Z4R1FB40",
+            databaseURL: "https://work-report-volcani-default-rtdb.firebaseio.com/"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Global state
+        let reportData = null;
+        let employeeData = null;
+
+        // Extract data from URL parameters
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                employee: params.get('employee'),
+                startDate: params.get('startDate'),
+                endDate: params.get('endDate'),
+                reportData: params.get('reportData')
+            };
+        }
+
+        // Load and display report
+        async function loadReport() {
+            try {
+                const params = getUrlParams();
+
+                if (!params.employee || !params.startDate || !params.endDate || !params.reportData) {
+                    throw new Error('חסרים פרמטרים נדרשים');
+                }
+
+                employeeData = JSON.parse(decodeURIComponent(params.employee));
+                reportData = JSON.parse(decodeURIComponent(params.reportData));
+
+                // --- Normalization of serialized structures ---
+                // Rebuild categories Map if it was serialized as array or plain object
+                if (reportData.categories) {
+                    if (Array.isArray(reportData.categories)) {
+                        reportData.categories = new Map(reportData.categories);
+                    } else if (!(reportData.categories instanceof Map) && typeof reportData.categories === 'object') {
+                        reportData.categories = new Map(Object.entries(reportData.categories));
+                    }
+                } else {
+                    reportData.categories = new Map();
+                }
+                // Convert missingDays strings back to Date objects
+                if (Array.isArray(reportData.missingDays)) {
+                    reportData.missingDays = reportData.missingDays.map(d => {
+                        try { return new Date(d); } catch { return d; }
+                    });
+                } else {
+                    reportData.missingDays = [];
+                }
+                // Ensure categorizedTasks array
+                if (!Array.isArray(reportData.categorizedTasks)) reportData.categorizedTasks = [];
+                // Ensure totalHours numeric
+                reportData.totalHours = Number(reportData.totalHours || 0);
+                // --- End normalization ---
+
+                const startDate = new Date(params.startDate);
+                const endDate = new Date(params.endDate);
+
+                // Update title and subtitle
+                document.getElementById('pdf-title').textContent =
+                    `דו"ח שעות עבודה - ${employeeData.firstName} ${employeeData.lastName}`;
+                document.getElementById('pdf-subtitle').textContent =
+                    `תקופה: ${startDate.toLocaleDateString('he-IL')} - ${endDate.toLocaleDateString('he-IL')}`;
+
+                // Generate report content
+                generateReportContent();
+
+                // Show content and hide loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('pdf-content').style.display = 'block';
+                document.getElementById('action-buttons').style.display = 'flex';
+
+            } catch (error) {
+                console.error('Error loading report:', error);
+                document.getElementById('loading').innerHTML =
+                    '<div style="color: #ef4444;">שגיאה בטעינת הדו"ח</div>';
+            }
+        }
+
+        function generateReportContent() {
+            let html = '';
+
+            // Summary table
+            html += `
+                <div class="section">
+                    <h3 class="section-title">סיכום שעות עבודה</h3>
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>קטגוריה</th>
+                                <th>סה"כ שעות</th>
+                                <th>אחוז מסך השעות</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            if (reportData.categories instanceof Map) {
+                reportData.categories.forEach((hours, category) => {
+                    const percentage = reportData.totalHours > 0 ?
+                        Math.round((hours / reportData.totalHours) * 100) : 0;
+                    html += `
+                        <tr>
+                            <td style="font-weight: 500;">${category}</td>
+                            <td style="text-align: center;">${hours}</td>
+                            <td class="percentage-cell">${percentage}%</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            html += `
+                            <tr style="font-weight: 600; background: #f8fafc;">
+                                <td>סה"כ</td>
+                                <td style="text-align: center;">${reportData.totalHours || 0}</td>
+                                <td class="percentage-cell">${reportData.totalHours ? '100%' : '0%'}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            // Categorized tasks
+            if (reportData.categorizedTasks && reportData.categorizedTasks.length > 0) {
+                html += `
+                    <div class="section">
+                        <h3 class="section-title">פירוט משימות</h3>
+                `;
+
+                reportData.categorizedTasks.forEach(task => {
+                    html += `
+                        <div class="hours-item">
+                            <span class="hours-label">${task.name} → ${task.category}</span>
+                            <span class="hours-value">${task.hours}</span>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            // Missing days
+            if (reportData.missingDays && reportData.missingDays.length > 0) {
+                html += `
+                    <div class="section">
+                        <h3 class="section-title">ימים ללא דיווח (${reportData.missingDays.length} ימים)</h3>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                `;
+
+                reportData.missingDays.forEach(dateObj => {
+                    const d = (dateObj instanceof Date) ? dateObj : new Date(dateObj);
+                    html += `
+                        <div style="background: #f1f5f9; padding: 4px 10px; border-radius: 15px; font-size: 0.9rem;">
+                            ${isNaN(d.getTime()) ? '' : d.toLocaleDateString('he-IL')}
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="section">
+                        <h3 class="section-title">ימים ללא דיווח</h3>
+                        <div style="color: #22c55e; font-weight: 500;">אין ימים חסרים בתקופה זו</div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('pdf-report-content').innerHTML = html;
+        }
+
+        // PDF generation function
+        window.generatePDF = async function() {
+            try {
+                const { jsPDF } = window.jspdf;
+                const content = document.getElementById('pdf-content');
+
+                // Generate canvas from HTML
+                const canvas = await html2canvas(content, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+
+                const imgWidth = 210;
+                const pageHeight = 295;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+
+                let position = 0;
+
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                const filename = `work_report_${employeeData.firstName}_${employeeData.lastName}_${new Date().toISOString().slice(0, 10)}.pdf`;
+                pdf.save(filename);
+
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('שגיאה בהפקת הPDF');
+            }
+        };
+
+        // Print function
+        window.printReport = function() {
+            window.print();
+        };
+
+        // Go back function
+        window.goBack = function() {
+            if (window.opener) {
+                window.close();
+            } else {
+                window.history.back();
+            }
+        };
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', loadReport);
+    </script>
+</body>
+</html>

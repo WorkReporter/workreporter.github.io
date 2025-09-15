@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>דו"ח נתונים גולמיים - מערכת דיווח שעות</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Heebo', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .report-container {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .loading::after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f1f5f9;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            margin: 1rem auto;
+            animation: spin 1s linear infinite;
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem;
+            text-align: right;
+            border: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table td {
+            color: #1e293b;
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f1f5f9;
+        }
+
+        .report-type {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .report-type.daily {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .report-type.weekly {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .work-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .work-status.office {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .work-status.home {
+            background: #fce7f3;
+            color: #be185d;
+        }
+
+        .work-status.hybrid {
+            background: #f3e8ff;
+            color: #7c3aed;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .json-viewer {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .stats-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        .collapsible {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .collapsible-header {
+            padding: 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .collapsible-header:hover {
+            background: #e2e8f0;
+        }
+
+        .collapsible-content {
+            padding: 0 1rem 1rem;
+            display: none;
+        }
+
+        .collapsible.active .collapsible-content {
+            display: block;
+        }
+
+        .arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .collapsible.active .arrow {
+            transform: rotate(90deg);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .data-table {
+                font-size: 0.8rem;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">דו"ח נתונים גולמיים</div>
+    </div>
+
+    <div class="container">
+        <div class="report-container">
+            <div id="loading" class="loading">טוען נתונים גולמיים...</div>
+
+            <div id="raw-content" style="display: none;">
+                <div id="employee-info" class="stats-card">
+                    <!-- פרטי עובד -->
+                </div>
+
+                <div class="stats-grid" id="stats-grid">
+                    <!-- סטטיסטיקות -->
+                </div>
+
+                <div class="collapsible" id="reports-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('reports-section')">
+                        <span>דיווחים גולמיים מהמסד נתונים</span>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="collapsible-content">
+                        <div id="raw-reports-table"></div>
+                    </div>
+                </div>
+
+                <div class="collapsible" id="json-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('json-section')">
+                        <span>JSON גולמי</span>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="collapsible-content">
+                        <div id="json-viewer" class="json-viewer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons" id="action-buttons" style="display: none;">
+                <button class="btn btn-primary" onclick="exportCSV()">ייצוא CSV</button>
+                <button class="btn btn-success" onclick="exportJSON()">ייצוא JSON</button>
+                <button class="btn btn-secondary" onclick="goBack()">חזרה</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+        import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDpzAnHPl8trZDQwC-G5twRWSwdweko_T8",
+            authDomain: "work-report-volcani.firebaseapp.com",
+            projectId: "work-report-volcani",
+            storageBucket: "work-report-volcani.firebasestorage.app",
+            messagingSenderId: "569559789764",
+            appId: "1:569559789764:web:d11b9c0e43ff78a66dd991",
+            measurementId: "G-M5Z4R1FB40",
+            databaseURL: "https://work-report-volcani-default-rtdb.firebaseio.com/"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Global state
+        let rawReports = [];
+        let employeeData = null;
+        let dateRange = null;
+
+        // Extract data from URL parameters
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                employeeId: params.get('employeeId'),
+                employee: params.get('employee'),
+                startDate: params.get('startDate'),
+                endDate: params.get('endDate')
+            };
+        }
+
+        // Load raw data from Firebase
+        async function loadRawData() {
+            try {
+                const params = getUrlParams();
+
+                if (!params.employeeId || !params.employee || !params.startDate || !params.endDate) {
+                    throw new Error('חסרים פרמטרים נדרשים');
+                }
+
+                employeeData = JSON.parse(decodeURIComponent(params.employee));
+                dateRange = {
+                    start: new Date(params.startDate),
+                    end: new Date(params.endDate)
+                };
+
+                // Load reports from Firebase
+                const reportsRef = ref(db, `reports/${params.employeeId}`);
+                const snapshot = await get(reportsRef);
+
+                if (snapshot.exists()) {
+                    const allReports = snapshot.val();
+                    rawReports = filterReportsByDateRange(allReports, dateRange.start, dateRange.end);
+                } else {
+                    rawReports = [];
+                }
+
+                // Generate content
+                generateRawDataContent();
+
+                // Show content and hide loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('raw-content').style.display = 'block';
+                document.getElementById('action-buttons').style.display = 'flex';
+
+            } catch (error) {
+                console.error('Error loading raw data:', error);
+                document.getElementById('loading').innerHTML =
+                    '<div style="color: #ef4444;">שגיאה בטעינת הנתונים הגולמיים</div>';
+            }
+        }
+
+        function filterReportsByDateRange(allReports, startDate, endDate) {
+            const filtered = [];
+            const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+            Object.entries(allReports).forEach(([reportId, reportData]) => {
+                const reportDate = new Date(reportData.date);
+                const reportDateOnly = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate());
+
+                let include = false;
+                if (reportData.type === 'weekly') {
+                    const weekStart = getSundayOfWeek(reportDateOnly);
+                    const weekEndThu = new Date(weekStart);
+                    weekEndThu.setDate(weekStart.getDate() + 4);
+                    include = weekEndThu >= start && weekStart <= end;
+                } else {
+                    include = reportDateOnly >= start && reportDateOnly <= end;
+                }
+
+                if (include) {
+                    filtered.push({
+                        id: reportId,
+                        ...reportData,
+                        dateFormatted: reportDateOnly.toLocaleDateString('he-IL')
+                    });
+                }
+            });
+
+            return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+        }
+
+        function getSundayOfWeek(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const sunday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - day);
+            return sunday;
+        }
+
+        function generateRawDataContent() {
+            // Employee info
+            document.getElementById('employee-info').innerHTML = `
+                <h3 class="section-title">פרטי עובד</h3>
+                <p><strong>שם:</strong> ${employeeData.firstName} ${employeeData.lastName}</p>
+                <p><strong>אימייל:</strong> ${employeeData.email || 'לא זמין'}</p>
+                <p><strong>תקופת דו"ח:</strong> ${dateRange.start.toLocaleDateString('he-IL')} - ${dateRange.end.toLocaleDateString('he-IL')}</p>
+                <p><strong>מספר דיווחים:</strong> ${rawReports.length}</p>
+            `;
+
+            // Statistics
+            generateStatistics();
+
+            // Raw reports table
+            generateRawReportsTable();
+
+            // JSON viewer
+            generateJSONViewer();
+        }
+
+        function generateStatistics() {
+            const stats = calculateStatistics();
+
+            document.getElementById('stats-grid').innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-value">${stats.totalReports}</div>
+                    <div class="stat-label">סה"כ דיווחים</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${stats.dailyReports}</div>
+                    <div class="stat-label">דיווחים יומיים</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${stats.weeklyReports}</div>
+                    <div class="stat-label">דיווחים שבועיים</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${stats.totalHours.toFixed(1)}</div>
+                    <div class="stat-label">סה"כ שעות</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${stats.totalEntries}</div>
+                    <div class="stat-label">סה"כ רשומות</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${stats.uniqueResearchers}</div>
+                    <div class="stat-label">חוקרים ייחודיים</div>
+                </div>
+            `;
+        }
+
+        function calculateStatistics() {
+            const stats = {
+                totalReports: rawReports.length,
+                dailyReports: 0,
+                weeklyReports: 0,
+                totalHours: 0,
+                totalEntries: 0,
+                uniqueResearchers: new Set()
+            };
+
+            rawReports.forEach(report => {
+                if (report.type === 'daily') {
+                    stats.dailyReports++;
+                } else if (report.type === 'weekly') {
+                    stats.weeklyReports++;
+                }
+
+                if (Array.isArray(report.entries)) {
+                    stats.totalEntries += report.entries.length;
+
+                    report.entries.forEach(entry => {
+                        if (entry) {
+                            // Calculate hours
+                            let hours = 0;
+                            if (report.type === 'weekly') {
+                                if (entry.hours != null && entry.hours !== '') {
+                                    hours = parseFloat(entry.hours) || 0;
+                                } else if (entry.days != null && entry.days !== '') {
+                                    hours = (parseFloat(entry.days) || 0) * 8;
+                                } else if (Array.isArray(entry.dailyHours)) {
+                                    hours = entry.dailyHours.reduce((sum, h) => sum + (parseFloat(h) || 0), 0);
+                                }
+                            } else {
+                                hours = parseFloat(entry.hours) || 0;
+                            }
+                            stats.totalHours += hours;
+
+                            // Track researchers
+                            if (entry.researcher && entry.researcher !== 'משימות אחרות') {
+                                stats.uniqueResearchers.add(entry.researcher);
+                            }
+                        }
+                    });
+                }
+            });
+
+            stats.uniqueResearchers = stats.uniqueResearchers.size;
+            return stats;
+        }
+
+        function generateRawReportsTable() {
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>תאריך</th>
+                            <th>סוג דיווח</th>
+                            <th>מצב עבודה</th>
+                            <th>מספר רשומות</th>
+                            <th>חוקרים</th>
+                            <th>סה"כ שעות</th>
+                            <th>ID דיווח</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            rawReports.forEach(report => {
+                const reportHours = calculateReportHours(report);
+                const researchers = getReportResearchers(report);
+
+                html += `
+                    <tr>
+                        <td>${report.dateFormatted}</td>
+                        <td>
+                            <span class="report-type ${report.type}">
+                                ${report.type === 'daily' ? 'יומי' : 'שבועי'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="work-status ${report.workStatus || 'office'}">
+                                ${getWorkStatusText(report.workStatus)}
+                            </span>
+                        </td>
+                        <td>${Array.isArray(report.entries) ? report.entries.length : 0}</td>
+                        <td>${researchers.join(', ')}</td>
+                        <td>${reportHours.toFixed(1)}</td>
+                        <td style="font-family: monospace; font-size: 0.8rem;">${report.id}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('raw-reports-table').innerHTML = html;
+        }
+
+        function calculateReportHours(report) {
+            let totalHours = 0;
+            if (Array.isArray(report.entries)) {
+                report.entries.forEach(entry => {
+                    if (entry) {
+                        let hours = 0;
+                        if (report.type === 'weekly') {
+                            if (entry.hours != null && entry.hours !== '') {
+                                hours = parseFloat(entry.hours) || 0;
+                            } else if (entry.days != null && entry.days !== '') {
+                                hours = (parseFloat(entry.days) || 0) * 8;
+                            } else if (Array.isArray(entry.dailyHours)) {
+                                hours = entry.dailyHours.reduce((sum, h) => sum + (parseFloat(h) || 0), 0);
+                            }
+                        } else {
+                            hours = parseFloat(entry.hours) || 0;
+                        }
+                        totalHours += hours;
+                    }
+                });
+            }
+            return totalHours;
+        }
+
+        function getReportResearchers(report) {
+            const researchers = new Set();
+            if (Array.isArray(report.entries)) {
+                report.entries.forEach(entry => {
+                    if (entry && entry.researcher) {
+                        researchers.add(entry.researcher);
+                    }
+                });
+            }
+            return Array.from(researchers);
+        }
+
+        function getWorkStatusText(status) {
+            switch (status) {
+                case 'home': return 'בית';
+                case 'office': return 'משרד';
+                case 'hybrid': return 'משולב';
+                default: return 'משרד';
+            }
+        }
+
+        function generateJSONViewer() {
+            const jsonData = {
+                employee: employeeData,
+                dateRange: {
+                    start: dateRange.start.toISOString(),
+                    end: dateRange.end.toISOString()
+                },
+                reports: rawReports,
+                statistics: calculateStatistics()
+            };
+
+            document.getElementById('json-viewer').textContent = JSON.stringify(jsonData, null, 2);
+        }
+
+        // Export functions
+        window.exportCSV = function() {
+            const csvData = generateCSVData();
+            downloadFile('raw_data.csv', csvData, 'text/csv;charset=utf-8');
+        };
+
+        window.exportJSON = function() {
+            const jsonData = {
+                employee: employeeData,
+                dateRange: {
+                    start: dateRange.start.toISOString(),
+                    end: dateRange.end.toISOString()
+                },
+                reports: rawReports,
+                statistics: calculateStatistics(),
+                exportedAt: new Date().toISOString()
+            };
+
+            const jsonString = JSON.stringify(jsonData, null, 2);
+            downloadFile('raw_data.json', jsonString, 'application/json');
+        };
+
+        function generateCSVData() {
+            const headers = ['תאריך', 'סוג דיווח', 'מצב עבודה', 'חוקר', 'פרטים', 'שעות', 'ID דיווח'];
+            const rows = [headers];
+
+            rawReports.forEach(report => {
+                if (Array.isArray(report.entries)) {
+                    report.entries.forEach(entry => {
+                        if (entry) {
+                            let hours = 0;
+                            if (report.type === 'weekly') {
+                                if (entry.hours != null && entry.hours !== '') {
+                                    hours = parseFloat(entry.hours) || 0;
+                                } else if (entry.days != null && entry.days !== '') {
+                                    hours = (parseFloat(entry.days) || 0) * 8;
+                                } else if (Array.isArray(entry.dailyHours)) {
+                                    hours = entry.dailyHours.reduce((sum, h) => sum + (parseFloat(h) || 0), 0);
+                                }
+                            } else {
+                                hours = parseFloat(entry.hours) || 0;
+                            }
+
+                            rows.push([
+                                report.dateFormatted,
+                                report.type === 'daily' ? 'יומי' : 'שבועי',
+                                getWorkStatusText(report.workStatus),
+                                entry.researcher || '',
+                                entry.detail || '',
+                                hours,
+                                report.id
+                            ]);
+                        }
+                    });
+                } else {
+                    rows.push([
+                        report.dateFormatted,
+                        report.type === 'daily' ? 'יומי' : 'שבועי',
+                        getWorkStatusText(report.workStatus),
+                        '',
+                        'אין רשומות',
+                        0,
+                        report.id
+                    ]);
+                }
+            });
+
+            return rows.map(row =>
+                row.map(cell => {
+                    const str = String(cell || '');
+                    return str.includes(',') || str.includes('"') || str.includes('\n')
+                        ? `"${str.replace(/"/g, '""')}"`
+                        : str;
+                }).join(',')
+            ).join('\n');
+        }
+
+        function downloadFile(filename, content, type) {
+            const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+            const blob = new Blob([bom, content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${employeeData.firstName}_${employeeData.lastName}_${filename}`;
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(url);
+            a.remove();
+        }
+
+        // Toggle collapsible sections
+        window.toggleCollapsible = function(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.classList.toggle('active');
+        };
+
+        // Go back function
+        window.goBack = function() {
+            if (window.opener) {
+                window.close();
+            } else {
+                window.history.back();
+            }
+        };
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', loadRawData);
+    </script>
+</body>
+</html>
