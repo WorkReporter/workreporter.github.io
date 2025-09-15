@@ -575,12 +575,25 @@
                 flex: 1;
             }
         }
+
+        /* Logout button in header */
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.45rem 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: inherit;
+        }
+        .logout-btn:hover { background: #dc2626; }
     </style>
 </head>
 <body>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
         import { getDatabase, ref, get, query, orderByChild, equalTo } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
         // Firebase configuration - Replace with your config
@@ -599,8 +612,8 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        // Make Firebase available globally
-        window.firebaseApp = { app, auth, db, get, ref, query, orderByChild, equalTo };
+        // Make Firebase available globally (include signOut)
+        window.firebaseApp = { app, auth, db, get, ref, query, orderByChild, equalTo, signOut };
     </script>
 
     <div class="header">
@@ -610,6 +623,7 @@
         </div>
         <div class="user-profile">
             <div class="user-avatar">👤</div>
+            <button class="logout-btn" onclick="logout()" title="התנתק">התנתק</button>
         </div>
     </div>
 
@@ -1865,6 +1879,25 @@
                 return true;
             } catch (error) {
                 return false;
+            }
+        }
+
+        // Logout helper - signs the user out and redirects to index.html
+        async function logout() {
+            try {
+                if (window.firebaseApp && typeof window.firebaseApp.signOut === 'function' && window.firebaseApp.auth) {
+                    await window.firebaseApp.signOut(window.firebaseApp.auth);
+                } else if (window.firebaseApp && window.firebaseApp.auth && typeof window.firebaseApp.auth.signOut === 'function') {
+                    await window.firebaseApp.auth.signOut();
+                } else {
+                    alert('לא ניתן להתנתק כעת.');
+                    return;
+                }
+                // redirect after successful sign-out
+                window.location.href = 'index.html';
+            } catch (err) {
+                console.error('Error signing out:', err);
+                alert('שגיאה בעת ניסיון התנתקות. נסה שוב.');
             }
         }
     </script>
