@@ -385,59 +385,6 @@
                 title: 'סיימנו! 🚀',
                 text: 'אתם מוכנים להתחיל.</u></strong>. בהצלחה!',
                 onBeforeStep: () => navigateTo(".nav-btn[onclick*='main']"),
-            },
-            {
-                title: 'התחייבות אישית ✍️',
-                text: `
-                    <div style="text-align:center; margin-top:10px;">
-                        <h3>אני מתחייב לדווח בזמן?</h3>
-                        <div id="btnContainer"
-                             style="display:flex; justify-content:center; gap:20px; margin-top:15px; position:relative; width:350px; height: 120px; margin:auto;">
-
-                            <button id="yesBtn" style="
-                                padding:10px 20px; font-size:18px; border:none; border-radius:8px;
-                                background:#22c55e; color:white; cursor:pointer; position:relative; z-index:2;">
-                                ✅ כן
-                            </button>
-
-                            <button id="noBtn" style="
-                                padding:10px 20px; font-size:18px; border:none; border-radius:8px;
-                                background:#ef4444; color:white; cursor:pointer; position:absolute; left:220px; top:0;
-                                transition: all 0.1s ease-out;">
-                                ❌ לא
-                            </button>
-                        </div>
-                    </div>
-                `,
-                onBeforeStep: () => {
-                    setTimeout(() => {
-                        const noBtn = document.getElementById("noBtn");
-                        const yesBtn = document.getElementById("yesBtn");
-                        const container = document.getElementById("btnContainer");
-
-                        if (noBtn && yesBtn && container) {
-                            noBtn.addEventListener("mouseover", () => {
-                                const maxX = container.clientWidth - noBtn.offsetWidth;
-                                const maxY = container.clientHeight - noBtn.offsetHeight;
-                                const x = Math.random() * maxX;
-                                const y = Math.random() * maxY;
-
-                                noBtn.style.left = `${x}px`;
-                                noBtn.style.top = `${y}px`;
-                            });
-
-                            noBtn.addEventListener("click", () => {
-                                // --- שימוש בפונקציה החדשה במקום alert ---
-                                showToast("הפעולה נכשלה בהצלחה! 😉");
-                            });
-
-                            yesBtn.addEventListener("click", () => {
-                                // --- שימוש בפונקציה החדשה במקום alert ---
-                                showToast("מעולה!  😎");
-                            });
-                        }
-                    }, 300);
-                }
             }
         ];
 
