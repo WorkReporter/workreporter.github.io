@@ -725,7 +725,7 @@
         <div class="header-title">
             <a href="#" class="home-link" id="home-link" title="עמוד ראשי" aria-label="עמוד ראשי" onclick="showEmployeesScreen(); return false;">
                 <div class="header-icon">🏠</div>
-                <span id="header-name">שם מנהל/ת</span>
+                <span id="header-name">ברוך הבא, שם מנהל/ת</span>
             </a>
         </div>
         <div class="user-profile">
@@ -2127,7 +2127,7 @@
 
                             // update only the header name text (keep the home link intact)
                             const headerNameEl = document.getElementById('header-name');
-                            if (headerNameEl) headerNameEl.textContent = AppState.managerName;
+                            if (headerNameEl) headerNameEl.textContent = `ברוך הבא, ${AppState.managerName} ☺️`;
 
                             renderEmployeesList();
                         } else {
