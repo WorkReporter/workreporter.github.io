@@ -839,7 +839,7 @@
 
         <div id="intermediate-screen" class="screen">
             <div class="report-container">
-                <h1 class="screen-title" id="intermediate-title">עובד - הפקת דו"ח שכר ביניים</h1>
+                <h1 class="screen-title" id="intermediate-title">עובד - הפקת דו"ח פעילות - מסך ביניים</h1>
                 <p style="text-align: center; color: #64748b; margin-bottom: 2rem;" id="intermediate-subtitle">לתקופה</p>
 
                 <div id="intermediate-content">
@@ -1083,7 +1083,7 @@
             const startDate = AppState.selectedStartDate.toLocaleDateString('he-IL');
             const endDate = AppState.selectedEndDate.toLocaleDateString('he-IL');
 
-            document.getElementById('intermediate-title').textContent = `${employee.firstName} ${employee.lastName} - הפקת דו"ח שכר ביניים`;
+            document.getElementById('intermediate-title').textContent = `${employee.firstName} ${employee.lastName} - הפקת דו"ח פעילות - עמוד ביניים`;
             document.getElementById('intermediate-subtitle').textContent = `לתקופה ${startDate} - ${endDate}`;
 
             showScreen('intermediate-screen');
@@ -1449,8 +1449,9 @@
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'relative', this)">חלוקה יחסית</button>
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'custom', this)">חיוב חדש</button>
                                  </div>
-                                 <input id="${key}_custom" class="custom-input" style="display:none; margin-top:0.75rem;" placeholder="הכנס הסבר או חוקר/ת לחיוב חדש..." value="${AppState.categorizations.get(`${key}_custom`) || ''}" oninput="AppState.categorizations.set('${key}_custom', this.value)" />
                              </div>
+                             <!-- moved custom input outside of header so it opens below the buttons like the active-select -->
+                             <input id="${key}_custom" class="custom-input" style="display:none; margin-top:0.75rem;" placeholder="הכנס הסבר או חוקר/ת לחיוב חדש..." value="${AppState.categorizations.get(`${key}_custom`) || ''}" oninput="AppState.categorizations.set('${key}_custom', this.value)" />
                          </div>
                      `;
                 });
@@ -1477,8 +1478,9 @@
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'equal', this)">חלוקה שווה</button>
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'custom', this)">חיוב חדש</button>
                                  </div>
-                                 <input id="${key}_custom" class="custom-input" style="display:none; margin-top:0.75rem;" placeholder="הכנס הסבר לחיוב חדש..." value="${AppState.categorizations.get(`${key}_custom`) || ''}" oninput="AppState.categorizations.set('${key}_custom', this.value)" />
                              </div>
+                             <!-- moved custom input outside of header so it opens below the buttons like the active-select -->
+                             <input id="${key}_custom" class="custom-input" style="display:none; margin-top:0.75rem;" placeholder="הכנס הסבר לחיוב חדש..." value="${AppState.categorizations.get(`${key}_custom`) || ''}" oninput="AppState.categorizations.set('${key}_custom', this.value)" />
                          </div>
                      `;
                 });
@@ -1522,7 +1524,7 @@
                     if (!activeSelect) {
                         activeSelect = document.createElement('select');
                         activeSelect.className = 'active-select custom-input';
-                        activeSelect.style.marginTop = '0.5rem';
+                        activeSelect.style.marginTop = '0.75rem';
                         activeSelect.innerHTML = '<option value="">בחר חוקר פעיל...</option>' + activeList.map(r => `<option value="${r}">${r}</option>`).join('');
                         activeSelect.addEventListener('change', (e) => {
                             AppState.categorizations.set(`${taskIndex}_activeResearcher`, e.target.value);
@@ -2250,7 +2252,7 @@
                     return;
                 }
                 // redirect after successful sign-out
-                window.location.href = 'index.html';
+                window.location.href = 'homepage.html';
             } catch (err) {
                 console.error('Error signing out:', err);
                 alert('שגיאה בעת ניסיון התנתקות. נסה שוב.');
