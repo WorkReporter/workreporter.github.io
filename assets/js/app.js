@@ -282,6 +282,32 @@
             if (typeof updateManagerUIVisibility === 'function') {
                 updateManagerUIVisibility(userData.position || '');
             }
+
+            // --- Small addition: set the header display name (minimal, safe) ---
+            try {
+                // Prefer DB name fields if present
+                var displayName = '';
+                if ((userData.firstName && userData.firstName.toString().trim()) || (userData.lastName && userData.lastName.toString().trim())) {
+                    displayName = ((userData.firstName || '') + ' ' + (userData.lastName || '')).trim();
+                } else if (currentUser) {
+                    displayName = (currentUser.displayName && currentUser.displayName.toString().trim()) || (currentUser.email || '').toString().trim();
+                    // prefer local part of email if displayName not set
+                    if (displayName && displayName.indexOf('@') !== -1) displayName = displayName.split('@')[0];
+                }
+
+                if (displayName) {
+                    if (typeof setUserDisplayName === 'function') {
+                        setUserDisplayName(displayName);
+                    } else {
+                        // setter may be defined later in the page; keep pending value
+                        window._pendingUserDisplayName = displayName;
+                    }
+                }
+            } catch (e) {
+                // swallow any errors to avoid affecting auth flow
+                console.warn('Could not set user display name:', e);
+            }
+
         }).catch(() => {});
     }
 

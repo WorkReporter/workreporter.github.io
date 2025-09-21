@@ -121,6 +121,32 @@
             z-index: 1;
         }
 
+        /* user area: wraps icon + user name, RTL-aware and responsive */
+        .user-area {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            direction: rtl; /* keep name to the left of the icon in RTL */
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 14px;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            line-height: 1;
+            -webkit-font-smoothing:antialiased;
+        }
+
+        /* keep compact on smaller screens: hide text and keep icon only */
+        @media (max-width: 600px) {
+            .user-name { display: none !important; }
+        }
+
         .user-icon:hover {
             transform: scale(1.1);
             box-shadow: 0 6px 20px rgba(0,0,0,0.2);
@@ -1402,16 +1428,19 @@
     </div>
 
     <div class="header">
-        <div class="user-icon" onclick="showScreen('user-profile')"><span class="material-symbols-outlined" aria-hidden="true">account_circle</span></div>
-        <h1>מערכת דיווח פעילות - המכון להנדסת מערכות חקלאיות וביולוגיות</h1>
-        <div class="header-actions">
-            <div onclick="showScreen('main')" style="cursor: pointer;"><span class="material-symbols-outlined" aria-hidden="true">home</span></div>
-            <button id="logout-btn" onclick="logout()" style="display:none; background:#ef4444; color:white; border: 1px solid #ef4444; padding:6px 10px; border-radius:6px; cursor:pointer;">התנתק</button>
+        <div class="user-area" onclick="showScreen('user-profile')" role="button" aria-label="פתח פרופיל משתמש">
+            <div class="user-icon"><span class="material-symbols-outlined" aria-hidden="true">account_circle</span></div>
+            <span id="user-display-name" class="user-name" aria-live="polite" aria-atomic="true"></span>
         </div>
-    </div>
+         <h1>מערכת דיווח פעילות - המכון להנדסת מערכות חקלאיות וביולוגיות</h1>
+         <div class="header-actions">
+             <div onclick="showScreen('main')" style="cursor: pointer;"><span class="material-symbols-outlined" aria-hidden="true">home</span></div>
+             <button id="logout-btn" onclick="logout()" style="display:none; background:#ef4444; color:white; border: 1px solid #ef4444; padding:6px 10px; border-radius:6px; cursor:pointer;">התנתק</button>
+         </div>
+     </div>
 
 
-            <div class="navigation" style="display:none;">
+             <div class="navigation" style="display:none;">
             <button class="nav-btn active" onclick="showScreen('main')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">home</span>בית</button>
             <button class="nav-btn" onclick="showScreen('active-researchers')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">group</span>חוקרים פעילים</button>
             <button class="nav-btn" onclick="showScreen('calendar')"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">calendar_month</span>יומן</button>
@@ -1833,6 +1862,34 @@
     `;
     document.head.appendChild(tourStyleOverrides);
 </script>
+<!-- Insert JS setter near the end of the file -->
+<script>
+// Minimal helper: call setUserDisplayName(name) from your auth flow after login.
+function setUserDisplayName(fullName) {
+    var el = document.getElementById('user-display-name');
+    if (!el) return;
+    if (fullName && fullName.toString().trim()) {
+        el.textContent = fullName.toString().trim();
+        el.style.display = '';
+    } else {
+        el.textContent = '';
+        el.style.display = 'none';
+    }
+}
+
+// If app.js ran earlier and stored a pending display name, apply it now.
+if (window._pendingUserDisplayName) {
+    try { setUserDisplayName(window._pendingUserDisplayName); } catch (e) { /* ignore */ }
+    // clear it to avoid re-applying
+    window._pendingUserDisplayName = undefined;
+}
+
+// Optional convenience: if you already have a user object, uncomment and adapt below:
+// document.addEventListener('DOMContentLoaded', function() {
+//     // Example: setUserDisplayName(currentUser && (currentUser.displayName || currentUser.email));
+// });
+</script>
+
 </body>
 </html>
 
