@@ -1034,7 +1034,7 @@
         function showCalendarScreen(employee, shouldResetDates = true) {
             if (employee) {
                 AppState.selectedEmployee = employee;
-                document.getElementById('calendar-title').textContent = `${employee.firstName} ${employee.lastName} - נוכחות`;
+                document.getElementById('calendar-title').textContent = `${employee.firstName} ${employee.lastName} - פעילות`;
             }
             if (shouldResetDates) {
                 AppState.selectedStartDate = null;
@@ -1531,12 +1531,104 @@
             });
         }
 
-        function toCsv(rows, columns) { /* CSV logic remains the same */ return ""; }
-        function download(filename, content, type) { /* Download logic remains the same */ }
-        function exportFinalReport() { /* Export logic remains the same */ }
-        function getSundayOfWeek(date) { const d = new Date(date); d.setDate(d.getDate() - d.getDay()); return d; }
-        window.openPdfReport = () => { /* PDF logic remains the same */ };
-        window.openDbReport = () => { /* Raw data logic remains the same */ };
+        // --- פונקציות להפעלת הכפתורים ---
+
+        function exportFinalReport() {
+            // --- FIX: Check for data before proceeding to prevent the error ---
+            if (!AppState.finalReport || !AppState.selectedEmployee || !AppState.selectedStartDate || !AppState.selectedEndDate) {
+                alert('שגיאה: נתוני הדו"ח אינם זמינים. נסה להפיק את הדו"ח מחדש.');
+                console.error("exportFinalReport called without complete data in AppState.", AppState);
+                return;
+            }
+
+            const { selectedEmployee, selectedStartDate, selectedEndDate, finalReport } = AppState;
+
+            const employeeName = `${selectedEmployee.firstName} ${selectedEmployee.lastName}`;
+            const startDateStr = selectedStartDate.toLocaleDateString('he-IL');
+            const endDateStr = selectedEndDate.toLocaleDateString('he-IL');
+            const dateForFilename = new Date().toISOString().slice(0, 10);
+
+            let csvContent = '';
+
+            // 1. Add header info
+            csvContent += `דו"ח שעות עבור:,${employeeName}\n`;
+            csvContent += `תקופה:,${startDateStr} - ${endDateStr}\n\n`;
+
+            // 2. Add summary table
+            const summaryRows = [];
+            finalReport.categories.forEach((hours, category) => {
+                const percentage = finalReport.totalHours > 0 ? Math.round((hours / finalReport.totalHours) * 100) : 0;
+                summaryRows.push({
+                    category: category,
+                    hours: hours,
+                    percentage: `${percentage}%`
+                });
+            });
+            // Add total row
+            summaryRows.push({
+                category: 'סה"כ',
+                hours: finalReport.totalHours,
+                percentage: '100%'
+            });
+
+            const summaryColumns = [
+                { key: 'category', header: 'קטגוריה' },
+                { key: 'hours', header: 'סה"כ שעות' },
+                { key: 'percentage', header: 'אחוז מסך השעות' }
+            ];
+            csvContent += toCsv(summaryRows, summaryColumns);
+
+            csvContent += '\n\n'; // Add spacing
+
+            // 3. Add Missing Days
+            if (finalReport.missingDays.length > 0) {
+                const missingDaysRows = finalReport.missingDays.map(date => ({
+                    date: date.toLocaleDateString('he-IL')
+                }));
+                const missingDaysColumns = [{ key: 'date', header: 'ימים ללא דיווח' }];
+                csvContent += toCsv(missingDaysRows, missingDaysColumns);
+            } else {
+                csvContent += 'לא נמצאו ימים ללא דיווח בתקופה זו.\n';
+            }
+
+            // 4. Trigger download
+            const filename = `work_report_${employeeName.replace(' ', '_')}_${dateForFilename}.csv`;
+            download(filename, csvContent);
+        }
+
+        // === Added: report windows (PDF / Raw data) ===
+        window.openPdfReport = function() {
+            if (!AppState.finalReport || !AppState.selectedEmployee || !AppState.selectedStartDate || !AppState.selectedEndDate) {
+                alert('שגיאה: נתוני הדו"ח אינם זמינים.');
+                return;
+            }
+            // Serialize Map and Date objects safely
+            const serializableReport = {
+                totalHours: AppState.finalReport.totalHours,
+                categorizedTasks: AppState.finalReport.categorizedTasks,
+                missingDays: (AppState.finalReport.missingDays || []).map(d => (d instanceof Date ? d.toISOString() : d)),
+                categories: Array.from(AppState.finalReport.categories.entries())
+            };
+            const employeeData = encodeURIComponent(JSON.stringify(AppState.selectedEmployee));
+            const reportData = encodeURIComponent(JSON.stringify(serializableReport));
+            const startDate = AppState.selectedStartDate.toISOString();
+            const endDate = AppState.selectedEndDate.toISOString();
+            const url = `pdf_report.html?employee=${employeeData}&startDate=${startDate}&endDate=${endDate}&reportData=${reportData}`;
+            window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
+        };
+
+        window.openDbReport = function() {
+            if (!AppState.selectedEmployee || !AppState.selectedStartDate || !AppState.selectedEndDate) {
+                alert('שגיאה: פרטי העובד או התאריכים אינם זמינים.');
+                return;
+            }
+            const employeeData = encodeURIComponent(JSON.stringify(AppState.selectedEmployee));
+            const employeeId = AppState.selectedEmployee.id;
+            const startDate = AppState.selectedStartDate.toISOString();
+            const endDate = AppState.selectedEndDate.toISOString();
+            const url = `raw_data_report.html?employeeId=${employeeId}&employee=${employeeData}&startDate=${startDate}&endDate=${endDate}`;
+            window.open(url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+        };
         function toLocalDateStr(dt) { return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; }
 
         document.addEventListener('DOMContentLoaded', () => {
