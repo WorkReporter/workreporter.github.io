@@ -502,40 +502,34 @@
         function computeRawCategorySeries(rd) {
             const rawMap = new Map();
 
-            // Add base researchers from raw data
+            // Add base researchers from raw data (before any distribution)
             if (rd.raw && rd.raw.researchers) {
                 rd.raw.researchers.forEach((v, k) => {
-                    if (Number(v) > 0) rawMap.set(k, Number(v));
+                    const num = Number(v) || 0;
+                    if (num > 0) rawMap.set(k, +num.toFixed(2));
                 });
             }
 
-            // Calculate raw totals for seminars and relative distribution
-            let seminarTotal = 0;
-            let relativeTotal = 0;
+            // Use exact raw totals provided from the manager dashboard
+            const seminarsTotal = Number(rd.raw?.seminarsTotal || 0);
+            const otherTasksTotal = Number(rd.raw?.otherTasksTotal || 0);
 
-            if (rd.categorizedTasks) {
-                rd.categorizedTasks.forEach(task => {
-                    if (task.category === 'סמינר') {
-                        seminarTotal += task.hours;
-                    } else if (task.category === 'חלוקה יחסית') {
-                        relativeTotal += task.hours;
-                    }
-                });
+            if (seminarsTotal > 0) {
+                rawMap.set('סמינר/קורס/הכשרה', +seminarsTotal.toFixed(2));
             }
-
-            // Add seminar and relative distribution totals if they exist
-            if (seminarTotal > 0) {
-                rawMap.set('סמינר/קורס/הכשרה', seminarTotal);
-            }
-            if (relativeTotal > 0) {
-                rawMap.set('חלוקה יחסית', relativeTotal);
+            if (otherTasksTotal > 0) {
+                rawMap.set('משימות נוספות', +otherTasksTotal.toFixed(2));
             }
 
             const sorted = Array.from(rawMap.entries()).sort((a, b) => b[1] - a[1]);
             const labels = sorted.map(item => item[0]);
             const values = sorted.map(item => Number(item[1].toFixed(2)));
 
-            return { labels, values, seminarTotal, relativeTotal };
+            return {
+                labels,
+                values,
+                categoriesMap: rawMap
+            };
         }
 
         // --- Rendering Functions ---
@@ -546,46 +540,48 @@
             tbody.innerHTML = '';
             tfoot.innerHTML = '';
 
-            // Create a map for easy lookup of raw values
-            const rawMap = new Map();
-            rawSeries.labels.forEach((label, i) => {
-                rawMap.set(label, rawSeries.values[i]);
-            });
-
             // Calculate total raw hours (sum of all raw values)
             const totalRawHours = rawSeries.values.reduce((sum, value) => sum + value, 0);
 
-            // Render existing categories with both raw and processed data
-            labels.forEach((label, i) => {
-                const processedValue = values[i];
-                const rawValue = rawMap.get(label) || processedValue;
-                const percent = totalHours > 0 ? Math.round((processedValue / totalHours) * 100) : 0;
+            // Create a comprehensive list of all categories
+            const allCategories = new Set();
+
+            // Add processed categories (these are the final distributed categories)
+            labels.forEach(label => allCategories.add(label));
+
+            // Add raw-only categories (these were distributed and should show 0%)
+            rawSeries.labels.forEach(label => {
+                if (!labels.includes(label)) {
+                    allCategories.add(label);
+                }
+            });
+
+            // Convert to array and sort by raw hours (descending)
+            const sortedCategories = Array.from(allCategories).sort((a, b) => {
+                const rawA = rawSeries.categoriesMap.get(a) || 0;
+                const rawB = rawSeries.categoriesMap.get(b) || 0;
+                return rawB - rawA;
+            });
+
+            // Render all categories
+            sortedCategories.forEach(categoryName => {
+                const rawValue = rawSeries.categoriesMap.get(categoryName) || 0;
+                const processedIndex = labels.indexOf(categoryName);
+                const processedValue = processedIndex >= 0 ? values[processedIndex] : 0;
+
+                // Calculate percentage based on processed value vs total processed hours
+                let percent = 0;
+                if (processedValue > 0 && totalHours > 0) {
+                    percent = Math.round((processedValue / totalHours) * 100);
+                }
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${escapeHtml(label)}</td>
+                    <td>${escapeHtml(categoryName)}</td>
                     <td>${rawValue.toFixed(2)}</td>
                     <td class="percentage-cell">${percent}%</td>`;
                 tbody.appendChild(tr);
             });
-
-            // Add new rows for seminar and relative distribution with 0% if they have raw hours
-            if (rawSeries.seminarTotal > 0) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>סמינר/קורס/הכשרה</td>
-                    <td>${rawSeries.seminarTotal.toFixed(2)}</td>
-                    <td class="percentage-cell">0%</td>`;
-                tbody.appendChild(tr);
-            }
-
-            if (rawSeries.relativeTotal > 0) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>חלוקה יחסית</td>
-                    <td>${rawSeries.relativeTotal.toFixed(2)}</td>
-                    <td class="percentage-cell">0%</td>`;
-                tbody.appendChild(tr);
-            }
 
             const totalRow = document.createElement('tr');
             totalRow.innerHTML = `

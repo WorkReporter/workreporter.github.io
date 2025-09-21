@@ -1390,26 +1390,32 @@
                             break;
                         case 'equal':
                         case 'relative': // Treat them similarly for logic, different for display
-                            const reportResearchers = Array.from(data.researchers.keys());
-                            const targetList = categorization === 'equal' ? activeList : reportResearchers;
-                            const totalBase = reportResearchers.reduce((sum, r) => sum + (data.researchers.get(r) || 0), 0);
+                            // תיקון חשוב: החלוקה צריכה להתבצע רק בין חוקרים שבפועל היו פעילים באותה תקופה
+                            // לא לפי הרשימה הכללית של חוקרים פעילים
+                            const researchersWithHours = Array.from(data.researchers.entries())
+                                .filter(([researcher, hours]) => hours > 0)
+                                .map(([researcher, hours]) => researcher);
 
-                            if (targetList.length > 0 && (categorization === 'equal' || totalBase > 0)) {
+                            const totalBase = researchersWithHours.reduce((sum, r) => sum + (data.researchers.get(r) || 0), 0);
+
+                            if (researchersWithHours.length > 0 && (categorization === 'equal' || totalBase > 0)) {
                                 if (categorization === 'relative') {
+                                    // חלוקה יחסית - רק בין חוקרים שבפועל היו פעילים באותה תקופה
                                     let remaining = task.hours;
-                                    reportResearchers.forEach((r, idx) => {
+                                    researchersWithHours.forEach((r, idx) => {
                                         const weight = (data.researchers.get(r) || 0) / totalBase;
-                                        const toAdd = (idx === reportResearchers.length - 1) ? remaining : +(task.hours * weight).toFixed(2);
+                                        const toAdd = (idx === researchersWithHours.length - 1) ? remaining : +(task.hours * weight).toFixed(2);
                                         remaining = +(remaining - toAdd).toFixed(2);
                                         const prev = finalData.categories.get(r) || 0;
                                         finalData.categories.set(r, +(prev + toAdd).toFixed(2));
                                     });
                                     displayName = `חלוקה יחסית`;
                                 } else { // Equal
-                                    const portion = task.hours / targetList.length;
+                                    // חלוקה שווה - רק בין חוקרים שבפועל היו פעילים באותה תקופה
+                                    const portion = task.hours / researchersWithHours.length;
                                     let remaining = task.hours;
-                                    targetList.forEach((r, idx) => {
-                                        const toAdd = (idx === targetList.length - 1) ? remaining : +portion.toFixed(2);
+                                    researchersWithHours.forEach((r, idx) => {
+                                        const toAdd = (idx === researchersWithHours.length - 1) ? remaining : +portion.toFixed(2);
                                         remaining = +(remaining - toAdd).toFixed(2);
                                         const prev = finalData.categories.get(r) || 0;
                                         finalData.categories.set(r, +(prev + toAdd).toFixed(2));
@@ -1417,13 +1423,13 @@
                                     displayName = `חלוקה שווה`;
                                 }
                             } else {
-                                displayName = categorization === 'relative' ? 'חלוקה יחסית (אין בסיס)' : 'חלוקה שווה (אין חוקרים)';
+                                displayName = categorization === 'relative' ? 'חלוקה יחסית (אין בסיס)' : 'חלוקה שווה (אין חוקרים פעילים בתקופה)';
                                 const prev = finalData.categories.get(displayName) || 0;
                                 finalData.categories.set(displayName, prev + task.hours);
                             }
                             break;
                         case 'seminar':
-                            displayName = 'סמינר';
+                            displayName = 'סמינר/קורס/הכשרה';
                             const prevSem = finalData.categories.get(displayName) || 0;
                             finalData.categories.set(displayName, prevSem + task.hours);
                             break;
@@ -1603,16 +1609,27 @@
                 return;
             }
             // Serialize Map and Date objects safely
+            // Compute raw totals directly from the pre-processed reportData (before any distribution)
+            const rawResearchers = Array.isArray(AppState.reportData?.researchers)
+                ? AppState.reportData.researchers
+                : (AppState.reportData?.researchers ? Array.from(AppState.reportData.researchers.entries()) : []);
+            const rawSeminarsTotal = Array.isArray(AppState.reportData?.seminars)
+                ? AppState.reportData.seminars.reduce((sum, t) => sum + (Number(t.hours) || 0), 0)
+                : 0;
+            const rawOtherTasksTotal = Array.isArray(AppState.reportData?.otherTasks)
+                ? AppState.reportData.otherTasks.reduce((sum, t) => sum + (Number(t.hours) || 0), 0)
+                : 0;
+
             const serializableReport = {
                 totalHours: AppState.finalReport.totalHours,
                 categorizedTasks: AppState.finalReport.categorizedTasks,
                 missingDays: (AppState.finalReport.missingDays || []).map(d => (d instanceof Date ? d.toISOString() : d)),
                 categories: Array.from(AppState.finalReport.categories.entries()),
-                // Added: raw base researchers (before distribution/assignments)
+                // Added: raw base researchers (before distribution/assignments) and raw totals
                 raw: {
-                    researchers: Array.isArray(AppState.reportData?.researchers)
-                        ? AppState.reportData.researchers
-                        : (AppState.reportData?.researchers ? Array.from(AppState.reportData.researchers.entries()) : [])
+                    researchers: rawResearchers,
+                    seminarsTotal: Number(rawSeminarsTotal.toFixed(2)),
+                    otherTasksTotal: Number(rawOtherTasksTotal.toFixed(2))
                 }
             };
             const employeeData = encodeURIComponent(JSON.stringify(AppState.selectedEmployee));
@@ -1667,7 +1684,7 @@
         async function logout() {
             try {
                 await window.firebaseApp.signOut(window.firebaseApp.auth);
-                window.location.href = 'homepage.html';
+                window.location.href = 'index.html';
             } catch (err) {
                 console.error('Error signing out:', err);
             }
@@ -1675,4 +1692,3 @@
     </script>
 </body>
 </html>
-
