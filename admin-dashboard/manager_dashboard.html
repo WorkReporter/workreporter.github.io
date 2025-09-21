@@ -1661,7 +1661,7 @@
         async function logout() {
             try {
                 await window.firebaseApp.signOut(window.firebaseApp.auth);
-                window.location.href = 'index.html';
+                window.location.href = 'homepage.html';
             } catch (err) {
                 console.error('Error signing out:', err);
             }
