@@ -216,11 +216,10 @@
 
         .calendar-day.other-month {
             color: #cbd5e0;
-            cursor: default;
         }
 
         .calendar-day.other-month:hover {
-            background: transparent;
+            background: #f1f5f9;
         }
 
         .calendar-day.has-reports {
@@ -554,13 +553,15 @@
 
         /* Action buttons layout */
         .action-buttons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            display: flex;
+            justify-content: center;
             gap: 1rem;
             margin-top: 2rem;
+            flex-wrap: wrap;
         }
 
-        .action-btn {
+
+      .action-btn {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -575,6 +576,8 @@
             text-decoration: none;
             font-family: inherit;
             min-height: 56px;
+            min-width: 200px;
+            max-width: 300px;
         }
 
         .action-btn:hover {
@@ -693,6 +696,28 @@
         @media (max-width:600px) {
             .legend { font-size:0.85rem; gap:0.5rem; }
         }
+
+        .action-btn.primary {
+            background: #3b82f6;
+            color: white;
+            font-weight: 600;
+        }
+        .action-btn.primary:hover {
+            background: #2563eb;
+        }
+
+        .action-btn.secondary {
+            background: #f8fafc;
+            color: #475569;
+            border: 2px solid #e2e8f0;
+            font-weight: 600;
+        }
+        .action-btn.secondary:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+
     </style>
 </head>
 <body>
@@ -724,12 +749,17 @@
     <div class="header">
         <div class="header-title">
             <a href="#" class="home-link" id="home-link" title="עמוד ראשי" aria-label="עמוד ראשי" onclick="showEmployeesScreen(); return false;">
-                <div class="header-icon">🏠</div>
-                <span id="header-name">ברוך הבא, שם מנהל/ת</span>
+                <div class="header-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9,22 9,12 15,12 15,22"/>
+                    </svg>
+                </div>
+                <span id="header-name">טוען את שם המנהל/ת...</span>
             </a>
         </div>
         <div class="user-profile">
-            <div class="user-avatar">👤</div>
+
             <button class="logout-btn" onclick="logout()" title="התנתק">התנתק</button>
         </div>
     </div>
@@ -777,14 +807,12 @@
 
                 <button class="back-btn" onclick="showEmployeesScreen()">חזרה</button>
 
-                <!-- Calendar legend: מקרא -->
                 <div class="legend" aria-hidden="false">
                     <div class="legend-item"><span class="legend-swatch report" aria-hidden="true"></span><span>דיווח יומי — יום עם דיווח מלא</span></div>
                     <div class="legend-item"><span class="legend-swatch weekly" aria-hidden="true"></span><span>דיווח שבועי — הסימון המקווקו מייצג דיווח שבועי</span></div>
                     <div class="legend-item"><span class="legend-swatch selected" aria-hidden="true"></span><span>תחילת/סיום טווח — תחילת או סיום טווח שנבחר</span></div>
                     <div class="legend-item"><span class="legend-swatch in-range" aria-hidden="true"></span><span>ימים בתוך הטווח — חלק מהטווח הנבחר</span></div>
-                    <div class="legend-item"><span class="legend-swatch other-month" aria-hidden="true"></span><span>יום מחודש אחר — לא ניתן לבחור (מוצג להקשר)</span></div>
-                </div>
+                    </div>
              </div>
          </div>
 
@@ -798,10 +826,10 @@
                 </div>
 
                 <div class="action-buttons" id="intermediate-actions" style="display: none;">
-                    <button class="generate-report-btn" onclick="generateFinalReport()">
+                    <button class="action-btn primary" onclick="generateFinalReport()">
                         אישור שעות דו"ח
                     </button>
-                    <button class="back-btn" onclick="showCalendarScreen()">חזרה</button>
+                    <button class="action-btn secondary" onclick="showCalendarScreen()">חזרה</button>
                 </div>
             </div>
         </div>
@@ -815,7 +843,6 @@
                     <div class="loading">מכין דו"ח סופי...</div>
                 </div>
 
-                <!-- Pie Chart Container -->
                 <div class="report-section" id="chart-section" style="display: none;">
                     <h3 class="section-title">התפלגות שעות</h3>
                     <div style="max-width: 600px; margin: 0 auto; position: relative; height: 400px;">
@@ -1017,7 +1044,7 @@
         function showCalendarScreen(employee) {
             if (employee) {
                 AppState.selectedEmployee = employee;
-                document.getElementById('calendar-title').textContent = `${employee.firstName} ${employee.lastName} - הפקת דו"ח`;
+                document.getElementById('calendar-title').textContent = `${employee.firstName} ${employee.lastName} - נוכחות`;
             }
 
             AppState.selectedStartDate = null;
@@ -1092,7 +1119,6 @@
 
             const firstDay = new Date(AppState.currentYear, AppState.currentMonth, 1).getDay();
             const daysInMonth = new Date(AppState.currentYear, AppState.currentMonth + 1, 0).getDate();
-            const daysInPrevMonth = new Date(AppState.currentYear, AppState.currentMonth, 0).getDate();
 
             const calendarBody = document.getElementById('calendar-body');
             calendarBody.innerHTML = '';
@@ -1106,57 +1132,53 @@
                 );
             }
 
-            let date = 1;
-            let nextMonthDate = 1;
+            // START: CHANGE - Calendar generation logic updated for cross-month selection
+            const startDate = new Date(AppState.currentYear, AppState.currentMonth, 1);
+            startDate.setDate(startDate.getDate() - firstDay);
 
             for (let week = 0; week < 6; week++) {
                 const row = document.createElement('tr');
-
-                for (let day = 0; day < 7; day++) {
+                for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
                     const cell = document.createElement('td');
                     const dayDiv = document.createElement('div');
                     dayDiv.className = 'calendar-day';
 
-                    if (week === 0 && day < firstDay) {
-                        const prevDate = daysInPrevMonth - firstDay + day + 1;
-                        dayDiv.textContent = prevDate;
-                        dayDiv.classList.add('other-month');
-                    } else if (date > daysInMonth) {
-                        dayDiv.textContent = nextMonthDate;
-                        dayDiv.classList.add('other-month');
-                        nextMonthDate++;
-                    } else {
-                        dayDiv.textContent = date;
+                    const currentDate = new Date(startDate);
+                    dayDiv.textContent = currentDate.getDate();
+                    dayDiv.dataset.date = toLocalDateStr(currentDate);
 
-                        if (reportMeta.reportedDays.has(date)) {
-                             dayDiv.classList.add('has-reports');
-                         }
-                        if (reportMeta.weeklyDays.has(date)) {
-                            dayDiv.classList.add('weekly-day');
-                            const dow = new Date(AppState.currentYear, AppState.currentMonth, date).getDay();
-                            if (dow === 0) dayDiv.classList.add('weekly-start');
-                            if (dow === 4) dayDiv.classList.add('weekly-end');
-                        }
-
-                        const dayNumber = date;
-                        dayDiv.addEventListener('click', () => selectDate(dayNumber));
-                        date++;
+                    if (currentDate.getMonth() !== AppState.currentMonth) {
+                        dayDiv.classList.add('other-month');
                     }
+
+                    const dayNumber = currentDate.getDate();
+                    if (reportMeta.reportedDays.has(dayNumber) && currentDate.getMonth() === AppState.currentMonth) {
+                         dayDiv.classList.add('has-reports');
+                     }
+                    if (reportMeta.weeklyDays.has(dayNumber) && currentDate.getMonth() === AppState.currentMonth) {
+                        dayDiv.classList.add('weekly-day');
+                        const dow = currentDate.getDay();
+                        if (dow === 0) dayDiv.classList.add('weekly-start');
+                        if (dow === 4) dayDiv.classList.add('weekly-end');
+                    }
+
+                    const finalCellDate = new Date(currentDate);
+                    dayDiv.addEventListener('click', () => selectDate(finalCellDate));
 
                     cell.appendChild(dayDiv);
                     row.appendChild(cell);
-                }
 
+                    startDate.setDate(startDate.getDate() + 1);
+                }
                 calendarBody.appendChild(row);
-                if (date > daysInMonth && week > 3) break;
             }
+            // END: CHANGE
 
             updateCalendarSelection();
         }
 
-        function selectDate(day) {
-            const clickedDate = new Date(AppState.currentYear, AppState.currentMonth, day);
-
+        // START: CHANGE - `selectDate` now accepts a full Date object
+        function selectDate(clickedDate) {
             if (!AppState.selectedStartDate || (AppState.selectedStartDate && AppState.selectedEndDate)) {
                 AppState.selectedStartDate = clickedDate;
                 AppState.selectedEndDate = null;
@@ -1171,26 +1193,29 @@
             updateDateSelection();
             updateGenerateButton();
         }
+        // END: CHANGE
 
+        // START: CHANGE - `updateCalendarSelection` uses `data-date` for robust comparison
         function updateCalendarSelection() {
-            document.querySelectorAll('.calendar-day').forEach(day => {
+            document.querySelectorAll('.calendar-day[data-date]').forEach(day => {
                 day.classList.remove('range-start', 'range-end', 'in-range');
 
-                if (!day.classList.contains('other-month')) {
-                    const dayNum = parseInt(day.textContent);
-                    const dayDate = new Date(AppState.currentYear, AppState.currentMonth, dayNum);
+                const dayDateStr = day.dataset.date;
+                if (!dayDateStr) return;
 
-                    if (AppState.selectedStartDate && dayDate.getTime() === AppState.selectedStartDate.getTime()) {
-                        day.classList.add('range-start');
-                    } else if (AppState.selectedEndDate && dayDate.getTime() === AppState.selectedEndDate.getTime()) {
-                        day.classList.add('range-end');
-                    } else if (AppState.selectedStartDate && AppState.selectedEndDate &&
-                              dayDate > AppState.selectedStartDate && dayDate < AppState.selectedEndDate) {
-                        day.classList.add('in-range');
-                    }
+                const startDateStr = AppState.selectedStartDate ? toLocalDateStr(AppState.selectedStartDate) : null;
+                const endDateStr = AppState.selectedEndDate ? toLocalDateStr(AppState.selectedEndDate) : null;
+
+                if (startDateStr && dayDateStr === startDateStr) {
+                    day.classList.add('range-start');
+                } else if (endDateStr && dayDateStr === endDateStr) {
+                    day.classList.add('range-end');
+                } else if (startDateStr && endDateStr && dayDateStr > startDateStr && dayDateStr < endDateStr) {
+                    day.classList.add('in-range');
                 }
             });
         }
+        // END: CHANGE
 
         function updateDateSelection() {
             const container = document.getElementById('date-selection');
@@ -1399,7 +1424,6 @@
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'relative', this)">חלוקה יחסית</button>
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'custom', this)">חיוב חדש</button>
                                  </div>
-                                 <!-- free-text input for 'חיוב חדש' (hidden by default) -->
                                  <input id="${key}_custom" class="custom-input" style="display:none; margin-top:0.75rem;" placeholder="הכנס הסבר או חוקר/ת לחיוב חדש..." value="${AppState.categorizations.get(`${key}_custom`) || ''}" oninput="AppState.categorizations.set('${key}_custom', this.value)" />
                              </div>
                          </div>
@@ -1428,7 +1452,6 @@
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'equal', this)">חלוקה שווה</button>
                                     <button class="option-btn" onclick="selectCategorization('${key}', 'custom', this)">חיוב חדש</button>
                                  </div>
-                                 <!-- free-text input for 'חיוב חדש' (hidden by default) -->
                                  <input id="${key}_custom" class="custom-input" style="display:none; margin-top:0.75rem;" placeholder="הכנס הסבר לחיוב חדש..." value="${AppState.categorizations.get(`${key}_custom`) || ''}" oninput="AppState.categorizations.set('${key}_custom', this.value)" />
                              </div>
                          </div>
@@ -1803,6 +1826,29 @@
                 }
             });
 
+            // small helper: convert hex to rgb and return contrasting text color
+            function hexToRgb(hex) {
+                if (!hex) return null;
+                const h = hex.replace('#', '');
+                const bigint = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+                return {
+                    r: (bigint >> 16) & 255,
+                    g: (bigint >> 8) & 255,
+                    b: bigint & 255
+                };
+            }
+            function getContrastColor(hex) {
+                const rgb = hexToRgb(hex);
+                if (!rgb) return '#fff';
+                // relative luminance formula
+                const [r, g, b] = [rgb.r, rgb.g, rgb.b].map(v => {
+                    v /= 255;
+                    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+                });
+                const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                return lum > 0.5 ? '#0f172a' : '#ffffff';
+            }
+
             window.hoursChartInstance = new Chart(ctx, {
                 type: 'pie',
                 data: {
@@ -1851,22 +1897,28 @@
                         const ctx = chart.ctx;
                         chart.data.datasets.forEach((dataset, i) => {
                             const meta = chart.getDatasetMeta(i);
+                            const total = dataset.data.reduce((a, b) => a + b, 0);
+
                             meta.data.forEach((element, index) => {
-                                const data = dataset.data[index];
-                                const total = dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = Math.round((data / total) * 100);
+                                const value = dataset.data[index];
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
 
-                                // Only show label if slice is big enough
-                                if (percentage > 5) {
-                                    const {x, y} = element.tooltipPosition();
+                                // get center position of the slice
+                                const pos = element.tooltipPosition();
 
-                                    ctx.fillStyle = '#fff';
-                                    ctx.font = 'bold 14px Heebo';
-                                    ctx.textAlign = 'center';
-                                    ctx.textBaseline = 'middle';
-                                    ctx.fillText(`${data}`, x, y - 5);
-                                    ctx.fillText(`שעות`, x, y + 10);
-                                }
+                                // determine text color based on slice background
+                                const bg = Array.isArray(dataset.backgroundColor) ? dataset.backgroundColor[index] : dataset.backgroundColor;
+                                const textColor = getContrastColor(bg);
+
+                                ctx.save();
+                                ctx.fillStyle = textColor;
+                                ctx.font = 'bold 14px Heebo';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+
+                                // write percentage
+                                ctx.fillText(`${percentage}%`, pos.x, pos.y);
+                                ctx.restore();
                             });
                         });
                     }
@@ -2127,7 +2179,7 @@
 
                             // update only the header name text (keep the home link intact)
                             const headerNameEl = document.getElementById('header-name');
-                            if (headerNameEl) headerNameEl.textContent = `ברוך הבא, ${AppState.managerName} ☺️`;
+                            if (headerNameEl) headerNameEl.textContent = ` ${AppState.managerName} `;
 
                             renderEmployeesList();
                         } else {
@@ -2141,7 +2193,7 @@
                 } else {
                     // if no user, show default text but keep the home link markup
                     const headerNameEl = document.getElementById('header-name');
-                    if (headerNameEl) headerNameEl.textContent = 'מערכת דיווח שעות';
+                    if (headerNameEl) headerNameEl.textContent = ' מערכת דיווח פעילות';
 
                     document.getElementById('employees-list').innerHTML =
                         '<div class="empty-state">יש להתחבר כדי לגשת למערכת</div>';
@@ -2182,4 +2234,3 @@
     </script>
 </body>
 </html>
-

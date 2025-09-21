@@ -12,6 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 
     <style>
         :root {
@@ -129,8 +130,6 @@
         /* Specific KPI Colors */
         .kpi-card.total-hours { border-left-color: var(--brand-primary); }
         .kpi-card.total-hours .icon { color: var(--brand-primary); }
-        .kpi-card.top-category { border-left-color: var(--kpi-accent-1); }
-        .kpi-card.top-category .icon { color: var(--kpi-accent-1); }
         .kpi-card.missing-days { border-left-color: var(--kpi-accent-3); }
         .kpi-card.missing-days .icon { color: var(--kpi-accent-3); }
 
@@ -318,11 +317,6 @@
                         <div class="value" id="kpi-total-hours">0</div>
                         <div class="label">סה"כ שעות בתקופה</div>
                     </div>
-                    <div class="kpi-card top-category">
-                        <div class="icon">⭐</div>
-                        <div class="value" id="kpi-top-category">—</div>
-                        <div class="label">קטגוריה מובילה</div>
-                    </div>
                     <div class="kpi-card missing-days">
                         <div class="icon">⚠️</div>
                         <div class="value" id="kpi-missing-days">0</div>
@@ -372,7 +366,7 @@
 
             <footer class="report-footer">
                 דו"ח זה הופק בתאריך <span id="generation-date"></span>.
-                <div>WorkReport Systems © 2025</div>
+                <div>WorkReport Systems המכון להנדסת מערכות חקלאיות וביולוגיות © 2025</div>
             </footer>
         </div>
     </div>
@@ -447,7 +441,7 @@
 
             } catch (err) {
                 console.error("Initialization Error:", err);
-                document.getElementById('loading').innerHTML = `<div style="color:#ef4444; font-weight:600;">שגיאה חמורה בטעינת הדו"ח. ודא שהנתונים הועברו כראוי.</div>`;
+                document.getElementById('loading').innerHTML = `<div style="color:#ef4444; font-weight:600;">שגיאה בטעינת הדו"ח. ודא שהנתונים הועברו כראוי.</div>`;
             }
         })();
 
@@ -467,11 +461,9 @@
             totalHours = Math.round(totalHours * 100) / 100;
 
             const missingDaysCount = reportData.missingDays.length;
-            const topCategory = catSeries.labels.length > 0 ? catSeries.labels[0] : '—';
 
             // 2. Populate KPIs
             document.getElementById('kpi-total-hours').textContent = totalHours;
-            document.getElementById('kpi-top-category').textContent = topCategory;
             document.getElementById('kpi-missing-days').textContent = missingDaysCount;
 
             // 3. Render Table & Details
@@ -544,6 +536,14 @@
             ];
 
             const pieCtx = document.getElementById('pieChart').getContext('2d');
+
+            // Register the datalabels plugin if it's available
+            try {
+                if (window.ChartDataLabels && !Chart.registry.plugins.get('datalabels')) {
+                    Chart.register(window.ChartDataLabels);
+                }
+            } catch (e) { /* ignore if registration fails */ }
+
             charts.pie = new Chart(pieCtx, {
                 type: 'pie',
                 data: {
@@ -554,7 +554,20 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: { position: 'bottom' },
-                        title: { display: true, text: 'התפלגות שעות לפי קטגוריה', font: { size: 16, weight: '600' } }
+                        // Use datalabels to show percentages on the pie slices
+                        datalabels: {
+                            formatter: (value, ctx) => {
+                                const data = ctx.dataset.data;
+                                const sum = data.reduce((a, b) => a + b, 0) || 0;
+                                const pct = sum ? Math.round((value / sum) * 100) : 0;
+                                return pct + '%';
+                            },
+                            color: '#ffffff',
+                            font: { weight: '700', size: 12 },
+                            anchor: 'center',
+                            align: 'center'
+                        },
+                        title: { display: true, text: 'התפלגות שעות לפי חוקר/קטגוריה - נתונים מעובדים (לאחר חלוקה יחסית)', font: { size: 16, weight: '600' } }
                     }
                 }
             });

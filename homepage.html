@@ -1067,15 +1067,21 @@
         }
 
         .legend-today {
-            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-        }
+    background: #ffffff;
+    border: 2px solid #3b82f6;
+    border-radius: 8px;
+    padding: 6px 6px;  /* כמו שהיה קודם בערך */
+    display: inline-block; /* שישב יפה */
+}
+
 
         .legend-weekend {
-            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%);
         }
 
         .legend-missing {
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
+
         }
 
         /* === Add New Researcher Styles === */
@@ -1397,7 +1403,7 @@
 
     <div class="header">
         <div class="user-icon" onclick="showScreen('user-profile')"><span class="material-symbols-outlined" aria-hidden="true">account_circle</span></div>
-        <h1>מערכת דיווח שעות - המכון להנדסת מערכות חקלאיות וביולוגיות</h1>
+        <h1>מערכת דיווח פעילות - המכון להנדסת מערכות חקלאיות וביולוגיות</h1>
         <div class="header-actions">
             <div onclick="showScreen('main')" style="cursor: pointer;"><span class="material-symbols-outlined" aria-hidden="true">home</span></div>
             <button id="logout-btn" onclick="logout()" style="display:none; background:#ef4444; color:white; border: 1px solid #ef4444; padding:6px 10px; border-radius:6px; cursor:pointer;">התנתק</button>
@@ -1435,7 +1441,7 @@
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                     <button type="submit" class="btn">התחבר/י</button>
                     <a href="#" class="forgot-password-link" onclick="showForgotPassword()">שכחתי סיסמה</a>
-                    
+
                 </div>
             </form>
         </div>
@@ -1534,10 +1540,10 @@
         <h2 style="text-align: center; margin-bottom: 30px;">אודות המערכת</h2>
         <div class="about-content" style="max-width: 800px; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h3 style="color: #1e3a8a; margin-bottom: 10px;">מערכת דיווח שעות - המכון להנדסת מערכות חקלאיות וביולוגיות </h3>
-                <p style="color: #6b7280; font-size: 16px;">מערכת מתקדמת לניהול דיווחי שעות עבודה</p>
+                <h3 style="color: #1e3a8a; margin-bottom: 10px;">מערכת דיווח פעילות - המכון להנדסת מערכות חקלאיות וביולוגיות </h3>
+                <p style="color: #6b7280; font-size: 16px;">מערכת לניהול דיווחי פעילות</p>
             </div>
-            
+
             <div style="margin-bottom: 30px;">
                 <h4 style="color: #374151; margin-bottom: 15px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">פיתוח, תכנון ואיפיון</h4>
                 <div style="display: flex; flex-direction: column; gap: 8px; font-size: 16px;">
@@ -1621,7 +1627,7 @@
                 </div>
                 <div class="legend-item">
                     <span class="legend-color legend-missing"></span>
-                    <span>חסר דיווח</span>
+                    <span>ללא דיווח</span>
                 </div>
             </div>
         </div>
