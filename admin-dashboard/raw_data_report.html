@@ -575,7 +575,7 @@
                             <th>תאריך</th>
                             <th>סוג דיווח</th>
                             <th>חוקר</th>
-                            <th>שיוך מנהל</th>
+                            <th>שיוך מנהל/ת</th>
                             <th>פרטים</th>
                             <th>שעות</th>
                             <th>ID דיווח</th>
@@ -691,8 +691,8 @@
         };
 
         function generateCSVData() {
-            // Insert new column "שיוך מנהל" between "חוקר" and "פרטים"
-            const headers = ['תאריך', 'סוג דיווח', 'חוקר', 'שיוך מנהל', 'פרטים', 'שעות', 'ID דיווח'];
+            // Insert new column "שיוך מנהל/ת" between "חוקר" and "פרטים"
+            const headers = ['תאריך', 'סוג דיווח', 'חוקר', 'שיוך מנהל/ת', 'פרטים', 'שעות', 'ID דיווח'];
             const rows = [headers];
 
             rawReports.forEach(report => {
