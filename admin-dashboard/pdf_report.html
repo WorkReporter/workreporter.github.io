@@ -652,25 +652,32 @@
             });
 
             const barCtx = document.getElementById('barChart').getContext('2d');
-            charts.bar = new Chart(barCtx, {
-                type: 'bar',
-                data: {
-                    labels: rawSeries.labels,
-                    datasets: [{
-                        label: 'סה"כ שעות גולמיות',
-                        data: rawSeries.values,
-                        backgroundColor: colors[0]
-                    }]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, title: { display: true, text: 'שעות' } } },
-                    plugins: {
-                        legend: { display: false },
-                        title: { display: true, text: 'נתונים גולמיים - לפני חלוקה', font: { size: 16, weight: '600' } }
-                    }
-                }
-            });
+charts.bar = new Chart(barCtx, {
+    type: 'bar',
+    data: {
+        labels: rawSeries.labels,
+        datasets: [{
+            label: 'סה"כ שעות גולמיות',
+            data: rawSeries.values,
+            backgroundColor: colors[0]
+        }]
+    },
+    options: {
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'שעות' } } },
+        plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'נתונים גולמיים - לפני חלוקה', font: { size: 16, weight: '600' } },
+            datalabels: {
+                anchor: 'end',
+                align: 'top',
+                color: '#ffffff',
+                font: { weight: '700', size: 12 },
+                formatter: (value) => value.toFixed(1)
+            }
+        }
+    }
+});
         }
 
         // --- Action Functions ---
