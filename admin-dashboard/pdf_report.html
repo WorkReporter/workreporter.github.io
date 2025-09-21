@@ -344,8 +344,8 @@
                         <thead>
                             <tr>
                                 <th>קטגוריה</th>
-                                <th>סה"כ שעות</th>
-                                <th>אחוז מסך השעות</th>
+                                <th>סה"כ שעות - לפני חלוקה</th>
+                                <th>אחוז מסך השעות - לאחר חלוקה</th>
                             </tr>
                         </thead>
                         <tbody id="summary-body"></tbody>
@@ -552,6 +552,9 @@
                 rawMap.set(label, rawSeries.values[i]);
             });
 
+            // Calculate total raw hours (sum of all raw values)
+            const totalRawHours = rawSeries.values.reduce((sum, value) => sum + value, 0);
+
             // Render existing categories with both raw and processed data
             labels.forEach((label, i) => {
                 const processedValue = values[i];
@@ -560,7 +563,7 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${escapeHtml(label)}</td>
-                    <td>${rawValue}</td>
+                    <td>${rawValue.toFixed(2)}</td>
                     <td class="percentage-cell">${percent}%</td>`;
                 tbody.appendChild(tr);
             });
@@ -570,7 +573,7 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>סמינר/קורס/הכשרה</td>
-                    <td>${rawSeries.seminarTotal}</td>
+                    <td>${rawSeries.seminarTotal.toFixed(2)}</td>
                     <td class="percentage-cell">0%</td>`;
                 tbody.appendChild(tr);
             }
@@ -579,7 +582,7 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>חלוקה יחסית</td>
-                    <td>${rawSeries.relativeTotal}</td>
+                    <td>${rawSeries.relativeTotal.toFixed(2)}</td>
                     <td class="percentage-cell">0%</td>`;
                 tbody.appendChild(tr);
             }
@@ -587,7 +590,7 @@
             const totalRow = document.createElement('tr');
             totalRow.innerHTML = `
                 <td>סה"כ</td>
-                <td>${totalHours}</td>
+                <td>${totalRawHours.toFixed(2)}</td>
                 <td class="percentage-cell">100%</td>`;
             tfoot.appendChild(totalRow);
         }
@@ -753,4 +756,3 @@
     </script>
 </body>
 </html>
-
