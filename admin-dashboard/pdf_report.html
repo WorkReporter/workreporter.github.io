@@ -412,6 +412,16 @@
             } else {
                 out.categories = new Map();
             }
+
+            // Handle raw researchers data
+            if (out.raw && Array.isArray(out.raw.researchers)) {
+                out.raw.researchers = new Map(out.raw.researchers);
+            } else if (out.raw && typeof out.raw.researchers === 'object') {
+                out.raw.researchers = new Map(Object.entries(out.raw.researchers || {}));
+            } else {
+                out.raw = { researchers: new Map() };
+            }
+
             out.missingDays = Array.isArray(out.missingDays) ? out.missingDays.map(d => new Date(d)) : [];
             out.totalHours = Number(out.totalHours || 0);
             return out;
@@ -455,23 +465,27 @@
         }
 
         function generateReportContent() {
-            // 1. Compute Data Series
+            // 1. Compute Data Series (processed data for pie chart)
             const catSeries = computeCategorySeries(reportData);
+
+            // 2. Compute Raw Data Series (raw data for bar chart)
+            const rawSeries = computeRawCategorySeries(reportData);
+
             let totalHours = reportData.totalHours || catSeries.values.reduce((a, b) => a + b, 0);
             totalHours = Math.round(totalHours * 100) / 100;
 
             const missingDaysCount = reportData.missingDays.length;
 
-            // 2. Populate KPIs
+            // 3. Populate KPIs
             document.getElementById('kpi-total-hours').textContent = totalHours;
             document.getElementById('kpi-missing-days').textContent = missingDaysCount;
 
-            // 3. Render Table & Details
-            renderSummaryTable(catSeries.labels, catSeries.values, totalHours);
+            // 4. Render Table & Details with both raw and processed data
+            renderSummaryTable(catSeries.labels, catSeries.values, rawSeries, totalHours);
             renderMissingDays(reportData.missingDays);
 
-            // 4. Render Charts
-            renderCharts(catSeries);
+            // 5. Render Charts with raw data for bar chart
+            renderCharts(catSeries, rawSeries);
         }
 
         function computeCategorySeries(rd) {
@@ -485,24 +499,90 @@
             return { labels, values };
         }
 
+        function computeRawCategorySeries(rd) {
+            const rawMap = new Map();
+
+            // Add base researchers from raw data
+            if (rd.raw && rd.raw.researchers) {
+                rd.raw.researchers.forEach((v, k) => {
+                    if (Number(v) > 0) rawMap.set(k, Number(v));
+                });
+            }
+
+            // Calculate raw totals for seminars and relative distribution
+            let seminarTotal = 0;
+            let relativeTotal = 0;
+
+            if (rd.categorizedTasks) {
+                rd.categorizedTasks.forEach(task => {
+                    if (task.category === 'סמינר') {
+                        seminarTotal += task.hours;
+                    } else if (task.category === 'חלוקה יחסית') {
+                        relativeTotal += task.hours;
+                    }
+                });
+            }
+
+            // Add seminar and relative distribution totals if they exist
+            if (seminarTotal > 0) {
+                rawMap.set('סמינר/קורס/הכשרה', seminarTotal);
+            }
+            if (relativeTotal > 0) {
+                rawMap.set('חלוקה יחסית', relativeTotal);
+            }
+
+            const sorted = Array.from(rawMap.entries()).sort((a, b) => b[1] - a[1]);
+            const labels = sorted.map(item => item[0]);
+            const values = sorted.map(item => Number(item[1].toFixed(2)));
+
+            return { labels, values, seminarTotal, relativeTotal };
+        }
+
         // --- Rendering Functions ---
 
-        function renderSummaryTable(labels, values, totalHours) {
+        function renderSummaryTable(labels, values, rawSeries, totalHours) {
             const tbody = document.getElementById('summary-body');
             const tfoot = document.getElementById('summary-foot');
             tbody.innerHTML = '';
             tfoot.innerHTML = '';
 
+            // Create a map for easy lookup of raw values
+            const rawMap = new Map();
+            rawSeries.labels.forEach((label, i) => {
+                rawMap.set(label, rawSeries.values[i]);
+            });
+
+            // Render existing categories with both raw and processed data
             labels.forEach((label, i) => {
-                const value = values[i];
-                const percent = totalHours > 0 ? Math.round((value / totalHours) * 100) : 0;
+                const processedValue = values[i];
+                const rawValue = rawMap.get(label) || processedValue;
+                const percent = totalHours > 0 ? Math.round((processedValue / totalHours) * 100) : 0;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${escapeHtml(label)}</td>
-                    <td>${value}</td>
+                    <td>${rawValue}</td>
                     <td class="percentage-cell">${percent}%</td>`;
                 tbody.appendChild(tr);
             });
+
+            // Add new rows for seminar and relative distribution with 0% if they have raw hours
+            if (rawSeries.seminarTotal > 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>סמינר/קורס/הכשרה</td>
+                    <td>${rawSeries.seminarTotal}</td>
+                    <td class="percentage-cell">0%</td>`;
+                tbody.appendChild(tr);
+            }
+
+            if (rawSeries.relativeTotal > 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>חלוקה יחסית</td>
+                    <td>${rawSeries.relativeTotal}</td>
+                    <td class="percentage-cell">0%</td>`;
+                tbody.appendChild(tr);
+            }
 
             const totalRow = document.createElement('tr');
             totalRow.innerHTML = `
@@ -527,7 +607,7 @@
             Object.values(charts).forEach(chart => chart?.destroy());
         }
 
-        function renderCharts(catSeries) {
+        function renderCharts(catSeries, rawSeries) {
             destroyCharts();
 
             const colors = [
@@ -576,10 +656,10 @@
             charts.bar = new Chart(barCtx, {
                 type: 'bar',
                 data: {
-                    labels: catSeries.labels,
+                    labels: rawSeries.labels,
                     datasets: [{
-                        label: 'סה"כ שעות',
-                        data: catSeries.values,
+                        label: 'סה"כ שעות גולמיות',
+                        data: rawSeries.values,
                         backgroundColor: colors[0]
                     }]
                 },
@@ -588,7 +668,7 @@
                     scales: { y: { beginAtZero: true, title: { display: true, text: 'שעות' } } },
                     plugins: {
                         legend: { display: false },
-                        title: { display: true, text: 'סה"כ שעות לפי קטגוריה', font: { size: 16, weight: '600' } }
+                        title: { display: true, text: 'נתונים גולמיים - לפני חלוקה', font: { size: 16, weight: '600' } }
                     }
                 }
             });
@@ -673,3 +753,4 @@
     </script>
 </body>
 </html>
+

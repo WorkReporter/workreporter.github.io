@@ -1607,7 +1607,13 @@
                 totalHours: AppState.finalReport.totalHours,
                 categorizedTasks: AppState.finalReport.categorizedTasks,
                 missingDays: (AppState.finalReport.missingDays || []).map(d => (d instanceof Date ? d.toISOString() : d)),
-                categories: Array.from(AppState.finalReport.categories.entries())
+                categories: Array.from(AppState.finalReport.categories.entries()),
+                // Added: raw base researchers (before distribution/assignments)
+                raw: {
+                    researchers: Array.isArray(AppState.reportData?.researchers)
+                        ? AppState.reportData.researchers
+                        : (AppState.reportData?.researchers ? Array.from(AppState.reportData.researchers.entries()) : [])
+                }
             };
             const employeeData = encodeURIComponent(JSON.stringify(AppState.selectedEmployee));
             const reportData = encodeURIComponent(JSON.stringify(serializableReport));
@@ -1669,3 +1675,4 @@
     </script>
 </body>
 </html>
+
