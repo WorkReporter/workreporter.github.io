@@ -902,9 +902,11 @@
 
         const CACHE_PREFIX = 'reportCategorizationCache_';
 
+        // Helper to format hours - shows integer if whole, otherwise shows decimal
+        const formatHours = (hours) => parseFloat(Number(hours).toFixed(2));
+
         function getCacheKey() {
             if (!AppState.selectedEmployee) return null;
-            // <<< 🚀 SMART CHANGE: The key is now only dependent on the employee, not the date range.
             return `${CACHE_PREFIX}${AppState.selectedEmployee.id}`;
         }
 
@@ -1127,6 +1129,7 @@
                     startDate.setDate(startDate.getDate() + 1);
                 }
                 calendarBody.appendChild(row);
+                 if (startDate > new Date(AppState.currentYear, AppState.currentMonth + 1, 0) && week > 3) break;
             }
             updateCalendarSelection();
         }
@@ -1232,12 +1235,9 @@
                     data.totalHours += hours;
 
                     const isSeminar = entry.researcher?.includes('סמינר') || entry.researcher?.includes('קורס') || entry.researcher?.includes('הכשרה');
-
-                    // <<< 🚀 SMART CHANGE: Create a stable, unique ID for each task entry using the report ID and the entry's index.
                     const stableId = `${report.id}_${entryIndex}`;
-
                     const taskObject = {
-                        id: stableId, // Use the new stable ID
+                        id: stableId,
                         name: entry.detail || entry.researcher || 'לא מוגדר',
                         hours: hours,
                         date: report.date
@@ -1247,7 +1247,7 @@
                     else if (entry.researcher === 'משימות אחרות') data.otherTasks.push(taskObject);
                     else {
                         const current = data.researchers.get(entry.researcher) || 0;
-                        data.researchers.set(entry.researcher, +(current + hours).toFixed(2));
+                        data.researchers.set(entry.researcher, formatHours(current + hours));
                     }
                 });
             });
@@ -1276,14 +1276,13 @@
             if (data.researchers.size > 0) {
                 html += `<div class="report-section"><h3 class="section-title">חוקרים:</h3>`;
                 data.researchers.forEach((hours, researcher) => {
-                    html += `<div class="hours-item"><span class="hours-label">${researcher} - סה"כ שעות</span><span class="hours-value">${hours}</span></div>`;
+                    html += `<div class="hours-item"><span class="hours-label">${researcher} - סה"כ שעות</span><span class="hours-value">${formatHours(hours)}</span></div>`;
                 });
                 html += '</div>';
             }
 
-            // <<< 🚀 SMART CHANGE: The renderer now uses the stable task.id >>>
             const renderTaskItem = (task, isOtherTask) => {
-                const key = task.id; // Use the stable ID
+                const key = task.id;
                 const savedType = AppState.categorizations.get(key);
                 const savedCustomText = AppState.categorizations.get(`${key}_custom`) || '';
                 const savedActiveResearcher = AppState.categorizations.get(`${key}_activeResearcher`) || '';
@@ -1295,7 +1294,7 @@
                         <div class="categorization-header">
                             <div class="task-info">
                                 <div class="task-name">${task.name}</div>
-                                <div class="task-hours">סה"כ שעות: ${task.hours}</div>
+                                <div class="task-hours">סה"כ שעות: ${formatHours(task.hours)}</div>
                             </div>
                             <div class="categorization-options">
                                 <button class="option-btn ${savedType === 'seminar' ? 'active' : ''}" onclick="selectCategorization('${key}', 'seminar')">סמינר</button>
@@ -1341,7 +1340,6 @@
             document.getElementById('intermediate-actions').style.display = 'flex';
         }
 
-        // <<< 🚀 SMART CHANGE: Now uses the stable ID passed from the onclick event.
         function selectCategorization(taskStableId, type) {
             AppState.categorizations.delete(`${taskStableId}_custom`);
             AppState.categorizations.delete(`${taskStableId}_activeResearcher`);
@@ -1363,93 +1361,126 @@
         }
 
         function processFinalReport(data, categorizations) {
-            const finalData = { categories: new Map(), totalHours: data.totalHours, categorizedTasks: [], missingDays: data.missingDays, calculation: { relative: [] } };
-            data.researchers.forEach((hours, researcher) => finalData.categories.set(researcher, hours));
+            const finalData = {
+                categories: new Map(),
+                totalHours: data.totalHours,
+                categorizedTasks: [],
+                missingDays: data.missingDays,
+                calculation: { relative: [] }
+            };
+
+            data.researchers.forEach((hours, researcher) => {
+                finalData.categories.set(researcher, hours);
+            });
+
             const activeList = AppState.selectedEmployee?.activeResearchers || [];
 
-            const processTasks = (tasks) => {
+            const processTasks = (tasks, isOtherTask) => {
                 tasks.forEach(task => {
-                    const key = task.id; // Use stable ID
-                    const categorization = categorizations.get(key);
+                    const key = task.id;
+                    const defaultCategorization = isOtherTask ? null : 'seminar';
+                    const categorization = categorizations.get(key) || defaultCategorization;
                     const customText = categorizations.get(`${key}_custom`);
                     const chosenActive = categorizations.get(`${key}_activeResearcher`);
-                    let categoryName = 'לא מקוטלג';
                     let displayName = 'לא מקוטלג';
 
                     switch (categorization) {
                         case 'active':
                             if (chosenActive) {
                                 const prev = finalData.categories.get(chosenActive) || 0;
-                                finalData.categories.set(chosenActive, prev + task.hours);
+                                finalData.categories.set(chosenActive, formatHours(prev + task.hours));
                                 displayName = `חוקר פעיל: ${chosenActive}`;
                             } else {
                                 displayName = 'חוקר פעיל (לא נבחר)';
                                 const prev = finalData.categories.get(displayName) || 0;
-                                finalData.categories.set(displayName, prev + task.hours);
+                                finalData.categories.set(displayName, formatHours(prev + task.hours));
                             }
                             break;
+
                         case 'equal':
-                        case 'relative': // Treat them similarly for logic, different for display
-                            // תיקון חשוב: החלוקה צריכה להתבצע רק בין חוקרים שבפועל היו פעילים באותה תקופה
-                            // לא לפי הרשימה הכללית של חוקרים פעילים
-                            const researchersWithHours = Array.from(data.researchers.entries())
-                                .filter(([researcher, hours]) => hours > 0)
-                                .map(([researcher, hours]) => researcher);
+                             const researchersForEqual = Array.from(data.researchers.keys()).filter(r => (data.researchers.get(r) || 0) > 0);
+                             if (researchersForEqual.length > 0) {
+                                const portion = task.hours / researchersForEqual.length;
+                                let remaining = task.hours;
+                                researchersForEqual.forEach((r, idx) => {
+                                    const toAdd = (idx === researchersForEqual.length - 1) ? remaining : portion;
+                                    remaining -= toAdd;
+                                    const prev = finalData.categories.get(r) || 0;
+                                    finalData.categories.set(r, formatHours(prev + toAdd));
+                                });
+                                displayName = `חלוקה שווה (${researchersForEqual.length} חוקרים)`;
+                             } else {
+                                displayName = 'חלוקה שווה (אין חוקרים פעילים בתקופה)';
+                                const prev = finalData.categories.get(displayName) || 0;
+                                finalData.categories.set(displayName, formatHours(prev + task.hours));
+                             }
+                            break;
 
-                            const totalBase = researchersWithHours.reduce((sum, r) => sum + (data.researchers.get(r) || 0), 0);
+                        case 'relative':
+                            const reportResearchers = Array.from(data.researchers.keys()).filter(r => r && r !== 'משימות אחרות');
+                            if (reportResearchers.length > 0) {
+                                const weights = reportResearchers.map(r => ({ name: r, base: data.researchers.get(r) || 0 }));
+                                const totalBase = weights.reduce((s, w) => s + w.base, 0);
 
-                            if (researchersWithHours.length > 0 && (categorization === 'equal' || totalBase > 0)) {
-                                if (categorization === 'relative') {
-                                    // חלוקה יחסית - רק בין חוקרים שבפועל היו פעילים באותה תקופה
+                                if (totalBase > 0) {
+                                    const detail = { type:'relative', method:'proportional', taskName: task.name, taskHours: task.hours, totalBase: totalBase, items: [], note: 'חלוקה יחסית בין החוקרים המופיעים באותה תקופה' };
                                     let remaining = task.hours;
-                                    researchersWithHours.forEach((r, idx) => {
-                                        const weight = (data.researchers.get(r) || 0) / totalBase;
-                                        const toAdd = (idx === researchersWithHours.length - 1) ? remaining : +(task.hours * weight).toFixed(2);
-                                        remaining = +(remaining - toAdd).toFixed(2);
-                                        const prev = finalData.categories.get(r) || 0;
-                                        finalData.categories.set(r, +(prev + toAdd).toFixed(2));
+                                    weights.forEach((w, idx) => {
+                                        const raw = task.hours * (w.base / totalBase);
+                                        const add = (idx === weights.length - 1) ? remaining : raw;
+                                        remaining -= add;
+                                        const prev = finalData.categories.get(w.name) || 0;
+                                        finalData.categories.set(w.name, formatHours(prev + add));
+                                        detail.items.push({ researcher: w.name, baseHours: w.base, weight: (w.base/totalBase), allocated: add });
                                     });
-                                    displayName = `חלוקה יחסית`;
-                                } else { // Equal
-                                    // חלוקה שווה - רק בין חוקרים שבפועל היו פעילים באותה תקופה
-                                    const portion = task.hours / researchersWithHours.length;
+                                    finalData.calculation.relative.push(detail);
+                                    displayName = `חלוקה יחסית (${reportResearchers.length} חוקרים)`;
+                                } else {
+                                    const portion = task.hours / reportResearchers.length;
+                                    const detail = { type:'relative', method:'equal', taskName: task.name, taskHours: task.hours, totalBase: 0, items: [], note: 'חלוקה שווה בין החוקרים המופיעים באותה תקופה (אין שעות בסיס)' };
                                     let remaining = task.hours;
-                                    researchersWithHours.forEach((r, idx) => {
-                                        const toAdd = (idx === researchersWithHours.length - 1) ? remaining : +portion.toFixed(2);
-                                        remaining = +(remaining - toAdd).toFixed(2);
+                                    reportResearchers.forEach((r, idx) => {
+                                        const add = (idx === reportResearchers.length - 1) ? remaining : portion;
+                                        remaining -= add;
                                         const prev = finalData.categories.get(r) || 0;
-                                        finalData.categories.set(r, +(prev + toAdd).toFixed(2));
+                                        finalData.categories.set(r, formatHours(prev + add));
+                                        detail.items.push({ researcher: r, baseHours: 0, weight: (1/reportResearchers.length), allocated: add });
                                     });
-                                    displayName = `חלוקה שווה`;
+                                    finalData.calculation.relative.push(detail);
+                                    displayName = 'חלוקה יחסית (שווה בהעדר בסיס)';
                                 }
                             } else {
-                                displayName = categorization === 'relative' ? 'חלוקה יחסית (אין בסיס)' : 'חלוקה שווה (אין חוקרים פעילים בתקופה)';
+                                displayName = 'חלוקה יחסית (ללא חוקרים)';
                                 const prev = finalData.categories.get(displayName) || 0;
-                                finalData.categories.set(displayName, prev + task.hours);
+                                finalData.categories.set(displayName, formatHours(prev + task.hours));
                             }
                             break;
+
                         case 'seminar':
                             displayName = 'סמינר/קורס/הכשרה';
                             const prevSem = finalData.categories.get(displayName) || 0;
-                            finalData.categories.set(displayName, prevSem + task.hours);
+                            finalData.categories.set(displayName, formatHours(prevSem + task.hours));
                             break;
+
                         case 'custom':
                             displayName = customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
                             const prevCustom = finalData.categories.get(displayName) || 0;
-                            finalData.categories.set(displayName, prevCustom + task.hours);
+                            finalData.categories.set(displayName, formatHours(prevCustom + task.hours));
                             break;
+
                         default:
                             const prevUn = finalData.categories.get(displayName) || 0;
-                            finalData.categories.set(displayName, prevUn + task.hours);
+                            finalData.categories.set(displayName, formatHours(prevUn + task.hours));
                     }
                     finalData.categorizedTasks.push({ name: task.name, category: displayName, hours: task.hours });
                 });
             };
 
-            processTasks(data.otherTasks);
-            processTasks(data.seminars);
+            processTasks(data.otherTasks, true);
+            processTasks(data.seminars, false);
             return finalData;
         }
+
 
         function renderFinalReport(data) {
             let html = `
@@ -1460,13 +1491,18 @@
                         <tbody>`;
             data.categories.forEach((hours, category) => {
                 const percentage = data.totalHours > 0 ? Math.round((hours / data.totalHours) * 100) : 0;
-                html += `<tr><td style="font-weight: 500;">${category}</td><td style="text-align: center;">${hours.toFixed(2)}</td><td class="percentage-cell">${percentage}%</td></tr>`;
+                html += `<tr><td style="font-weight: 500;">${category}</td><td style="text-align: center;">${formatHours(hours)}</td><td class="percentage-cell">${percentage}%</td></tr>`;
             });
-            html += `</tbody></table></div>`;
+            html += `</tbody></table>
+                    <div class="calc-actions">
+                        <button class="calc-btn" onclick="toggleCalculation()">הצגת חישוב - חלוקה יחסית</button>
+                    </div>
+                    <div id="calc-panel" class="calc-panel" style="display:none;"></div>
+                </div>`;
 
             if (data.categorizedTasks.length > 0) {
                  html += `<div class="report-section"><h3 class="section-title">פירוט משימות וסמינרים:</h3>
-                    ${data.categorizedTasks.map(task => `<div class="hours-item other-task"><span class="hours-label">${task.name} <strong>→ ${task.category}</strong></span><span class="hours-value">${task.hours}</span></div>`).join('')}
+                    ${data.categorizedTasks.map(task => `<div class="hours-item other-task"><span class="hours-label">${task.name} <strong>→ ${task.category}</strong></span><span class="hours-value">${formatHours(task.hours)}</span></div>`).join('')}
                  </div>`;
             }
 
@@ -1508,7 +1544,7 @@
                     responsive: true, maintainAspectRatio: false,
                     plugins: {
                         legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, font: { family: 'Heebo' } } },
-                        tooltip: { callbacks: { label: c => `${c.label}: ${c.parsed.toFixed(2)} שעות (${Math.round((c.parsed / c.dataset.data.reduce((a,b)=>a+b,0)) * 100)}%)` } }
+                        tooltip: { callbacks: { label: c => `${c.label}: ${formatHours(c.parsed)} שעות (${Math.round((c.parsed / c.dataset.data.reduce((a,b)=>a+b,0)) * 100)}%)` } }
                     }
                 },
                 plugins: [{
@@ -1537,99 +1573,85 @@
             });
         }
 
-        // --- פונקציות להפעלת הכפתורים ---
+        function toCsv(rows, columns) {
+            const escapeCsv = v => {
+                const s = v === null || v === undefined ? '' : String(v);
+                if (/[",\n]/.test(s)) return '"' + s.replaceAll('"', '""') + '"';
+                return s;
+            };
+            const header = columns.map(c => escapeCsv(c.header)).join(',');
+            const lines = rows.map(row => columns.map(c => escapeCsv(row[c.key])).join(','));
+            return [header, ...lines].join('\n');
+        }
+
+        function download(filename, content, type = 'text/csv;charset=utf-8') {
+            const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+            const blob = new Blob([bom, content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(url);
+            a.remove();
+        }
 
         function exportFinalReport() {
-            // --- FIX: Check for data before proceeding to prevent the error ---
             if (!AppState.finalReport || !AppState.selectedEmployee || !AppState.selectedStartDate || !AppState.selectedEndDate) {
                 alert('שגיאה: נתוני הדו"ח אינם זמינים. נסה להפיק את הדו"ח מחדש.');
-                console.error("exportFinalReport called without complete data in AppState.", AppState);
                 return;
             }
 
             const { selectedEmployee, selectedStartDate, selectedEndDate, finalReport } = AppState;
-
             const employeeName = `${selectedEmployee.firstName} ${selectedEmployee.lastName}`;
             const startDateStr = selectedStartDate.toLocaleDateString('he-IL');
             const endDateStr = selectedEndDate.toLocaleDateString('he-IL');
             const dateForFilename = new Date().toISOString().slice(0, 10);
+            let csvContent = `דו"ח שעות עבור:,${employeeName}\nתקופה:,${startDateStr} - ${endDateStr}\n\n`;
 
-            let csvContent = '';
-
-            // 1. Add header info
-            csvContent += `דו"ח שעות עבור:,${employeeName}\n`;
-            csvContent += `תקופה:,${startDateStr} - ${endDateStr}\n\n`;
-
-            // 2. Add summary table
             const summaryRows = [];
             finalReport.categories.forEach((hours, category) => {
                 const percentage = finalReport.totalHours > 0 ? Math.round((hours / finalReport.totalHours) * 100) : 0;
-                summaryRows.push({
-                    category: category,
-                    hours: hours,
-                    percentage: `${percentage}%`
-                });
+                summaryRows.push({ category, hours: formatHours(hours), percentage: `${percentage}%` });
             });
-            // Add total row
-            summaryRows.push({
-                category: 'סה"כ',
-                hours: finalReport.totalHours,
-                percentage: '100%'
-            });
-
+            summaryRows.push({ category: 'סה"כ', hours: formatHours(finalReport.totalHours), percentage: '100%' });
             const summaryColumns = [
                 { key: 'category', header: 'קטגוריה' },
                 { key: 'hours', header: 'סה"כ שעות' },
                 { key: 'percentage', header: 'אחוז מסך השעות' }
             ];
-            csvContent += toCsv(summaryRows, summaryColumns);
+            csvContent += toCsv(summaryRows, summaryColumns) + '\n\n';
 
-            csvContent += '\n\n'; // Add spacing
-
-            // 3. Add Missing Days
             if (finalReport.missingDays.length > 0) {
-                const missingDaysRows = finalReport.missingDays.map(date => ({
-                    date: date.toLocaleDateString('he-IL')
-                }));
-                const missingDaysColumns = [{ key: 'date', header: 'ימים ללא דיווח' }];
-                csvContent += toCsv(missingDaysRows, missingDaysColumns);
+                const missingDaysRows = finalReport.missingDays.map(date => ({ date: date.toLocaleDateString('he-IL') }));
+                csvContent += toCsv(missingDaysRows, [{ key: 'date', header: 'ימים ללא דיווח' }]);
             } else {
                 csvContent += 'לא נמצאו ימים ללא דיווח בתקופה זו.\n';
             }
 
-            // 4. Trigger download
             const filename = `work_report_${employeeName.replace(' ', '_')}_${dateForFilename}.csv`;
             download(filename, csvContent);
         }
 
-        // === Added: report windows (PDF / Raw data) ===
         window.openPdfReport = function() {
             if (!AppState.finalReport || !AppState.selectedEmployee || !AppState.selectedStartDate || !AppState.selectedEndDate) {
                 alert('שגיאה: נתוני הדו"ח אינם זמינים.');
                 return;
             }
-            // Serialize Map and Date objects safely
-            // Compute raw totals directly from the pre-processed reportData (before any distribution)
-            const rawResearchers = Array.isArray(AppState.reportData?.researchers)
-                ? AppState.reportData.researchers
-                : (AppState.reportData?.researchers ? Array.from(AppState.reportData.researchers.entries()) : []);
-            const rawSeminarsTotal = Array.isArray(AppState.reportData?.seminars)
-                ? AppState.reportData.seminars.reduce((sum, t) => sum + (Number(t.hours) || 0), 0)
-                : 0;
-            const rawOtherTasksTotal = Array.isArray(AppState.reportData?.otherTasks)
-                ? AppState.reportData.otherTasks.reduce((sum, t) => sum + (Number(t.hours) || 0), 0)
-                : 0;
+            const rawResearchers = AppState.reportData?.researchers ? Array.from(AppState.reportData.researchers.entries()) : [];
+            const rawSeminarsTotal = AppState.reportData?.seminars?.reduce((sum, t) => sum + (Number(t.hours) || 0), 0) || 0;
+            const rawOtherTasksTotal = AppState.reportData?.otherTasks?.reduce((sum, t) => sum + (Number(t.hours) || 0), 0) || 0;
 
             const serializableReport = {
                 totalHours: AppState.finalReport.totalHours,
                 categorizedTasks: AppState.finalReport.categorizedTasks,
-                missingDays: (AppState.finalReport.missingDays || []).map(d => (d instanceof Date ? d.toISOString() : d)),
+                missingDays: (AppState.finalReport.missingDays || []).map(d => d.toISOString()),
                 categories: Array.from(AppState.finalReport.categories.entries()),
-                // Added: raw base researchers (before distribution/assignments) and raw totals
                 raw: {
                     researchers: rawResearchers,
-                    seminarsTotal: Number(rawSeminarsTotal.toFixed(2)),
-                    otherTasksTotal: Number(rawOtherTasksTotal.toFixed(2))
+                    seminarsTotal: formatHours(rawSeminarsTotal),
+                    otherTasksTotal: formatHours(rawOtherTasksTotal)
                 }
             };
             const employeeData = encodeURIComponent(JSON.stringify(AppState.selectedEmployee));
@@ -1652,7 +1674,70 @@
             const url = `raw_data_report.html?employeeId=${employeeId}&employee=${employeeData}&startDate=${startDate}&endDate=${endDate}`;
             window.open(url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
         };
+
         function toLocalDateStr(dt) { return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; }
+
+        function getSundayOfWeek(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const sunday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - day);
+            return sunday;
+        }
+
+        // Show-calculation logic
+        window.toggleCalculation = function() {
+            const panel = document.getElementById('calc-panel');
+            if (!panel) return;
+            if (panel.style.display === 'none') {
+                renderCalculationPanel(AppState.finalReport);
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function renderCalculationPanel(finalData) {
+            const panel = document.getElementById('calc-panel');
+            if (!panel) return;
+            if (!finalData || !finalData.calculation) {
+                panel.innerHTML = '<div class="empty-state">אין נתונים להצגה</div>';
+                return;
+            }
+
+            let html = '<div class="calc-section"><div class="calc-title">חישובי חלוקה יחסית</div>';
+            const rel = finalData.calculation.relative || [];
+            if (rel.length === 0) {
+                html += '<div class="note">לא בוצעו חלוקות יחסיות בתקופה זו.</div>';
+            } else {
+                html += '<div class="calc-grid">';
+                rel.forEach((item, idx) => {
+                    html += `<div class="calc-card">
+                        <div class="calc-subtitle">${idx + 1}. ${item.taskName || 'משימה'} — ${formatHours(item.taskHours)} שעות (${item.method === 'proportional' ? 'חלוקה יחסית' : 'חלוקה שווה'})</div>`;
+                    if (item.note) html += `<div class="note">${item.note}</div>`;
+                    if (item.method === 'proportional') html += `<div class="equation eq-line">סה"כ שעות בסיס = ${formatHours(item.totalBase)}</div>`;
+                    if (Array.isArray(item.items)) {
+                        html += '<div class="chips">';
+                        item.items.forEach(it => {
+                            html += `<span class="chip">${it.researcher}: בסיס ${formatHours(it.baseHours)}${item.method === 'proportional' ? ` • משקל ${formatHours(it.weight)}` : ''}</span>`;
+                        });
+                        html += '</div>';
+                        item.items.forEach(it => {
+                            if (item.method === 'proportional') {
+                                html += `<div class="equation eq-line">${it.researcher}: שעות להוספה = ${formatHours(item.taskHours)} × (${formatHours(it.baseHours)} / ${formatHours(item.totalBase)}) = ${formatHours(it.allocated)}</div>`;
+                            } else {
+                                const share = item.items.length ? (1 / item.items.length) : 0;
+                                html += `<div class="equation eq-line">${it.researcher}: שעות להוספה = ${formatHours(item.taskHours)} × ${formatHours(share)} = ${formatHours(it.allocated)}</div>`;
+                            }
+                        });
+                    }
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+            html += '</div>';
+            panel.innerHTML = html;
+        }
+
 
         document.addEventListener('DOMContentLoaded', () => {
             window.firebaseApp.auth.onAuthStateChanged(async (user) => {
