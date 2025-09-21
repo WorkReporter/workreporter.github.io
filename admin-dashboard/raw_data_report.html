@@ -353,6 +353,9 @@
         let rawReports = [];
         let employeeData = null;
         let dateRange = null;
+        let employeeId = null;
+        // Manager categorizations cache (from intermediate screen)
+        let categorizationsMap = new Map();
 
         // Extract data from URL parameters
         function getUrlParams() {
@@ -365,6 +368,20 @@
             };
         }
 
+        // Load manager categorizations from localStorage (shared origin)
+        function loadCategorizationsFromCache(empId) {
+            try {
+                const key = `reportCategorizationCache_${empId}`;
+                const saved = localStorage.getItem(key);
+                if (!saved) return new Map();
+                const obj = JSON.parse(saved);
+                return new Map(Object.entries(obj));
+            } catch (e) {
+                console.warn('Failed to load categorizations cache:', e);
+                return new Map();
+            }
+        }
+
         // Load raw data from Firebase
         async function loadRawData() {
             try {
@@ -374,11 +391,15 @@
                     throw new Error('חסרים פרמטרים נדרשים');
                 }
 
+                employeeId = params.employeeId;
                 employeeData = JSON.parse(decodeURIComponent(params.employee));
                 dateRange = {
                     start: new Date(params.startDate),
                     end: new Date(params.endDate)
                 };
+
+                // Load categorizations selected in the intermediate screen for this employee
+                categorizationsMap = loadCategorizationsFromCache(employeeId);
 
                 // Load reports from Firebase
                 const reportsRef = ref(db, `reports/${params.employeeId}`);
@@ -545,6 +566,7 @@
             return stats;
         }
 
+        // Replace aggregated-by-report table with per-entry table including manager assignment
         function generateRawReportsTable() {
             let html = `
                 <table class="data-table">
@@ -552,9 +574,10 @@
                         <tr>
                             <th>תאריך</th>
                             <th>סוג דיווח</th>
-                            <th>מספר רשומות</th>
-                            <th>חוקרים</th>
-                            <th>סה"כ שעות</th>
+                            <th>חוקר</th>
+                            <th>שיוך מנהל</th>
+                            <th>פרטים</th>
+                            <th>שעות</th>
                             <th>ID דיווח</th>
                         </tr>
                     </thead>
@@ -562,23 +585,30 @@
             `;
 
             rawReports.forEach(report => {
-                const reportHours = calculateReportHours(report);
-                const researchers = getReportResearchers(report);
-
-                html += `
-                    <tr>
-                        <td>${report.dateFormatted}</td>
-                        <td>
-                            <span class="report-type ${report.type}">
-                                ${report.type === 'daily' ? 'יומי' : 'שבועי'}
-                            </span>
-                        </td>
-                        <td>${Array.isArray(report.entries) ? report.entries.length : 0}</td>
-                        <td>${researchers.join(', ')}</td>
-                        <td>${reportHours.toFixed(1)}</td>
-                        <td style="font-family: monospace; font-size: 0.8rem;">${report.id}</td>
-                    </tr>
-                `;
+                const entries = Array.isArray(report.entries) ? report.entries : [];
+                entries.forEach((entry, idx) => {
+                    if (!entry) return;
+                    let hours = 0;
+                    if (report.type === 'weekly') {
+                        if (entry.hours != null && entry.hours !== '') hours = parseFloat(entry.hours) || 0;
+                        else if (entry.days != null && entry.days !== '') hours = (parseFloat(entry.days) || 0) * 8;
+                        else if (Array.isArray(entry.dailyHours)) hours = entry.dailyHours.reduce((sum, h) => sum + (parseFloat(h) || 0), 0);
+                    } else {
+                        hours = parseFloat(entry.hours) || 0;
+                    }
+                    const assignment = getManagerAssignment(report.id, idx, entry);
+                    html += `
+                        <tr>
+                            <td>${report.dateFormatted}</td>
+                            <td><span class="report-type ${report.type}">${report.type === 'daily' ? 'יומי' : 'שבועי'}</span></td>
+                            <td>${entry.researcher || ''}</td>
+                            <td>${assignment}</td>
+                            <td>${entry.detail || ''}</td>
+                            <td>${hours}</td>
+                            <td style="font-family: monospace; font-size: 0.8rem;">${report.id}</td>
+                        </tr>
+                    `;
+                });
             });
 
             html += `
@@ -589,40 +619,39 @@
             document.getElementById('raw-reports-table').innerHTML = html;
         }
 
-        function calculateReportHours(report) {
-            let totalHours = 0;
-            if (Array.isArray(report.entries)) {
-                report.entries.forEach(entry => {
-                    if (entry) {
-                        let hours = 0;
-                        if (report.type === 'weekly') {
-                            if (entry.hours != null && entry.hours !== '') {
-                                hours = parseFloat(entry.hours) || 0;
-                            } else if (entry.days != null && entry.days !== '') {
-                                hours = (parseFloat(entry.days) || 0) * 8;
-                            } else if (Array.isArray(entry.dailyHours)) {
-                                hours = entry.dailyHours.reduce((sum, h) => sum + (parseFloat(h) || 0), 0);
-                            }
-                        } else {
-                            hours = parseFloat(entry.hours) || 0;
-                        }
-                        totalHours += hours;
-                    }
-                });
-            }
-            return totalHours;
-        }
+        // Determine manager assignment label for an entry, based on categorizations map
+        function getManagerAssignment(reportId, entryIndex, entry) {
+            // Default mapping if no explicit categorization exists
+            const defaultAssignment = (() => {
+                const name = entry?.researcher || '';
+                if (!name) return '';
+                if (name === 'משימות אחרות') return 'משימות אחרות';
+                if (name.includes('סמינר') || name.includes('קורס') || name.includes('הכשרה')) return 'סמינר/קורס/הכשרה';
+                return name; // researcher stays as-is
+            })();
 
-        function getReportResearchers(report) {
-            const researchers = new Set();
-            if (Array.isArray(report.entries)) {
-                report.entries.forEach(entry => {
-                    if (entry && entry.researcher) {
-                        researchers.add(entry.researcher);
-                    }
-                });
+            const key = `${reportId}_${entryIndex}`;
+            const type = categorizationsMap.get(key);
+            if (!type) return defaultAssignment;
+
+            switch (type) {
+                case 'seminar':
+                    return 'סמינר/קורס/הכשרה';
+                case 'active': {
+                    const chosen = categorizationsMap.get(`${key}_activeResearcher`) || '';
+                    return chosen ? `חוקר פעיל: ${chosen}` : 'חוקר פעיל (לא נבחר)';
+                }
+                case 'relative':
+                    return 'חלוקה יחסית';
+                case 'equal':
+                    return 'חלוקה שווה';
+                case 'custom': {
+                    const customText = categorizationsMap.get(`${key}_custom`) || '';
+                    return customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
+                }
+                default:
+                    return defaultAssignment;
             }
-            return Array.from(researchers);
         }
 
         function generateJSONViewer() {
@@ -662,51 +691,38 @@
         };
 
         function generateCSVData() {
-            const headers = ['תאריך', 'סוג דיווח', 'חוקר', 'פרטים', 'שעות', 'ID דיווח'];
+            // Insert new column "שיוך מנהל" between "חוקר" and "פרטים"
+            const headers = ['תאריך', 'סוג דיווח', 'חוקר', 'שיוך מנהל', 'פרטים', 'שעות', 'ID דיווח'];
             const rows = [headers];
 
             rawReports.forEach(report => {
-                if (Array.isArray(report.entries)) {
-                    report.entries.forEach(entry => {
-                        if (entry) {
-                            let hours = 0;
-                            if (report.type === 'weekly') {
-                                if (entry.hours != null && entry.hours !== '') {
-                                    hours = parseFloat(entry.hours) || 0;
-                                } else if (entry.days != null && entry.days !== '') {
-                                    hours = (parseFloat(entry.days) || 0) * 8;
-                                } else if (Array.isArray(entry.dailyHours)) {
-                                    hours = entry.dailyHours.reduce((sum, h) => sum + (parseFloat(h) || 0), 0);
-                                }
-                            } else {
-                                hours = parseFloat(entry.hours) || 0;
-                            }
-
-                            rows.push([
-                                report.dateFormatted,
-                                report.type === 'daily' ? 'יומי' : 'שבועי',
-                                entry.researcher || '',
-                                entry.detail || '',
-                                hours,
-                                report.id
-                            ]);
-                        }
-                    });
-                } else {
+                const entries = Array.isArray(report.entries) ? report.entries : [];
+                entries.forEach((entry, idx) => {
+                    if (!entry) return;
+                    let hours = 0;
+                    if (report.type === 'weekly') {
+                        if (entry.hours != null && entry.hours !== '') hours = parseFloat(entry.hours) || 0;
+                        else if (entry.days != null && entry.days !== '') hours = (parseFloat(entry.days) || 0) * 8;
+                        else if (Array.isArray(entry.dailyHours)) hours = entry.dailyHours.reduce((sum, h) => sum + (parseFloat(h) || 0), 0);
+                    } else {
+                        hours = parseFloat(entry.hours) || 0;
+                    }
+                    const assignment = getManagerAssignment(report.id, idx, entry);
                     rows.push([
                         report.dateFormatted,
                         report.type === 'daily' ? 'יומי' : 'שבועי',
-                        '',
-                        'אין רשומות',
-                        0,
+                        entry.researcher || '',
+                        assignment || '',
+                        entry.detail || '',
+                        hours,
                         report.id
                     ]);
-                }
+                });
             });
 
             return rows.map(row =>
                 row.map(cell => {
-                    const str = String(cell || '');
+                    const str = String(cell ?? '');
                     return str.includes(',') || str.includes('"') || str.includes('\n')
                         ? `"${str.replace(/"/g, '""')}"`
                         : str;
