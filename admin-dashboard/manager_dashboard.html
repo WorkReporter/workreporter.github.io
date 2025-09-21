@@ -1306,12 +1306,12 @@
                         <div id="${key}_dynamic_content">`;
 
                 if (savedType === 'custom') {
-                    itemHtml += `<input class="custom-input" placeholder="הכנס הסבר..." value="${savedCustomText}" oninput="AppState.categorizations.set('${key}_custom', this.value); saveCategorizationsToCache();" />`;
+                    itemHtml += `<input class="custom-input" placeholder="הוספת הסבר לחיוב או חוקר/ת לחיוב..." value="${savedCustomText}" oninput="AppState.categorizations.set('${key}_custom', this.value); saveCategorizationsToCache();" />`;
                 } else if (savedType === 'active') {
                     const activeList = AppState.selectedEmployee?.activeResearchers || [];
                     if (activeList.length > 0) {
                         itemHtml += `<select class="active-select custom-input" style="margin-top: 0.75rem;" onchange="AppState.categorizations.set('${key}_activeResearcher', this.value); saveCategorizationsToCache();">
-                            <option value="">בחר חוקר פעיל...</option>
+                            <option value="">בחר/י חוקר/ת פעיל/ה...</option>
                             ${activeList.map(r => `<option value="${r}" ${r === savedActiveResearcher ? 'selected' : ''}>${r}</option>`).join('')}
                         </select>`;
                     }
