@@ -280,20 +280,42 @@
         }
 
         .date-selection-info {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
+            /* Default instruction style: inline text under the employee name (not a button).
+               Constrain width to match the calendar container so it doesn't extend beyond calendar bounds. */
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            margin: 0 auto 1rem auto;
             text-align: center;
-            color: #64748b;
-            font-size: 0.9rem;
+            color: #475569; /* slightly darker for readability */
+            font-size: 0.95rem;
+            max-width: 500px; /* match .calendar-container max-width */
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .date-selection-info.has-selection {
+            /* When a date range is selected, show the highlighted box to draw attention */
             background: #eff6ff;
-            border-color: #3b82f6;
+            border: 1px solid #3b82f6;
+            border-radius: 8px;
+            padding: 1rem;
             color: #1e40af;
+        }
+
+        /* Specific instruction styles for the default (non-selected) state */
+        .date-selection-info .instruction-main {
+            font-size: 1.15rem; /* larger and bolder */
+            font-weight: 800; /* bold */
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+
+        .date-selection-info .instruction-sub {
+            font-size: 0.85rem; /* smaller */
+            color: #64748b;
+            font-weight: 500;
         }
 
         .date-label {
@@ -774,6 +796,11 @@
 
         <div id="calendar-screen" class="screen">
             <h1 class="screen-title" id="calendar-title">עובד - הפקת דו"ח</h1>
+            <!-- Instruction: moved here under employee title as requested; constrained to calendar width -->
+            <div class="date-selection-info" id="date-selection">
+                <div class="instruction-main">יש לבחור תאריך התחלה וסיום להפקת דו"ח</div>
+                <div class="instruction-sub">(תאריכים מחודשים אחרים מוצגים באפור)</div>
+            </div>
             <div class="calendar-container">
                 <div class="calendar-header">
                     <button class="nav-btn" onclick="previousMonth()">‹</button>
@@ -797,10 +824,6 @@
                         </tbody>
                 </table>
 
-                <div class="date-selection-info" id="date-selection">
-                    <div>בחר תאריך התחלה</div>
-                </div>
-
                 <button class="generate-report-btn" id="generate-report" disabled onclick="generateIntermediateReport()">
                     הפקת דו"ח שעות
                 </button>
@@ -808,11 +831,9 @@
                 <button class="back-btn" onclick="showEmployeesScreen()">חזרה</button>
 
                 <div class="legend" aria-hidden="false">
-                    <div class="legend-item"><span class="legend-swatch report" aria-hidden="true"></span><span>דיווח יומי — יום עם דיווח מלא</span></div>
-                    <div class="legend-item"><span class="legend-swatch weekly" aria-hidden="true"></span><span>דיווח שבועי — הסימון המקווקו מייצג דיווח שבועי</span></div>
-                    <div class="legend-item"><span class="legend-swatch selected" aria-hidden="true"></span><span>תחילת/סיום טווח — תחילת או סיום טווח שנבחר</span></div>
-                    <div class="legend-item"><span class="legend-swatch in-range" aria-hidden="true"></span><span>ימים בתוך הטווח — חלק מהטווח הנבחר</span></div>
-                    </div>
+                    <div class="legend-item"><span class="legend-swatch report" aria-hidden="true"></span><span>קיים דיווח יומי</span></div>
+                    <div class="legend-item"><span class="legend-swatch weekly" aria-hidden="true"></span><span>קיים דיווח שבועי</span></div>
+                </div>
              </div>
          </div>
 
@@ -1234,13 +1255,17 @@
                 container.innerHTML = `
                     <div class="date-label">תאריך התחלה</div>
                     <div class="date-value">${startStr}</div>
-                    <div style="margin-top: 0.5rem; font-size: 0.8rem;">בחר תאריך סיום</div>
+                    <div style="margin-top: 0.5rem; font-size: 0.8rem;">בחר/י תאריך סיום</div>
                 `;
             } else {
                 container.className = 'date-selection-info';
-                container.innerHTML = '<div>בחר תאריך התחלה</div>';
-            }
-        }
+                // Default instruction placed under the employee name (not button-like)
+                container.innerHTML = `
+                    <div class="instruction-main">יש לבחור תאריך התחלה וסיום להפקת דו"ח</div>
+                    <div class="instruction-sub">(תאריכים מחודשים אחרים מוצגים באפור)</div>
+                `;
+             }
+         }
 
         function updateGenerateButton() {
             const btn = document.getElementById('generate-report');
@@ -2234,3 +2259,4 @@
     </script>
 </body>
 </html>
+
