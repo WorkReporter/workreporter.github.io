@@ -592,6 +592,23 @@
             return { allowed: true, message: 'דיווח לשבוע קודם - ניתן רק להוסיף דיווח חדש' };
         }
 
+        // Temporary one-time override: allow reporting further back than one week
+        const overrideCfg = (window.APP_CONFIG && window.APP_CONFIG.backdateOverride) || {};
+        if (overrideCfg.enabled) {
+            // Optional lower bound (inclusive)
+            if (overrideCfg.minDate) {
+                const min = new Date(overrideCfg.minDate);
+                min.setHours(0, 0, 0, 0);
+                if (dateOnly < min) {
+                    return {
+                        allowed: false,
+                        message: 'התאריך מוקדם מהתאריך המותר לדיווח בדיעבד'
+                    };
+                }
+            }
+            return { allowed: true, message: '' };
+        }
+
         // For any other dates - not allowed
         const daysDiff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
         console.log('  Days difference:', daysDiff);

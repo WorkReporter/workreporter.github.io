@@ -30,8 +30,12 @@ window.APP_CONFIG = {
     "עמיחי חורש",
     "רני אריאלי"
     ],
+    // One-time temporary override to allow backdating beyond one previous week
+    // Toggle enabled to true when you want to allow reporting further back
+    // Optionally set minDate (YYYY-MM-DD) to restrict how far back is allowed
+    backdateOverride: {
+        enabled: true,
+        // Allow backdating starting from Sep 1, 2025 (adjust as needed)
+        minDate: '2025-09-01'
+    }
 };
-
-
-
-
