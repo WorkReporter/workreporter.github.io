@@ -834,10 +834,11 @@
                 reportData.entries = validEntries;
             }
         } else {
-            // דרישה: דיווח שבועי - הגעה אליו ביום ה' בלבד
+            // דרישה: דיווח שבועי - הגעה אליו ביום ה' או יום א' בלבד
             const today = new Date();
-            if (today.getDay() !== 4) {
-                showError('דיווח שבועי זמין רק בימי חמישי');
+            const dayOfWeek = today.getDay();
+            if (dayOfWeek !== 4 && dayOfWeek !== 0) {
+                showError('דיווח שבועי זמין רק בימי חמישי וראשון');
                 return;
             }
 
@@ -1025,14 +1026,14 @@
         setInputValue('report-date', formatDate(today));
         const dayOfWeek = today.getDay();
 
-        // Always show both options; disable weekly unless allowed (Thursday)
+        // Always show both options; disable weekly unless allowed (Thursday or Sunday)
         const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
         if (weeklyToggle) {
-            const allowed = (dayOfWeek === 4);
+            const allowed = (dayOfWeek === 4 || dayOfWeek === 0);
             weeklyToggle.style.opacity = allowed ? '' : '0.5';
             weeklyToggle.setAttribute('aria-disabled', allowed ? 'false' : 'true');
             weeklyToggle.dataset.allowed = allowed ? '1' : '0';
-            weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי';
+            weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי וראשון';
         }
 
         selectReportType('daily');
@@ -1377,11 +1378,11 @@
             const today = new Date();
             const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
             if (weeklyToggle) {
-                const isThursday = (today.getDay() === 4);
-                weeklyToggle.style.opacity = isThursday ? '' : '0.5';
-                weeklyToggle.setAttribute('aria-disabled', !isThursday ? 'true' : 'false');
-                weeklyToggle.dataset.allowed = isThursday ? '1' : '0';
-                weeklyToggle.title = isThursday ? '' : 'דיווח שבועי זמין רק בימי חמישי';
+                const isThursdayOrSunday = (today.getDay() === 4 || today.getDay() === 0);
+                weeklyToggle.style.opacity = isThursdayOrSunday ? '' : '0.5';
+                weeklyToggle.setAttribute('aria-disabled', !isThursdayOrSunday ? 'true' : 'false');
+                weeklyToggle.dataset.allowed = isThursdayOrSunday ? '1' : '0';
+                weeklyToggle.title = isThursdayOrSunday ? '' : 'דיווח שבועי זמין רק בימי חמישי וראשון';
             }
 
             showScreen('daily-report');
@@ -1635,12 +1636,11 @@
         const today = new Date();
         const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
         if (weeklyToggle) {
-            const isThursday = (today.getDay() === 4);
-            const allowed = isThursday;
-            weeklyToggle.style.opacity = allowed ? '' : '0.5';
-            weeklyToggle.setAttribute('aria-disabled', allowed ? 'false' : 'true');
-            weeklyToggle.dataset.allowed = allowed ? '1' : '0';
-            weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי';
+            const isThursdayOrSunday = (today.getDay() === 4 || today.getDay() === 0);
+            weeklyToggle.style.opacity = isThursdayOrSunday ? '' : '0.5';
+            weeklyToggle.setAttribute('aria-disabled', !isThursdayOrSunday ? 'true' : 'false');
+            weeklyToggle.dataset.allowed = isThursdayOrSunday ? '1' : '0';
+            weeklyToggle.title = isThursdayOrSunday ? '' : 'דיווח שבועי זמין רק בימי חמישי וראשון';
         }
 
         showScreen('daily-report');

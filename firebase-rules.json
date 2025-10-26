@@ -1,0 +1,49 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "users": {
+      ".read": "auth != null && (auth.token.email == 'test_manager@volcani.agri.gov.il' || auth.token.email == 'yehuda222222@volcani.agri.gov.il')",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.email == 'test_manager@volcani.agri.gov.il' || auth.token.email == 'yehuda222222@volcani.agri.gov.il')",
+        ".write": "auth != null && auth.uid === $uid && auth.token.email.matches(/^[^@\\s]+@volcani\\.agri\\.gov\\.il$/)"
+      }
+    },
+
+    "reports": {
+      ".read": "auth != null && (auth.token.email == 'test_manager@volcani.agri.gov.il' || auth.token.email == 'yehuda222222@volcani.agri.gov.il')",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.email == 'test_manager@volcani.agri.gov.il' || auth.token.email == 'yehuda222222@volcani.agri.gov.il')",
+        ".write": "auth != null && auth.uid === $uid && auth.token.email.matches(/^[^@\\s]+@volcani\\.agri\\.gov\\.il$/)"
+      }
+    },
+
+    "managers": {
+      ".read": "auth != null && auth.token.email.matches(/^[^@\\s]+@volcani\\.agri\\.gov\\.il$/)",
+      ".write": "auth != null && (auth.token.email == 'test_manager@volcani.agri.gov.il' || auth.token.email == 'yehuda222222@volcani.agri.gov.il')",
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && (auth.token.email == 'test_manager@volcani.agri.gov.il' || auth.token.email == 'yehuda222222@volcani.agri.gov.il')",
+        ".validate": "newData.hasChildren(['firstName','lastName','fullName','email']) && newData.child('email').isString()"
+      }
+    },
+
+    "pendingManagers": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['firstName','lastName','fullName','email','uid','createdAt'])"
+      },
+      ".read": "auth != null"
+    },
+
+    "global": {
+      ".read": false,
+      "researchers": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('managers').child(auth.uid).exists()"
+      }
+    }
+  }
+}
