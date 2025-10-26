@@ -884,16 +884,34 @@
                 return;
             }
 
-            // Compute range for storage and filtering based on selected date, not current date
-            const sunday = getSundayOfWeek(selectedDate);
-            const thursday = new Date(sunday);
-            thursday.setDate(sunday.getDate() + 4);
-            reportData.weekStart = formatDate(sunday);
-            reportData.weekEnd = formatDate(thursday);
+            // Compute range for storage based on the selected week range shown in the UI (#report-week)
+            let weekStartDate, weekEndDate;
+            if (typeof week === 'string' && week.includes(' - ')) {
+                try {
+                    const [startStr, endStr] = week.split(' - ');
+                    const [sDay, sMonth, sYear] = startStr.split('/').map(Number);
+                    const [eDay, eMonth, eYear] = endStr.split('/').map(Number);
+                    weekStartDate = new Date(sYear, (sMonth || 1) - 1, sDay || 1);
+                    weekEndDate = new Date(eYear, (eMonth || 1) - 1, eDay || 1);
+                } catch (_) {
+                    // Fallback to selectedDate week if parsing fails
+                    const sunday = getSundayOfWeek(selectedDate);
+                    const thursday = new Date(sunday); thursday.setDate(sunday.getDate() + 4);
+                    weekStartDate = sunday; weekEndDate = thursday;
+                }
+            } else {
+                // Fallback to selectedDate week if week string missing
+                const sunday = getSundayOfWeek(selectedDate);
+                const thursday = new Date(sunday); thursday.setDate(sunday.getDate() + 4);
+                weekStartDate = sunday; weekEndDate = thursday;
+            }
+
+            reportData.weekStart = formatDate(weekStartDate);
+            reportData.weekEnd = formatDate(weekEndDate);
 
             if (!currentUser) return;
 
-            const weeklyKey = `weekly_${getWeekForStorageByDate(selectedDate)}`;
+            const weeklyKey = `weekly_${reportData.weekStart}_${reportData.weekEnd}`;
             database.ref('reports/' + currentUser.uid + '/' + weeklyKey).set({
                 ...reportData,
                 entries: weeklyEntries,
@@ -909,13 +927,6 @@
             }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
             return;
         }
-
-        if (!currentUser) return;
-        const reportKey = isWeekly ? `weekly_${getCurrentWeekForStorage()}` : `daily_${reportData.date}`;
-        database.ref('reports/' + currentUser.uid + '/' + reportKey).set(reportData).then(() => {
-            showPopup('הדיווח נוסף/עודכן בהצלחה!');
-            setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
-        }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
     }
     window.submitReport = submitReport;
 
@@ -1206,40 +1217,16 @@
         const hintEl = document.getElementById('weekly-dates-hint');
         if (!hintEl) return;
 
-        // Get the selected date to calculate the correct week range
-        const reportDate = getInputValue('report-date');
-        let sunday, thursday;
-
-        if (reportDate) {
-            // Parse the selected date and calculate the week for that date
-            const [year, month, day] = reportDate.split('-').map(Number);
-            const selectedDate = new Date(year, month - 1, day);
-            sunday = getSundayOfWeek(selectedDate);
-            thursday = new Date(sunday);
-            thursday.setDate(sunday.getDate() + 4);
-        } else {
-            // ביום ראשון נציג את השבוע הקודם, ביום חמישי את השבוע הנוכחי
-            const today = new Date();
-            const dayOfWeek = today.getDay();
-
-            if (dayOfWeek === 0) {
-                // ביום ראשון - נציג את השבוע הקודם
-                const lastSunday = new Date(today);
-                lastSunday.setDate(today.getDate() - 7);
-                sunday = getSundayOfWeek(lastSunday);
-                thursday = new Date(sunday);
-                thursday.setDate(sunday.getDate() + 4);
-            } else {
-                // בשאר הימים - נציג את השבוע הנוכחי
-                sunday = getSundayOfWeek(today);
-                thursday = new Date(sunday);
-                thursday.setDate(sunday.getDate() + 4);
-            }
+        // במקום לחשב מחדש לפי תאריך, נשתמש בדיוק בערך שמוצג בשדה הטווח (#report-week)
+        const weekRange = getInputValue('report-week');
+        if (weekRange) {
+            hintEl.textContent = `טווח התאריכים: ${weekRange} (א׳–ה׳)`;
+            return;
         }
 
-        const startDate = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
-        const endDate = `${String(thursday.getDate()).padStart(2,'0')}/${String(thursday.getMonth()+1).padStart(2,'0')}/${thursday.getFullYear()}`;
-        hintEl.textContent = `טווח התאריכים: ${startDate} - ${endDate} (א׳–ה׳)`;
+        // fallback: אם משום מה השדה ריק, נחשב לפי כללי הדיווח השבועי (כולל יום ראשון = שבוע שעבר)
+        const fallbackRange = getWeekForWeeklyReport();
+        hintEl.textContent = `טווח התאריכים: ${fallbackRange} (א׳–ה׳)`;
     }
 
     function refreshResearcherDropdowns() {
@@ -1519,7 +1506,7 @@
                 }
             } else if (report.type === 'weekly') {
                 // For weekly reports, compute the week range and list entries
-                const rangeLabel = report.week || `${(report.weekStart || '').split('-').reverse().join('/')} - ${(report.weekEnd || '').split('-').reverse().join('/')}`;
+                const rangeLabel = report.week || `${(report.weekStart || '').split('-').reverse().join('/') } - ${(report.weekEnd || '').split('-').reverse().join('/')}`;
                 html += `<h4><span class="material-symbols-outlined" style="vertical-align: middle; color:#7c3aed; margin-left:6px;">event</span>${rangeLabel}</h4>`;
 
                 // Determine week start/end as Date objects
@@ -1965,7 +1952,7 @@
         document.body.appendChild(popup);
         setTimeout(() => {
             if (popup.parentNode) document.body.removeChild(popup);
-        }, 3000);
+        }, 1000);
     }
     function showError(message) { showPopup(message, 'error'); }
     function formatDate(date) {
@@ -1975,8 +1962,8 @@
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
-    function getCurrentWeek() { 
-        const now = new Date(); 
+    function getCurrentWeek() {
+        const now = new Date();
         const sunday = getSundayOfWeek(now);
         const thursday = new Date(sunday);
         thursday.setDate(sunday.getDate() + 4);
@@ -1984,7 +1971,7 @@
         const endDate = `${String(thursday.getDate()).padStart(2,'0')}/${String(thursday.getMonth()+1).padStart(2,'0')}/${thursday.getFullYear()}`;
         return `${startDate} - ${endDate}`;
     }
-    
+
     /**
      * מחזיר את השבוע הנכון לדיווח שבועי
      * ביום ראשון - מחזיר את השבוע הקודם (ראשון-חמישי שעבר)
@@ -2015,7 +2002,7 @@
     }
 
     function getCurrentWeekForStorage() {
-        const now = new Date(); 
+        const now = new Date();
         const sunday = getSundayOfWeek(now);
         const thursday = new Date(sunday);
         thursday.setDate(sunday.getDate() + 4);
@@ -2158,7 +2145,25 @@
                     if (reportDate) {
                         const [year, month, day] = reportDate.split('-').map(Number);
                         const selectedDate = new Date(year, month - 1, day);
-                        const weekRange = getWeekForDate(selectedDate);
+
+                        // Special rule: On Sunday (and the selected date is today), show last week's range
+                        const today = new Date();
+                        const todayString = formatDate(today);
+                        const selectedString = formatDate(selectedDate);
+                        let weekRange;
+                        if (selectedDate.getDay() === 0 && selectedString === todayString) {
+                            const lastSunday = new Date(selectedDate);
+                            lastSunday.setDate(selectedDate.getDate() - 7);
+                            const sunday = getSundayOfWeek(lastSunday);
+                            const thursday = new Date(sunday);
+                            thursday.setDate(sunday.getDate() + 4);
+                            const startDate = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
+                            const endDate = `${String(thursday.getDate()).padStart(2,'0')}/${String(thursday.getMonth()+1).padStart(2,'0')}/${thursday.getFullYear()}`;
+                            weekRange = `${startDate} - ${endDate}`;
+                        } else {
+                            weekRange = getWeekForDate(selectedDate);
+                        }
+
                         setInputValue('report-week', weekRange);
                         renderWeeklyDatesHint();
                     }
@@ -2362,3 +2367,4 @@
     // חשוף את הפונקציה לשימוש גלובלי
     window.updateManagerUIVisibility = updateManagerUIVisibility;
 })();
+
