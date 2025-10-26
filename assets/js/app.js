@@ -927,6 +927,20 @@
             }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
             return;
         }
+
+        // =================================================================
+        // הבלוק הזה היה חסר - הוא שומר את הדיווח היומי
+        // =================================================================
+        if (!currentUser) return;
+        // אנו יודעים ש-isWeekly הוא false כאן, כי בלוק ה-weekly מבצע return
+        const reportKey = `daily_${reportData.date}`;
+        database.ref('reports/' + currentUser.uid + '/' + reportKey).set(reportData).then(() => {
+            showPopup('הדיווח נוסף/עודכן בהצלחה!');
+            setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
+        }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
+        // =================================================================
+        // סוף הבלוק החסר
+        // =================================================================
     }
     window.submitReport = submitReport;
 
