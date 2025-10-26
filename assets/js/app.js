@@ -1071,10 +1071,29 @@
                 // Parse the selected date and calculate the week for that date
                 const [year, month, day] = reportDate.split('-').map(Number);
                 const selectedDate = new Date(year, month - 1, day);
-                weekRange = getWeekForDate(selectedDate);
+
+                // אם התאריך הנבחר הוא יום ראשון והוא התאריך של היום, נציג את השבוע הקודם
+                const today = new Date();
+                const todayString = formatDate(today);
+                const selectedString = formatDate(selectedDate);
+
+                if (selectedDate.getDay() === 0 && selectedString === todayString) {
+                    // זה יום ראשון היום - נרצה את השבוע הקודם
+                    const lastSunday = new Date(selectedDate);
+                    lastSunday.setDate(selectedDate.getDate() - 7);
+                    const sunday = getSundayOfWeek(lastSunday);
+                    const thursday = new Date(sunday);
+                    thursday.setDate(sunday.getDate() + 4);
+                    const startDate = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
+                    const endDate = `${String(thursday.getDate()).padStart(2,'0')}/${String(thursday.getMonth()+1).padStart(2,'0')}/${thursday.getFullYear()}`;
+                    weekRange = `${startDate} - ${endDate}`;
+                } else {
+                    // תאריך רגיל - נחשב את השבוע שלו
+                    weekRange = getWeekForDate(selectedDate);
+                }
             } else {
-                // Fallback to current week if no date is selected
-                weekRange = getCurrentWeek();
+                // ביום ראשון נציג את השבוע הקודם, ביום חמישי את השבוע הנוכחי
+                weekRange = getWeekForWeeklyReport();
             }
 
             setInputValue('report-week', weekRange);
@@ -1199,11 +1218,23 @@
             thursday = new Date(sunday);
             thursday.setDate(sunday.getDate() + 4);
         } else {
-            // Fallback to current week if no date is selected
+            // ביום ראשון נציג את השבוע הקודם, ביום חמישי את השבוע הנוכחי
             const today = new Date();
-            sunday = getSundayOfWeek(today);
-            thursday = new Date(sunday);
-            thursday.setDate(sunday.getDate() + 4);
+            const dayOfWeek = today.getDay();
+
+            if (dayOfWeek === 0) {
+                // ביום ראשון - נציג את השבוע הקודם
+                const lastSunday = new Date(today);
+                lastSunday.setDate(today.getDate() - 7);
+                sunday = getSundayOfWeek(lastSunday);
+                thursday = new Date(sunday);
+                thursday.setDate(sunday.getDate() + 4);
+            } else {
+                // בשאר הימים - נציג את השבוע הנוכחי
+                sunday = getSundayOfWeek(today);
+                thursday = new Date(sunday);
+                thursday.setDate(sunday.getDate() + 4);
+            }
         }
 
         const startDate = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
@@ -1838,7 +1869,7 @@
 
             // אם המשתמש הוא מנהל, הוסף אותו לרשימת המנהלים הגלובלית (לבחירה בלבד)
             // הרשאות אמיתיות ניתנות רק דרך הכללים ב-firebase-rules.json
-            if (data.position === 'מנהל/ת') {
+            if (data.position === 'מנה��/ת') {
                 const managerData = {
                     firstName: data.firstName,
                     lastName: data.lastName,
@@ -1954,7 +1985,36 @@
         return `${startDate} - ${endDate}`;
     }
     
-    function getCurrentWeekForStorage() { 
+    /**
+     * מחזיר את השבוע הנכון לדיווח שבועי
+     * ביום ראשון - מחזיר את השבוע הקודם (ראשון-חמישי שעבר)
+     * ביום חמישי - מחזיר את השבוע הנוכחי (ראשון-חמישי הנוכחי)
+     * @returns {string} טווח השבוע בפורמט DD/MM/YYYY - DD/MM/YYYY
+     */
+    function getWeekForWeeklyReport() {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+
+        // ביום ראשון (0), נרצה את השבוע הקודם
+        if (dayOfWeek === 0) {
+            // מחשב את יום ראשון של השבוע הקודם
+            const lastSunday = new Date(now);
+            lastSunday.setDate(now.getDate() - 7); // חוזר 7 ימים אחורה
+
+            const sunday = getSundayOfWeek(lastSunday);
+            const thursday = new Date(sunday);
+            thursday.setDate(sunday.getDate() + 4);
+
+            const startDate = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
+            const endDate = `${String(thursday.getDate()).padStart(2,'0')}/${String(thursday.getMonth()+1).padStart(2,'0')}/${thursday.getFullYear()}`;
+            return `${startDate} - ${endDate}`;
+        }
+
+        // בשאר הימים (כולל חמישי), נחזיר את השבוע הנוכחי
+        return getCurrentWeek();
+    }
+
+    function getCurrentWeekForStorage() {
         const now = new Date(); 
         const sunday = getSundayOfWeek(now);
         const thursday = new Date(sunday);
