@@ -1416,6 +1416,107 @@
         .loading-box p { color: var(--neutral-700, #334155); font-weight: 600; }
         .spinner { width: 48px; height: 48px; border-radius: 50%; border: 5px solid rgba(74, 155, 224, 0.25); border-top-color: var(--brand-blue-700, #165ea8); animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+
+        /* Login Screen Split Layout with Logo */
+#login-screen.auth-container {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    max-width: 1000px;
+    padding: 0;
+    overflow: visible;
+}
+
+#login-screen .logo-section {
+    flex: 0 0 300px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    background: linear-gradient(180deg, #f0f4f8 0%, #e1e8ed 40%, var(--brand-blue-100) 100%);
+    padding: 40px 20px;
+    min-height: 100%;
+}
+
+#login-screen .institute-logo {
+    max-width: 100%;
+    max-height: 280px;
+    height: auto;
+    object-fit: contain;
+    margin-top: 0;
+}
+
+#login-screen .logo-welcome-text {
+    text-align: center;
+    color: #2c3e50;
+    font-size: 17px;
+    font-weight: 400;
+    margin-top: 25px;
+    line-height: 1.8;
+    display: block;
+    max-width: 380px;
+    margin-right: auto;
+    margin-left: auto;
+    padding: 0 10px;
+    letter-spacing: 0.3px;
+}
+
+#login-screen .form-section {
+    flex: 1;
+    padding: 40px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    #login-screen.auth-container {
+        flex-direction: column;
+        max-width: 450px;
+    }
+
+    #login-screen .logo-section {
+        flex: 0 0 auto;
+        padding: 30px 20px 20px;
+        align-items: center;
+        min-height: auto;
+    }
+
+    #login-screen .institute-logo {
+        max-height: 120px;
+    }
+
+    #login-screen .logo-welcome-text {
+        display: none;
+    }
+
+    #login-screen .login-divider {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent 0%, var(--neutral-200) 20%, var(--neutral-200) 80%, transparent 100%);
+    }
+
+    #login-screen .form-section {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    #login-screen .logo-section {
+        padding: 20px 15px 15px;
+    }
+
+    #login-screen .institute-logo {
+        max-height: 100px;
+    }
+
+    #login-screen .form-section {
+        padding: 15px;
+    }
+}
+
+
+        #login-screen.auth-container.hidden {
+    display: none;
+}
     </style>
 </head>
 <body>
@@ -1451,12 +1552,28 @@
         </div>
 
     <div id="login-screen" class="auth-container">
-        <!-- הודעה זמנית על אפשרות דיווח בדיעבד - מעל כל החלון -->
+    <!-- Logo Section -->
+    <div class="logo-section">
+        <div>
+            <img src="LOGO_4_english & hebrew.png" alt="Institute Logo" class="institute-logo">
+<p class="logo-welcome-text">
+ ברוכים/ות הבאים/ות למערכת דיווח הפעילות של המכון להנדסת מערכות חקלאיות וביולוגיות.
+אנא התחבר/י או הירשם/י באמצעות המייל הארגוני שלך.
+</p>
+        </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="login-divider"></div>
+
+    <!-- Form Section -->
+    <div class="form-section">
+        <!-- הודעה זמנית על אפשרות דיווח בהיעדר - מעל כל החלון -->
         <div class="info-message" style="margin-bottom: 25px; display: flex; align-items: start; gap: 10px;">
             <span class="material-symbols-outlined" style="color: #0369a1; font-size: 24px;">info</span>
             <div>
                 <strong>הודעה חשובה:</strong>
-                <p style="margin: 5px 0 0 0;">באופן חד-פעמי, ניתן כעת לדווח בדיעבד על תקופת החופשה - גם יותר משבוע אחורה. אנא השלימו את כל הדיווחים החסרים החל מתאריך ה 1 לאוקטובר.</p>
+                <p style="margin: 5px 0 0 0;">באופן חד-פעמי, נית ן כעת לדווח בהיעדר על תקופת החופשה - בניגוד משבוע אחורה. אנא השלימו את כל הדיווחים החסרים החל מתאריך ה 1 לאוקטובר.</p>
             </div>
         </div>
 
@@ -1479,7 +1596,6 @@
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                     <button type="submit" class="btn">התחבר/י</button>
                     <a href="#" class="forgot-password-link" onclick="showForgotPassword()">שכחתי סיסמה</a>
-
                 </div>
             </form>
         </div>
@@ -1490,8 +1606,7 @@
                 <div class="form-group"><label>שם משפחה:</label><input type="text" id="register-last-name" required></div>
                 <div class="form-group"><label>תפקיד:</label><select id="register-position" required>
                     <option value="מהנדס/ת מחקר">מהנדס/ת מחקר</option>
-                                        <option value="מנהל/ת">מנהל/ת</option>
-
+                    <option value="מנהל/ת">מנהל/ת</option>
                 </select></div>
                 <div id="register-manager-warning" class="info-message" style="display:none; margin-top:10px;">
                     ⚠️ שים/י לב! ההרשאות בפועל למנהל/ת ניתנות במערכת. לקבלת הרשאות ניהול פנו למייל - yehudah@volcani.agri.gov.il, אם את/ה לא באמת מנהל/ת לא תוכל/י להשתמש במערכת.
@@ -1502,7 +1617,7 @@
                 <div class="form-group"><label>אימייל ארגוני:</label><input type="email" id="register-email" required></div>
                 <div class="form-group"><label>סיסמה:</label><input type="password" id="register-password" required minlength="6"></div>
                 <div class="form-group"><label>אימות סיסמה:</label><input type="password" id="register-confirm-password" required minlength="6"></div>
-                <button type="submit" class="btn">הרשמ/י</button>
+                <button type="submit" class="btn">הרשם/י</button>
             </form>
         </div>
         <div id="forgot-password-form">
@@ -1515,6 +1630,7 @@
             </form>
         </div>
     </div>
+</div>
 
     <div id="main-screen" class="container hidden">
         <!-- הודעה זמנית על אפשרות דיווח בדיעבד -->
@@ -1910,4 +2026,3 @@ if (window._pendingUserDisplayName) {
 
 </body>
 </html>
-
