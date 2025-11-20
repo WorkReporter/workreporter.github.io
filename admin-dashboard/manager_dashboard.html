@@ -11,8 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Favicon - multiple formats for better browser support -->
-    <link rel="icon" type="image/png" href="/institute_icon.png">
+  <link rel="icon" type="image/png" href="/institute_icon.png">
     <link rel="shortcut icon" type="image/png" href="/institute_icon.png">
     <link rel="apple-touch-icon" href="/institute_icon.png">
     <style>
@@ -905,7 +904,8 @@
             currentYear: new Date().getFullYear(),
             reportData: null,
             categorizations: new Map(),
-            finalReport: null
+            finalReport: null,
+            isGrouped: false
         };
 
         const CACHE_PREFIX = 'reportCategorizationCache_';
@@ -1279,8 +1279,100 @@
             return missing;
         }
 
+        // Grouping Helper Functions attached to window
+        window.toggleGrouping = function() {
+            AppState.isGrouped = !AppState.isGrouped;
+            renderIntermediateReport(AppState.reportData);
+        };
+
+        window.selectGroupCategorization = function(idsString, type) {
+            const ids = idsString.split(',');
+            ids.forEach(id => {
+                AppState.categorizations.delete(`${id}_custom`);
+                AppState.categorizations.delete(`${id}_activeResearcher`);
+                AppState.categorizations.set(id, type);
+            });
+            saveCategorizationsToCache();
+            renderIntermediateReport(AppState.reportData);
+        };
+
+        window.updateGroupCustomText = function(idsString, value) {
+            const ids = idsString.split(',');
+            ids.forEach(id => {
+                AppState.categorizations.set(`${id}_custom`, value);
+            });
+            saveCategorizationsToCache();
+        };
+
+        window.updateGroupActiveResearcher = function(idsString, value) {
+            const ids = idsString.split(',');
+            ids.forEach(id => {
+                AppState.categorizations.set(`${id}_activeResearcher`, value);
+            });
+            saveCategorizationsToCache();
+        };
+
+        function renderTaskItem(task, isOtherTask) {
+            // Check first ID for status (assuming group consistency)
+            const firstId = task.originalIds ? task.originalIds[0] : task.id;
+
+            const savedType = AppState.categorizations.get(firstId);
+            const savedCustomText = AppState.categorizations.get(`${firstId}_custom`) || '';
+            const savedActiveResearcher = AppState.categorizations.get(`${firstId}_activeResearcher`) || '';
+
+            const buttonType = isOtherTask ? 'relative' : 'equal';
+            const buttonText = isOtherTask ? 'חלוקה יחסית' : 'חלוקה שווה';
+
+            let selectCall, inputCall, activeCall;
+
+            if (task.isGroup) {
+                selectCall = `selectGroupCategorization('${task.id}',`;
+                inputCall = `updateGroupCustomText('${task.id}', this.value)`;
+                activeCall = `updateGroupActiveResearcher('${task.id}', this.value)`;
+            } else {
+                selectCall = `selectCategorization('${task.id}',`;
+                inputCall = `AppState.categorizations.set('${task.id}_custom', this.value); saveCategorizationsToCache();`;
+                activeCall = `AppState.categorizations.set('${task.id}_activeResearcher', this.value); saveCategorizationsToCache();`;
+            }
+
+            const groupBadge = (task.isGroup && task.count > 1)
+                ? `<span style="background:#eff6ff; color:#1d4ed8; font-size:0.75rem; font-weight:600; padding:2px 8px; border-radius:12px; margin-inline-start:8px; border:1px solid #bfdbfe;">מקובץ מ-${task.count}</span>`
+                : '';
+
+            let itemHtml = `
+                <div class="categorization-item">
+                    <div class="categorization-header">
+                        <div class="task-info">
+                            <div class="task-name">${task.name} ${groupBadge}</div>
+                            <div class="task-hours">סה"כ שעות: ${formatHours(task.hours)}</div>
+                        </div>
+                        <div class="categorization-options">
+                            <button class="option-btn ${savedType === 'seminar' ? 'active' : ''}" onclick="${selectCall} 'seminar')">סמינר</button>
+                            <button class="option-btn ${savedType === 'active' ? 'active' : ''}" onclick="${selectCall} 'active')">חוקר פעיל <span class="dropdown-arrow">▾</span></button>
+                            <button class="option-btn ${savedType === buttonType ? 'active' : ''}" onclick="${selectCall} '${buttonType}')">${buttonText}</button>
+                            <button class="option-btn ${savedType === 'custom' ? 'active' : ''}" onclick="${selectCall} 'custom')">חיוב חדש</button>
+                        </div>
+                    </div>
+                    <div id="${task.isGroup ? 'group' : task.id}_dynamic_content">`;
+
+            if (savedType === 'custom') {
+                itemHtml += `<input class="custom-input" placeholder="הוספת הסבר לחיוב או חוקר/ת לחיוב..." value="${savedCustomText}" oninput="${inputCall}" />`;
+            } else if (savedType === 'active') {
+                const activeList = AppState.selectedEmployee?.activeResearchers || [];
+                if (activeList.length > 0) {
+                    itemHtml += `<select class="active-select custom-input" style="margin-top: 0.75rem;" onchange="${activeCall}">
+                        <option value="">בחר/י חוקר/ת פעיל/ה...</option>
+                        ${activeList.map(r => `<option value="${r}" ${r === savedActiveResearcher ? 'selected' : ''}>${r}</option>`).join('')}
+                    </select>`;
+                }
+            }
+            itemHtml += `</div></div>`;
+            return itemHtml;
+        }
+
         function renderIntermediateReport(data) {
             let html = '';
+
             if (data.researchers.size > 0) {
                 html += `<div class="report-section"><h3 class="section-title">חוקרים:</h3>`;
                 data.researchers.forEach((hours, researcher) => {
@@ -1289,54 +1381,56 @@
                 html += '</div>';
             }
 
-            const renderTaskItem = (task, isOtherTask) => {
-                const key = task.id;
-                const savedType = AppState.categorizations.get(key);
-                const savedCustomText = AppState.categorizations.get(`${key}_custom`) || '';
-                const savedActiveResearcher = AppState.categorizations.get(`${key}_activeResearcher`) || '';
-                const buttonType = isOtherTask ? 'relative' : 'equal';
-                const buttonText = isOtherTask ? 'חלוקה יחסית' : 'חלוקה שווה';
-
-                let itemHtml = `
-                    <div class="categorization-item">
-                        <div class="categorization-header">
-                            <div class="task-info">
-                                <div class="task-name">${task.name}</div>
-                                <div class="task-hours">סה"כ שעות: ${formatHours(task.hours)}</div>
-                            </div>
-                            <div class="categorization-options">
-                                <button class="option-btn ${savedType === 'seminar' ? 'active' : ''}" onclick="selectCategorization('${key}', 'seminar')">סמינר</button>
-                                <button class="option-btn ${savedType === 'active' ? 'active' : ''}" onclick="selectCategorization('${key}', 'active')">חוקר פעיל <span class="dropdown-arrow">▾</span></button>
-                                <button class="option-btn ${savedType === buttonType ? 'active' : ''}" onclick="selectCategorization('${key}', '${buttonType}')">${buttonText}</button>
-                                <button class="option-btn ${savedType === 'custom' ? 'active' : ''}" onclick="selectCategorization('${key}', 'custom')">חיוב חדש</button>
-                            </div>
-                        </div>
-                        <div id="${key}_dynamic_content">`;
-
-                if (savedType === 'custom') {
-                    itemHtml += `<input class="custom-input" placeholder="הוספת הסבר לחיוב או חוקר/ת לחיוב..." value="${savedCustomText}" oninput="AppState.categorizations.set('${key}_custom', this.value); saveCategorizationsToCache();" />`;
-                } else if (savedType === 'active') {
-                    const activeList = AppState.selectedEmployee?.activeResearchers || [];
-                    if (activeList.length > 0) {
-                        itemHtml += `<select class="active-select custom-input" style="margin-top: 0.75rem;" onchange="AppState.categorizations.set('${key}_activeResearcher', this.value); saveCategorizationsToCache();">
-                            <option value="">בחר/י חוקר/ת פעיל/ה...</option>
-                            ${activeList.map(r => `<option value="${r}" ${r === savedActiveResearcher ? 'selected' : ''}>${r}</option>`).join('')}
-                        </select>`;
-                    }
-                }
-                itemHtml += `</div></div>`;
-                return itemHtml;
-            };
-
             if (data.otherTasks.length > 0) {
-                html += `<div class="report-section"><h3 class="section-title">משימות נוספות:</h3>`;
-                data.otherTasks.forEach(task => { html += renderTaskItem(task, true); });
+                html += `<div class="report-section">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <h3 class="section-title" style="margin-bottom:0; border:none;">משימות נוספות:</h3>
+                        <button onclick="toggleGrouping()" style="background: ${AppState.isGrouped ? '#e0f2fe' : '#f1f5f9'}; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; color: #334155; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                            ${AppState.isGrouped ? '<span style="color:#0ea5e9; font-weight:bold;">✓</span> מקובץ' : '<span style="filter: grayscale(1);">⬜</span> קיבוץ דומים'}
+                        </button>
+                    </div>`;
+
+                let tasksToRender = [];
+
+                if (AppState.isGrouped) {
+                    const groups = {};
+                    data.otherTasks.forEach(task => {
+                        const cleanName = task.name.trim();
+                        if (!groups[cleanName]) {
+                            groups[cleanName] = {
+                                ids: [],
+                                name: cleanName,
+                                hours: 0,
+                                date: task.date
+                            };
+                        }
+                        groups[cleanName].ids.push(task.id);
+                        groups[cleanName].hours += task.hours;
+                    });
+
+                    tasksToRender = Object.values(groups).map(g => ({
+                        id: g.ids.join(','),
+                        isGroup: true,
+                        count: g.ids.length,
+                        originalIds: g.ids,
+                        name: g.name,
+                        hours: g.hours
+                    }));
+                } else {
+                    tasksToRender = data.otherTasks.map(t => ({...t, isGroup: false, count: 1, originalIds: [t.id]}));
+                }
+
+                tasksToRender.forEach(task => {
+                    html += renderTaskItem(task, true);
+                });
                 html += '</div>';
             }
 
             if (data.seminars.length > 0) {
                 html += `<div class="report-section"><h3 class="section-title">סמינר/קורס/הכשרה:</h3>`;
-                data.seminars.forEach(task => { html += renderTaskItem(task, false); });
+                data.seminars.forEach(task => {
+                    html += renderTaskItem({...task, isGroup: false, originalIds: [task.id]}, false);
+                });
                 html += '</div>';
             }
 
@@ -1785,4 +1879,3 @@
     </script>
 </body>
 </html>
-
