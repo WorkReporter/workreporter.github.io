@@ -834,13 +834,29 @@
                 reportData.entries = validEntries;
             }
         } else {
-            // דרישה: דיווח שבועי - הגעה אליו ביום ה' או יום א' בלבד
-            const today = new Date();
-            const dayOfWeek = today.getDay();
-            if (dayOfWeek !== 4 && dayOfWeek !== 0) {
-                showError('דיווח שבועי זמין רק בימי חמישי וראשון');
-                return;
-            }
+    // הרשה: דיווח שבועי - הגבעה אליו ביום ה' או יום ב' בלבד, ורק על השבוע המתאים
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    if (dayOfWeek !== 4 && dayOfWeek !== 0) {
+        showError('דיווח שבועי זמין רק בימי חמישי וראשון');
+        return;
+    }
+
+    // חישוב איזה שבוע מותר לדווח עליו היום
+    let allowedWeekStart, allowedWeekEnd;
+    if (dayOfWeek === 4) {
+        // יום חמישי - מותר על השבוע הנוכחי
+        allowedWeekStart = getSundayOfWeek(today);
+        allowedWeekEnd = new Date(allowedWeekStart);
+        allowedWeekEnd.setDate(allowedWeekStart.getDate() + 4);
+    } else if (dayOfWeek === 0) {
+        // יום ראשון - מותר על השבוע הקודם
+        const lastWeek = new Date(today);
+        lastWeek.setDate(today.getDate() - 7);
+        allowedWeekStart = getSundayOfWeek(lastWeek);
+        allowedWeekEnd = new Date(allowedWeekStart);
+        allowedWeekEnd.setDate(allowedWeekStart.getDate() + 4);
+    }
 
             const week = getInputValue('report-week');
             reportData.week = week;
@@ -909,11 +925,20 @@
 
 
             reportData.weekStart = formatDate(weekStartDate);
-            reportData.weekEnd = formatDate(weekEndDate);
+reportData.weekEnd = formatDate(weekEndDate);
 
-            
+// בדיקה: האם השבוע שנבחר תואם לשבוע המותר
+if (formatDate(weekStartDate) !== formatDate(allowedWeekStart) ||
+    formatDate(weekEndDate) !== formatDate(allowedWeekEnd)) {
+    if (dayOfWeek === 4) {
+        showError('ביום חמישי ניתן לדווח דיווח שבועי רק על השבוע הנוכחי');
+    } else {
+        showError('ביום ראשון ניתן לדווח דיווח שבועי רק על השבוע הקודם');
+    }
+    return;
+}
 
-            if (!currentUser) return;
+if (!currentUser) return;
 
             const weeklyKey = `weekly_${reportData.weekStart}_${reportData.weekEnd}`;
             database.ref('reports/' + currentUser.uid + '/' + weeklyKey).set({
