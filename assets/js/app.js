@@ -906,8 +906,12 @@
                 weekStartDate = sunday; weekEndDate = thursday;
             }
 
+
+
             reportData.weekStart = formatDate(weekStartDate);
             reportData.weekEnd = formatDate(weekEndDate);
+
+            
 
             if (!currentUser) return;
 
@@ -2381,4 +2385,3 @@
     // חשוף את הפונקציה לשימוש גלובלי
     window.updateManagerUIVisibility = updateManagerUIVisibility;
 })();
-
