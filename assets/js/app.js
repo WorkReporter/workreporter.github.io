@@ -359,13 +359,8 @@
         });
     }
 
-    // ---------- Report Validation Functions (דרישה: הגבלות זמן לדיווח) ----------
+    // ---------- Report Validation Functions ----------
 
-    /**
-     * בודק אם תאריך נמצא באותו השבוע של היום
-     * @param {Date} date התאריך לבדיקה
-     * @returns {boolean} האם התאריך באותו השבוע
-     */
     function isInCurrentWeek(date) {
         const today = new Date();
         const currentWeekStart = getSundayOfWeek(today);
@@ -379,11 +374,6 @@
         return checkDate >= currentWeekStart && checkDate <= currentWeekEnd;
     }
 
-    /**
-     * בודק אם תאריך נמצא בשבוע הקודם
-     * @param {Date} date התאריך לבדיקה
-     * @returns {boolean} האם התאריך בשבוע הקודם
-     */
     function isInPreviousWeek(date) {
         const today = new Date();
         const currentWeekStart = getSundayOfWeek(today);
@@ -401,12 +391,6 @@
         return checkDate >= previousWeekStart && checkDate <= previousWeekEnd;
     }
 
-    /**
-     * בודק אם תאריך מכוסה על ידי דיווח שבועי או יש דיוח יומי לאותו תאריך
-     * @param {string} dateString התאריך בפורמט YYYY-MM-DD
-     * @param {Array} reports רשימת הדיווחים
-     * @returns {boolean} האם התאריך מכוסה על ידי דיווח
-     */
     function isDateCoveredByWeeklyReport(dateString, reports) {
         const checkDate = new Date(dateString);
         checkDate.setHours(0, 0, 0, 0);
@@ -458,12 +442,6 @@
         });
     }
 
-    /**
-     * בודק אם יש דיווח (יומי או שבועי) לתאריך נתון
-     * @param {string} dateString התאריך בפורמט YYYY-MM-DD
-     * @param {Array} reports רשימת הדיווחים
-     * @returns {Object} תוצאה עם hasReport (boolean) ו reportType (string)
-     */
     function hasReportForDate(dateString, reports) {
         // בודק דיווח יומי ישיר
         const hasDailyReport = reports.some(r => r.type === 'daily' && r.date === dateString);
@@ -480,14 +458,6 @@
         return { hasReport: false, reportType: null };
     }
 
-    // =================================================================
-    // NEW FUNCTION
-    // =================================================================
-    /**
-     * מוצא את הדיווח המלא (יומי או שבועי) לתאריך נתון
-     * @param {string} dateString התאריך בפורמט YYYY-MM-DD
-     * @returns {Object|null} אובייקט הדיווח או null אם לא נמצא
-     */
     function findReportForDate(dateString) {
         // חיפוש דיווח יומי ישיר
         const dailyReport = reports.find(r => r.type === 'daily' && r.date === dateString);
@@ -526,59 +496,28 @@
 
         return weeklyReport || null;
     }
-    // =================================================================
-    // END NEW FUNCTION
-    // =================================================================
 
-    /**
-     * בודק אם מותר ליצור דיווח חדש לתאריך נתון
-     * דרישה: לתת להוסיף דיווח חדש שבוע אחורה אבל לא יותר
-     * @param {Date} date התאריך לבדיקה
-     * @returns {Object} תוצאה עם allowed (boolean) ו message (string)
-     */
     function canCreateNewReport(date) {
-        // DEBUG: הוספת לוגים לבדיקה
         const today = new Date();
-        console.log('DEBUG canCreateNewReport:');
-        console.log('  Today:', today.toDateString());
-        console.log('  Date to check:', date.toDateString());
-
-        // בדיקת תאריך עתידי - אסור לדווח על תאריכים עתידיים
         const todayOnly = new Date(today);
         todayOnly.setHours(0, 0, 0, 0);
         const dateOnly = new Date(date);
         dateOnly.setHours(0, 0, 0, 0);
 
         if (dateOnly > todayOnly) {
-            console.log('  Future date detected - not allowed');
             return {
                 allowed: false,
                 message: 'לא ניתן לדווח על תאריכים עתידיים'
             };
         }
 
-        const currentWeekStart = getSundayOfWeek(today);
-        const currentWeekEnd = new Date(currentWeekStart);
-        currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
-
-        const previousWeekStart = new Date(currentWeekStart);
-        previousWeekStart.setDate(currentWeekStart.getDate() - 7);
-        const previousWeekEnd = new Date(previousWeekStart);
-        previousWeekEnd.setDate(previousWeekStart.getDate() + 6);
-
-        console.log('  Current week:', currentWeekStart.toDateString(), '-', currentWeekEnd.toDateString());
-        console.log('  Previous week:', previousWeekStart.toDateString(), '-', previousWeekEnd.toDateString());
-
-        // Allow reporting for current week (Sunday-Thursday) but only for past/today dates
         const inCurrentWeek = isInCurrentWeek(date);
-        console.log('  In current week?', inCurrentWeek);
         if (inCurrentWeek) {
             return { allowed: true, message: '' };
         }
 
         // Allow reporting for previous week (Sunday-Thursday) - NEW REPORTS ONLY
         const inPreviousWeek = isInPreviousWeek(date);
-        console.log('  In previous week?', inPreviousWeek);
         if (inPreviousWeek) {
             // בדיקה נוספת: אם יש כבר דיווח שבועי לאותו שבוע, לא מאפשרים דיווח יומי חדש
             const dateString = formatDate(date);
@@ -611,7 +550,6 @@
 
         // For any other dates - not allowed
         const daysDiff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
-        console.log('  Days difference:', daysDiff);
 
         if (daysDiff < 0) {
             return {
@@ -626,12 +564,6 @@
         };
     }
 
-    /**
-     * בודק אם מותר לערוך דיווח קיים
-     * דרישה: עריכת דיווחים רק של אותו שבוע (השבוע הנוכחי)
-     * @param {Date} date התאריך של הדיווח
-     * @returns {Object} תוצאה עם allowed (boolean) ו message (string)
-     */
     function canEditExistingReport(date) {
         // Only allow editing reports from current week
         if (isInCurrentWeek(date)) {
@@ -655,12 +587,6 @@
         };
     }
 
-    /**
-     * בודק אם יש התנגשות בין דיווח יומי לשבועי באותו שבוע
-     * @param {Date} date התאריך שרוצים לדווח עליו
-     * @param {string} reportType סוג הדיווח שרוצים ליצור ('daily' או 'weekly')
-     * @returns {Object} תוצאה עם allowed (boolean) ו message (string)
-     */
     function checkReportTypeConflict(date, reportType) {
         const sunday = getSundayOfWeek(date);
         const thursday = new Date(sunday);
@@ -723,6 +649,82 @@
         return { allowed: true, message: '' };
     }
 
+    // =================================================================
+    // NEW WEEKLY REPORT VALIDATION FUNCTIONS
+    // =================================================================
+    /**
+     * בודק האם מותר לבצע דיווח שבועי עבור תאריך ספציפי שנבחר
+     * חוקיות:
+     * 1. היום הנוכחי חייב להיות חמישי או ראשון.
+     * 2. אם היום חמישי: התאריך הנבחר חייב להיות בטווח א'-ה' של השבוע הנוכחי.
+     * 3. אם היום ראשון: התאריך הנבחר חייב להיות בטווח א'-ה' של השבוע שעבר.
+     */
+    function isWeeklyReportAllowedForDate(dateInput) {
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0=Sun, ..., 4=Thu
+
+        // דיווח שבועי מתאפשר רק בימי חמישי וראשון באופן כללי
+        if (dayOfWeek !== 4 && dayOfWeek !== 0) return false;
+
+        const checkDate = new Date(dateInput);
+        checkDate.setHours(12, 0, 0, 0); // נרמול שעות למניעת בעיות אזור זמן
+
+        // חישוב טווח השבוע המותר לדיווח שבועי
+        let allowedStart = new Date(today);
+        let allowedEnd = new Date(today);
+
+        if (dayOfWeek === 4) { // יום חמישי - מותר לדווח על השבוע הנוכחי
+            allowedEnd = new Date(today); // עד היום (חמישי)
+            allowedStart = new Date(today);
+            allowedStart.setDate(today.getDate() - 4); // מיום ראשון האחרון
+        } else if (dayOfWeek === 0) { // יום ראשון - מותר לדווח על השבוע שעבר
+            allowedEnd = new Date(today);
+            allowedEnd.setDate(today.getDate() - 3); // עד חמישי שעבר
+            allowedStart = new Date(today);
+            allowedStart.setDate(today.getDate() - 7); // מראשון שעבר
+        }
+
+        // איפוס שעות להשוואה מדוייקת
+        allowedStart.setHours(0, 0, 0, 0);
+        allowedEnd.setHours(23, 59, 59, 999);
+
+        return checkDate >= allowedStart && checkDate <= allowedEnd;
+    }
+
+    /**
+     * מעדכן את מצב כפתור הדיווח השבועי (פעיל/אפור) בהתאם לתאריך שנבחר
+     */
+    function updateWeeklyButtonState(selectedDateString) {
+        const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
+        if (!weeklyToggle) return;
+
+        const [year, month, day] = selectedDateString.split('-').map(Number);
+        const dateObj = new Date(year, month - 1, day);
+        const isAllowed = isWeeklyReportAllowedForDate(dateObj);
+
+        if (isAllowed) {
+            weeklyToggle.style.opacity = '1';
+            weeklyToggle.style.pointerEvents = 'auto';
+            weeklyToggle.setAttribute('aria-disabled', 'false');
+            weeklyToggle.dataset.allowed = '1';
+            weeklyToggle.title = '';
+        } else {
+            weeklyToggle.style.opacity = '0.5';
+            weeklyToggle.style.pointerEvents = 'none'; // מונע לחיצה פיזית
+            weeklyToggle.setAttribute('aria-disabled', 'true');
+            weeklyToggle.dataset.allowed = '0';
+
+            // בדיקה איזו הודעה להציג
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            if (dayOfWeek !== 4 && dayOfWeek !== 0) {
+                weeklyToggle.title = 'דיווח שבועי זמין רק בימי חמישי וראשון';
+            } else {
+                weeklyToggle.title = 'דיווח שבועי זמין רק עבור השבוע האחרון (לא ניתן לדווח שבועי על שבועות קודמים)';
+            }
+        }
+    }
+
     function submitReport() {
         const reportDate = getInputValue('report-date');
         if (!reportDate) { showError('אנא הזן תאריך'); return; }
@@ -748,6 +750,18 @@
             return;
         }
 
+        // זיהוי האם מדובר בדיווח שבועי לפי המצב הנוכחי של ה-DOM
+        // אם הטופס היומי מוסתר, סימן שאנחנו בשבועי
+        const isWeekly = document.getElementById('daily-form').classList.contains('hidden');
+
+        // --- בדיקה חדשה עבור דיווח שבועי ---
+        if (isWeekly) {
+            if (!isWeeklyReportAllowedForDate(selectedDate)) {
+                 showError('דיווח שבועי אינו מורשה עבור התאריך שנבחר (ניתן לדווח שבועי רק על השבוע שהסתיים זה עתה)');
+                 return;
+            }
+        }
+
         // בדיקה אם יש דיווח קיים לתאריך הזה (יומי או שבועי)
         const reportInfo = hasReportForDate(reportDate, reports);
 
@@ -766,8 +780,6 @@
                 return;
             }
         }
-
-        const isWeekly = document.getElementById('daily-form').classList.contains('hidden');
 
         // בדיקת התנגשות בין סוגי דיווחים לפני שמירה
         const conflictCheck = checkReportTypeConflict(selectedDate, isWeekly ? 'weekly' : 'daily');
@@ -834,14 +846,7 @@
                 reportData.entries = validEntries;
             }
         } else {
-            // דרישה: דיווח שבועי - הגעה אליו ביום ה' או יום א' בלבד
-            const today = new Date();
-            const dayOfWeek = today.getDay();
-            if (dayOfWeek !== 4 && dayOfWeek !== 0) {
-                showError('דיווח שבועי זמין רק בימי חמישי וראשון');
-                return;
-            }
-
+            // דרישה: דיווח שבועי
             const week = getInputValue('report-week');
             reportData.week = week;
             const weeklyEntries = [];
@@ -928,9 +933,6 @@
             return;
         }
 
-        // =================================================================
-        // הבלוק הזה היה חסר - הוא שומר את הדיווח היומי
-        // =================================================================
         if (!currentUser) return;
         // אנו יודעים ש-isWeekly הוא false כאן, כי בלוק ה-weekly מבצע return
         const reportKey = `daily_${reportData.date}`;
@@ -938,9 +940,6 @@
             showPopup('הדיווח נוסף/עודכן בהצלחה!');
             setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
         }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
-        // =================================================================
-        // סוף הבלוק החסר
-        // =================================================================
     }
     window.submitReport = submitReport;
 
@@ -955,13 +954,6 @@
 
     // ---------- UI: Daily/Weekly Entries ----------
 
-    // =================================================================
-    // NEW FUNCTION
-    // =================================================================
-    /**
-     * טוען נתוני דיווח קיים לתוך טופס הדיווח
-     * @param {Object} report אובייקט הדיווח לטעינה
-     */
     function populateReportForm(report) {
         if (!report) return;
 
@@ -1035,12 +1027,8 @@
             updateTotalDays();
         }
     }
-    // =================================================================
-    // END NEW FUNCTION
-    // =================================================================
 
     function addNewReport() {
-        // --- MODIFIED ---: Reset UI for a new report
         const formTitle = document.querySelector('#daily-report-screen h2');
         if (formTitle) formTitle.textContent = 'דיווח חדש';
         const submitBtn = document.querySelector('#daily-report-screen .btn[onclick="submitReport()"]');
@@ -1048,18 +1036,11 @@
         clearReportForm();
 
         const today = new Date();
-        setInputValue('report-date', formatDate(today));
-        const dayOfWeek = today.getDay();
+        const formattedDate = formatDate(today);
+        setInputValue('report-date', formattedDate);
 
-        // Always show both options; disable weekly unless allowed (Thursday or Sunday)
-        const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
-        if (weeklyToggle) {
-            const allowed = (dayOfWeek === 4 || dayOfWeek === 0);
-            weeklyToggle.style.opacity = allowed ? '' : '0.5';
-            weeklyToggle.setAttribute('aria-disabled', allowed ? 'false' : 'true');
-            weeklyToggle.dataset.allowed = allowed ? '1' : '0';
-            weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי וראשון';
-        }
+        // עדכון מצב הכפתור השבועי לפי היום
+        updateWeeklyButtonState(formattedDate);
 
         selectReportType('daily');
         showScreen('daily-report');
@@ -1368,7 +1349,6 @@
     window.previousMonth = function () { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar(); };
     window.nextMonth = function () { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); };
 
-    // --- MODIFIED ---: Reworked this function to handle both "Add" and "Edit" flows
     function addCalendarReport() {
         if (!selectedDate) {
             showError('אנא בחר תאריך');
@@ -1378,14 +1358,17 @@
         const formattedDate = formatDate(selectedDate);
         const existingReport = findReportForDate(formattedDate);
 
-        // Reset titles and buttons to default "new report" state
+        // Reset UI
         const formTitle = document.querySelector('#daily-report-screen h2');
         if (formTitle) formTitle.textContent = 'דיווח חדש';
         const submitBtn = document.querySelector('#daily-report-screen .btn[onclick="submitReport()"]');
         if (submitBtn) submitBtn.textContent = 'שמירת דיווח';
 
+        // עדכון מצב הכפתור השבועי לפי התאריך שנבחר
+        updateWeeklyButtonState(formattedDate);
+
         if (existingReport) {
-            // --- EDIT FLOW ---
+            // --- עריכה ---
             const editValidation = canEditExistingReport(selectedDate);
             if (!editValidation.allowed) {
                 showError(editValidation.message);
@@ -1394,7 +1377,7 @@
             showScreen('daily-report');
             populateReportForm(existingReport);
         } else {
-            // --- CREATE NEW FLOW ---
+            // --- יצירה חדשה ---
             const createValidation = canCreateNewReport(selectedDate);
             if (!createValidation.allowed) {
                 showError(createValidation.message);
@@ -1406,16 +1389,6 @@
 
             clearReportForm();
             setInputValue('report-date', formattedDate);
-
-            const today = new Date();
-            const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
-            if (weeklyToggle) {
-                const isThursdayOrSunday = (today.getDay() === 4 || today.getDay() === 0);
-                weeklyToggle.style.opacity = isThursdayOrSunday ? '' : '0.5';
-                weeklyToggle.setAttribute('aria-disabled', !isThursdayOrSunday ? 'true' : 'false');
-                weeklyToggle.dataset.allowed = isThursdayOrSunday ? '1' : '0';
-                weeklyToggle.title = isThursdayOrSunday ? '' : 'דיווח שבועי זמין רק בימי חמישי וראשון';
-            }
 
             showScreen('daily-report');
             selectReportType('daily');
@@ -1632,11 +1605,6 @@
         }
     }
 
-    /**
-     * פונקציה להוספת דיווח לתאריך ספציפי מההודעות
-     * דרישה: כפתור הוסף דיווח בהודעות הדיווחים החסרים
-     * @param {string} dateString תאריך בפורמט YYYY-MM-DD
-     */
     function addReportForDate(dateString) {
         const [year, month, day] = dateString.split('-').map(Number);
         const targetDate = new Date(year, month - 1, day);
@@ -1664,16 +1632,8 @@
         // Set the target date in the form
         setInputValue('report-date', dateString);
 
-        // דרישה: כפתור הוסף דיווח - בין הימים א'-ד' מסך דיווח חדש יומי, ביום ה' יומי/שבועי
-        const today = new Date();
-        const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
-        if (weeklyToggle) {
-            const isThursdayOrSunday = (today.getDay() === 4 || today.getDay() === 0);
-            weeklyToggle.style.opacity = isThursdayOrSunday ? '' : '0.5';
-            weeklyToggle.setAttribute('aria-disabled', !isThursdayOrSunday ? 'true' : 'false');
-            weeklyToggle.dataset.allowed = isThursdayOrSunday ? '1' : '0';
-            weeklyToggle.title = isThursdayOrSunday ? '' : 'דיווח שבועי זמין רק בימי חמישי וראשון';
-        }
+        // עדכון כפתור שבועי בהתאם לתאריך הספציפי החסר
+        updateWeeklyButtonState(dateString);
 
         showScreen('daily-report');
         selectReportType('daily'); // Always start with daily
@@ -1870,7 +1830,7 @@
 
             // אם המשתמש הוא מנהל, הוסף אותו לרשימת המנהלים הגלובלית (לבחירה בלבד)
             // הרשאות אמיתיות ניתנות רק דרך הכללים ב-firebase-rules.json
-            if (data.position === 'מנה��/ת') {
+            if (data.position === 'מנהל/ת') {
                 const managerData = {
                     firstName: data.firstName,
                     lastName: data.lastName,
@@ -1986,12 +1946,6 @@
         return `${startDate} - ${endDate}`;
     }
 
-    /**
-     * מחזיר את השבוע הנכון לדיווח שבועי
-     * ביום ראשון - מחזיר את השבוע הקודם (ראשון-חמישי שעבר)
-     * ביום חמישי - מחזיר את השבוע הנוכחי (ראשון-חמישי הנוכחי)
-     * @returns {string} טווח השבוע בפורמט DD/MM/YYYY - DD/MM/YYYY
-     */
     function getWeekForWeeklyReport() {
         const now = new Date();
         const dayOfWeek = now.getDay();
@@ -2022,11 +1976,7 @@
         thursday.setDate(sunday.getDate() + 4);
         return `${formatDate(sunday)}_${formatDate(thursday)}`;
     }
-    /**
-     * מחזיר את טווח השבוע לתאריך נתון
-     * @param {Date} date התאריך לבדיקה
-     * @returns {string} טווח השבוע בפורמט DD/MM/YYYY - DD/MM/YYYY
-     */
+
     function getWeekForDate(date) {
         const sunday = getSundayOfWeek(date);
         const thursday = new Date(sunday);
@@ -2051,11 +2001,7 @@
         if (profGroup) profGroup.style.display = (effectivePos === 'מהנדס/ת מחקר') ? '' : 'none';
         if (profWarn) profWarn.style.display = (effectivePos === 'מנהל/ת') ? '' : 'none';
     }
-    /**
-     * מחזיר את מפתח האחסון לשבוע של תאריך נתון
-     * @param {Date} date התאריך לבדיקה
-     * @returns {string} מפתח האחסון בפורמט YYYY-MM-DD_YYYY-MM-DD
-     */
+
     function getWeekForStorageByDate(date) {
         const sunday = getSundayOfWeek(date);
         const thursday = new Date(sunday);
@@ -2075,7 +2021,11 @@
         // toggles
         document.querySelectorAll('#report-type-toggle .toggle-option').forEach(option => option.addEventListener('click', function () {
             const allowed = this.dataset.allowed !== '0' && this.getAttribute('aria-disabled') !== 'true';
-            if (!allowed && this.dataset.type === 'weekly') { showError('לא ניתן למלא דיווח שבועי כעת'); return; }
+            if (!allowed && this.dataset.type === 'weekly') {
+                // Display reason why it is blocked (from title)
+                showError(this.title || 'לא ניתן למלא דיווח שבועי כעת');
+                return;
+            }
             selectReportType(this.dataset.type);
         }));
         document.querySelectorAll('#work-status-toggle .toggle-option').forEach(option => option.addEventListener('click', function () { selectWorkStatus(this.dataset.status); }));
@@ -2147,46 +2097,56 @@
         init();
         processEmailActionLink();
 
-        // Update weekly date range when report date changes
+        // Update weekly date range AND toggle button state when report date changes
         const reportDateInput = document.getElementById('report-date');
         if (reportDateInput) {
             reportDateInput.addEventListener('change', function() {
-                // Check if weekly report is currently selected
-                const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
-                if (weeklyToggle && weeklyToggle.classList.contains('active')) {
-                    // Update the week range and hint when date changes
-                    const reportDate = this.value;
-                    if (reportDate) {
-                        const [year, month, day] = reportDate.split('-').map(Number);
-                        const selectedDate = new Date(year, month - 1, day);
+                const reportDate = this.value;
+                if (!reportDate) return;
 
-                        // Special rule: On Sunday (and the selected date is today), show last week's range
+                // 1. עדכון מצב הכפתור (אפור/פעיל) לפי התאריך החדש
+                updateWeeklyButtonState(reportDate);
+
+                // 2. אם אנחנו כרגע במצב שבועי, בדוק אם הוא עדיין חוקי
+                const weeklyToggle = document.querySelector('#report-type-toggle .toggle-option[data-type="weekly"]');
+                const isWeeklyActive = weeklyToggle && weeklyToggle.classList.contains('active');
+
+                // בדיקה אם התאריך החדש חוקי לדיווח שבועי
+                const [year, month, day] = reportDate.split('-').map(Number);
+                const selectedDate = new Date(year, month - 1, day);
+                const isAllowed = isWeeklyReportAllowedForDate(selectedDate);
+
+                if (isWeeklyActive) {
+                    if (!isAllowed) {
+                        // אם היינו במצב שבועי אבל התאריך החדש לא מאפשר זאת -> חזור ליומי
+                        selectReportType('daily');
+                        showPopup('התאריך שנבחר אינו מאפשר דיווח שבועי - עבר לדיווח יומי', 'info');
+                    } else {
+                        // עדכון טווח התאריכים המוצג
+                        // לוגיקה מיוחדת ליום ראשון (אם נבחר יום ראשון והיום יום ראשון -> שבוע שעבר)
                         const today = new Date();
                         const todayString = formatDate(today);
                         const selectedString = formatDate(selectedDate);
                         let weekRange;
-                        if (selectedDate.getDay() === 0 && selectedString === todayString) {
-                            const lastSunday = new Date(selectedDate);
-                            lastSunday.setDate(selectedDate.getDate() - 7);
-                            const sunday = getSundayOfWeek(lastSunday);
-                            const thursday = new Date(sunday);
-                            thursday.setDate(sunday.getDate() + 4);
-                            const startDate = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
-                            const endDate = `${String(thursday.getDate()).padStart(2,'0')}/${String(thursday.getMonth()+1).padStart(2,'0')}/${thursday.getFullYear()}`;
-                            weekRange = `${startDate} - ${endDate}`;
-                        } else {
-                            weekRange = getWeekForDate(selectedDate);
-                        }
 
+                        if (selectedDate.getDay() === 0 && selectedString === todayString) {
+                             const lastSunday = new Date(selectedDate);
+                             lastSunday.setDate(selectedDate.getDate() - 7);
+                             const sunday = getSundayOfWeek(lastSunday);
+                             const thursday = new Date(sunday);
+                             thursday.setDate(sunday.getDate() + 4);
+                             const startDate = `${String(sunday.getDate()).padStart(2,'0')}/${String(sunday.getMonth()+1).padStart(2,'0')}/${sunday.getFullYear()}`;
+                             const endDate = `${String(thursday.getDate()).padStart(2,'0')}/${String(thursday.getMonth()+1).padStart(2,'0')}/${thursday.getFullYear()}`;
+                             weekRange = `${startDate} - ${endDate}`;
+                        } else {
+                             weekRange = getWeekForDate(selectedDate);
+                        }
                         setInputValue('report-week', weekRange);
                         renderWeeklyDatesHint();
                     }
                 }
             });
         }
-
-        // Do not auto-add entries here; entries are created when opening the report screen
-        // setTimeout(() => { addWorkEntry(); }, 100);
 
         // Accessibility/init for Add Researcher toggle
         try {
@@ -2276,10 +2236,6 @@
 
     // ---------- Manager Management Functions ----------
 
-    /**
-     * טוען רשימת מנהלים מ-Firebase
-     * @returns {Promise<Array>} רשימת מנהלים
-     */
     async function loadManagersList() {
         try {
             const snapshot = await database.ref('managers').once('value');
@@ -2301,9 +2257,6 @@
         }
     }
 
-    /**
-     * מעדכן את רשימת המנהלים ב-dropdown של הפרופיל
-     */
     async function updateManagersDropdown() {
         const managerSelect = document.getElementById('profile-my-manager');
         const loadingElement = document.getElementById('manager-loading');
@@ -2320,8 +2273,6 @@
 
             // נקה את הרשימה הקיימת
             managerSelect.innerHTML = '';
-
-
 
             // הוסף מנהלים לרשימה
             managers.forEach(manager => {
@@ -2347,10 +2298,6 @@
         }
     }
 
-    /**
-     * מעדכן את הנראות של שדה המנהל לפי התפקיד
-     * @param {string} position התפקיד
-     */
     function updateManagerUIVisibility(position) {
         const managerGroup = document.getElementById('profile-my-manager-group');
         const managerWarning = document.getElementById('profile-manager-warning');
