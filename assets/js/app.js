@@ -536,83 +536,26 @@
      * @param {Date} date התאריך לבדיקה
      * @returns {Object} תוצאה עם allowed (boolean) ו message (string)
      */
-    function canCreateNewReport(date, reportType = 'daily') {
-    // DEBUG: הוספת לוגים לבדיקה
-    const today = new Date();
-    console.log('DEBUG canCreateNewReport:');
-    console.log('  Today:', today.toDateString());
-    console.log('  Date to check:', date.toDateString());
-    console.log('  Report type:', reportType);
+    function canCreateNewReport(date) {
+        // DEBUG: הוספת לוגים לבדיקה
+        const today = new Date();
+        console.log('DEBUG canCreateNewReport:');
+        console.log('  Today:', today.toDateString());
+        console.log('  Date to check:', date.toDateString());
 
-    // בדיקת תאריך עתידי - אסור לדווח על תאריכים עתידיים
-    const todayOnly = new Date(today);
-    todayOnly.setHours(0, 0, 0, 0);
-    const dateOnly = new Date(date);
-    dateOnly.setHours(0, 0, 0, 0);
+        // בדיקת תאריך עתידי - אסור לדווח על תאריכים עתידיים
+        const todayOnly = new Date(today);
+        todayOnly.setHours(0, 0, 0, 0);
+        const dateOnly = new Date(date);
+        dateOnly.setHours(0, 0, 0, 0);
 
-    if (dateOnly > todayOnly) {
-        console.log('  Future date detected - not allowed');
-        return {
-            allowed: false,
-            message: 'לא ניתן לדווח על תאריכים עתידיים'
-        };
-    }
-
-    // בדיקה מיוחדת לדיווח שבועי - מותר רק על השבוע האחרון
-    if (reportType === 'weekly') {
-        const currentWeekStart = getSundayOfWeek(today);
-        const currentWeekEnd = new Date(currentWeekStart);
-        currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
-
-        const previousWeekStart = new Date(currentWeekStart);
-        previousWeekStart.setDate(currentWeekStart.getDate() - 7);
-        const previousWeekEnd = new Date(previousWeekStart);
-        previousWeekEnd.setDate(previousWeekStart.getDate() + 6);
-
-        const dayOfWeek = today.getDay();
-
-        console.log('  Weekly report check:');
-        console.log('    Day of week:', dayOfWeek);
-        console.log('    Current week:', currentWeekStart.toDateString(), '-', currentWeekEnd.toDateString());
-        console.log('    Previous week:', previousWeekStart.toDateString(), '-', previousWeekEnd.toDateString());
-
-        // ביום חמישי - מותר רק על השבוע הנוכחי (ראשון-חמישי)
-        if (dayOfWeek === 4) {
-            const allowedEnd = new Date(currentWeekStart);
-            allowedEnd.setDate(currentWeekStart.getDate() + 4); // חמישי
-
-            if (dateOnly < currentWeekStart || dateOnly > allowedEnd) {
-                console.log('    Not allowed - outside current week range for Thursday');
-                return {
-                    allowed: false,
-                    message: 'דיווח שבועי ביום חמישי מותר רק על השבוע הנוכחי (ראשון-חמישי)'
-                };
-            }
-            console.log('    Allowed - within current week');
-        }
-        // ביום ראשון - מותר רק על השבוע הקודם (ראשון-חמישי)
-        else if (dayOfWeek === 0) {
-            const allowedEnd = new Date(previousWeekStart);
-            allowedEnd.setDate(previousWeekStart.getDate() + 4); // חמישי
-
-            if (dateOnly < previousWeekStart || dateOnly > allowedEnd) {
-                console.log('    Not allowed - outside previous week range for Sunday');
-                return {
-                    allowed: false,
-                    message: 'דיווח שבועי ביום ראשון מותר רק על השבוע הקודם (ראשון-חמישי)'
-                };
-            }
-            console.log('    Allowed - within previous week');
-        }
-        // בימים אחרים - דיווח שבועי לא מותר בכלל
-        else {
-            console.log('    Not allowed - weekly report only on Thursday/Sunday');
+        if (dateOnly > todayOnly) {
+            console.log('  Future date detected - not allowed');
             return {
                 allowed: false,
-                message: 'דיווח שבועי זמין רק בימי חמישי וראשון'
+                message: 'לא ניתן לדווח על תאריכים עתידיים'
             };
         }
-    }
 
         const currentWeekStart = getSundayOfWeek(today);
         const currentWeekEnd = new Date(currentWeekStart);
@@ -817,8 +760,7 @@
             }
         } else {
             // אין דיוח - בודק אם ניתן ליצור חדש
-            const isWeekly = document.getElementById('daily-form').classList.contains('hidden');
-            const createValidation = canCreateNewReport(selectedDate, isWeekly ? 'weekly' : 'daily');
+            const createValidation = canCreateNewReport(selectedDate);
             if (!createValidation.allowed) {
                 showError(createValidation.message);
                 return;
@@ -964,11 +906,8 @@
                 weekStartDate = sunday; weekEndDate = thursday;
             }
 
-
-
             reportData.weekStart = formatDate(weekStartDate);
             reportData.weekEnd = formatDate(weekEndDate);
-
 
             if (!currentUser) return;
 
@@ -1119,7 +1058,7 @@
             weeklyToggle.style.opacity = allowed ? '' : '0.5';
             weeklyToggle.setAttribute('aria-disabled', allowed ? 'false' : 'true');
             weeklyToggle.dataset.allowed = allowed ? '1' : '0';
-            weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי (שבוע נוכחי) וראשון (שבוע קודם)';
+            weeklyToggle.title = allowed ? '' : 'דיווח שבועי זמין רק בימי חמישי וראשון';
         }
 
         selectReportType('daily');
@@ -1456,7 +1395,7 @@
             populateReportForm(existingReport);
         } else {
             // --- CREATE NEW FLOW ---
-            const createValidation = canCreateNewReport(selectedDate, 'daily');
+            const createValidation = canCreateNewReport(selectedDate);
             if (!createValidation.allowed) {
                 showError(createValidation.message);
                 return;
@@ -1715,7 +1654,7 @@
             }
         } else {
             // אין דיווח - בודק אם ניתן ליצור חדש
-            const createValidation = canCreateNewReport(targetDate, 'daily');
+            const createValidation = canCreateNewReport(targetDate);
             if (!createValidation.allowed) {
                 showError(createValidation.message);
                 return;
