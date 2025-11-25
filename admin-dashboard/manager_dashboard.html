@@ -739,13 +739,236 @@
             background: #f1f5f9;
             border-color: #cbd5e1;
         }
+
+        /* Researcher Management Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeIn 0.2s ease-in;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .modal-close {
+            background: #f1f5f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: #64748b;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .researchers-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .researcher-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .researcher-item:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .researcher-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-left: 0.75rem;
+            cursor: pointer;
+        }
+
+        .researcher-item label {
+            cursor: pointer;
+            flex: 1;
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .btn-select-researcher {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .btn-select-researcher:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .add-researcher-section {
+            border-top: 2px solid #e2e8f0;
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .add-researcher-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .add-researcher-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .add-researcher-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        .add-researcher-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-add-researcher {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-add-researcher:hover {
+            background: #059669;
+        }
+
+        .modal-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .modal-btn.primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            background: #2563eb;
+        }
+
+        .modal-btn.secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .modal-btn.secondary:hover {
+            background: #e2e8f0;
+        }
     </style>
 </head>
 <body>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-        import { getDatabase, ref, get, query, orderByChild, equalTo } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+        import { getDatabase, ref, get, set, query, orderByChild, equalTo } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
         // Firebase configuration - Replace with your config
         const firebaseConfig = {
@@ -763,8 +986,8 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        // Make Firebase available globally (include signOut)
-        window.firebaseApp = { app, auth, db, get, ref, query, orderByChild, equalTo, signOut };
+        // Make Firebase available globally (include signOut and set)
+        window.firebaseApp = { app, auth, db, get, ref, set, query, orderByChild, equalTo, signOut };
     </script>
 
     <div class="header">
@@ -890,6 +1113,32 @@
         </div>
     </div>
 
+    <!-- Researcher Management Modal -->
+    <div class="modal-overlay" id="researcher-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">ניהול חוקרים פעילים</h2>
+                <button class="modal-close" onclick="closeResearcherModal()" aria-label="סגור">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="researchers-grid" id="modal-researchers-list">
+                    <!-- Will be populated dynamically -->
+                </div>
+                <div class="add-researcher-section">
+                    <div class="add-researcher-title">הוספת חוקר/ת חדש/ה</div>
+                    <div class="add-researcher-row">
+                        <input type="text" id="modal-new-researcher-name" class="add-researcher-input" placeholder="יש להזין את שם החוקר/ת החדש/ה..." maxlength="50">
+                        <button class="btn-add-researcher" onclick="addNewResearcherFromModal()">הוספה</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn primary" onclick="saveResearchersFromModal()">שמירה</button>
+                <button class="modal-btn secondary" onclick="closeResearcherModal()">ביטול</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script>
         const AppState = {
@@ -905,10 +1154,38 @@
             reportData: null,
             categorizations: new Map(),
             finalReport: null,
-            isGrouped: false
+            isGrouped: false,
+            currentActiveResearcherInput: null // Track which dropdown was last clicked
         };
 
         const CACHE_PREFIX = 'reportCategorizationCache_';
+
+        // Toast notification function
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6';
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${bgColor};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                z-index: 10000;
+                font-weight: 600;
+                max-width: 400px;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
         // Helper to format hours - shows integer if whole, otherwise shows decimal
         const formatHours = (hours) => parseFloat(Number(hours).toFixed(2));
@@ -1312,6 +1589,28 @@
             saveCategorizationsToCache();
         };
 
+        // Handle active researcher selection change
+        window.handleActiveResearcherChange = function(taskId, value, isGroup) {
+            if (value === '__other__') {
+                // Open the modal to manage researchers
+                openResearcherModal();
+                // Reset the dropdown to empty
+                const select = event.target;
+                if (select) {
+                    select.value = '';
+                }
+                return;
+            }
+
+            // Normal selection handling
+            if (isGroup) {
+                updateGroupActiveResearcher(taskId, value);
+            } else {
+                AppState.categorizations.set(`${taskId}_activeResearcher`, value);
+                saveCategorizationsToCache();
+            }
+        };
+
         function renderTaskItem(task, isOtherTask) {
             // Check first ID for status (assuming group consistency)
             const firstId = task.originalIds ? task.originalIds[0] : task.id;
@@ -1328,11 +1627,11 @@
             if (task.isGroup) {
                 selectCall = `selectGroupCategorization('${task.id}',`;
                 inputCall = `updateGroupCustomText('${task.id}', this.value)`;
-                activeCall = `updateGroupActiveResearcher('${task.id}', this.value)`;
+                activeCall = `handleActiveResearcherChange('${task.id}', this.value, true)`;
             } else {
                 selectCall = `selectCategorization('${task.id}',`;
                 inputCall = `AppState.categorizations.set('${task.id}_custom', this.value); saveCategorizationsToCache();`;
-                activeCall = `AppState.categorizations.set('${task.id}_activeResearcher', this.value); saveCategorizationsToCache();`;
+                activeCall = `handleActiveResearcherChange('${task.id}', this.value, false)`;
             }
 
             const groupBadge = (task.isGroup && task.count > 1)
@@ -1363,7 +1662,12 @@
                     itemHtml += `<select class="active-select custom-input" style="margin-top: 0.75rem;" onchange="${activeCall}">
                         <option value="">בחר/י חוקר/ת פעיל/ה...</option>
                         ${activeList.map(r => `<option value="${r}" ${r === savedActiveResearcher ? 'selected' : ''}>${r}</option>`).join('')}
+                        <option value="__other__">---- אחר ----</option>
                     </select>`;
+                } else {
+                    itemHtml += `<div style="margin-top: 0.75rem; padding: 0.75rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; color: #856404; text-align: center;">
+                        אין חוקרים פעילים. <a href="#" onclick="openResearcherModal(); return false;" style="color: #0066cc; text-decoration: underline;">לחץ כאן לניהול חוקרים</a>
+                    </div>`;
                 }
             }
             itemHtml += `</div></div>`;
@@ -1876,6 +2180,257 @@
                 console.error('Error signing out:', err);
             }
         }
+
+        // Researcher Management Modal Functions
+        let modalTempActiveResearchers = [];
+        let modalAllResearchers = [];
+
+        async function loadAllResearchers() {
+            const { db, ref, get } = window.firebaseApp;
+            try {
+                // Try to load from global researchers list
+                const globalRef = ref(db, 'global/researchers');
+                const snapshot = await get(globalRef);
+                if (snapshot.exists()) {
+                    return snapshot.val() || [];
+                }
+            } catch (e) {
+                console.log('Could not load global researchers, using default list');
+            }
+
+            // Fallback to default list from researchers.json structure
+            return [
+                "אביטל בכר", "אילן הלחמי", "אלון סלע", "גיאורגי שטנברג",
+                "היבה אבו תאיה", "ויקטור אלחנתי", "ויקטור בלוך", "ילנה ויטושקין",
+                "יעל זלצר", "יפית כהן אלחנתי", "יפתח קלפ", "נעם דוד",
+                "ספי ורניק", "עלאא גמאל", "עמיחי חורש", "רני אריאלי"
+            ];
+        }
+
+        async function openResearcherModal() {
+            if (!AppState.selectedEmployee) {
+                alert('שגיאה: לא נבחר עובד');
+                return;
+            }
+
+            // Load all researchers and current active list
+            modalAllResearchers = await loadAllResearchers();
+            modalTempActiveResearchers = [...(AppState.selectedEmployee.activeResearchers || [])];
+
+            // Render modal content
+            renderModalResearchers();
+
+            // Show modal
+            document.getElementById('researcher-modal').classList.add('active');
+        }
+
+        function renderModalResearchers() {
+            const container = document.getElementById('modal-researchers-list');
+            container.innerHTML = '';
+
+            // Get unique list (all researchers from global + any that are already active for this employee)
+            const allUniqueResearchers = [...new Set([...modalAllResearchers, ...modalTempActiveResearchers])];
+
+            allUniqueResearchers.forEach(name => {
+                const div = document.createElement('div');
+                div.className = 'researcher-item';
+                const id = `modal-researcher-${name.replace(/\s/g, '_')}`;
+                const checked = modalTempActiveResearchers.includes(name) ? 'checked' : '';
+
+                div.innerHTML = `
+                    <input type="checkbox" id="${id}" ${checked} onchange="toggleResearcherSelection('${name.replace(/'/g, "\\'")}', this.checked)">
+                    <label for="${id}">${name}</label>
+                    <button class="btn-select-researcher" onclick="selectResearcherDirectly('${name.replace(/'/g, "\\'")}')">בחר/י</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.toggleResearcherSelection = function(name, isChecked) {
+            if (isChecked) {
+                if (!modalTempActiveResearchers.includes(name)) {
+                    modalTempActiveResearchers.push(name);
+                }
+            } else {
+                modalTempActiveResearchers = modalTempActiveResearchers.filter(r => r !== name);
+            }
+        };
+
+        // Function to select researcher directly to the active field without saving
+        window.selectResearcherDirectly = function(researcherName) {
+            if (!AppState.currentActiveResearcherInput) {
+                alert('אנא לחץ על שדה "החוקר/ת הפעיל/ה" כדי לבחור חוקר');
+                return;
+            }
+
+            // Check if this is a select dropdown
+            if (AppState.currentActiveResearcherInput.tagName === 'SELECT') {
+                // Check if the option already exists
+                let optionExists = false;
+                for (let i = 0; i < AppState.currentActiveResearcherInput.options.length; i++) {
+                    if (AppState.currentActiveResearcherInput.options[i].value === researcherName) {
+                        optionExists = true;
+                        break;
+                    }
+                }
+
+                // If option doesn't exist, add it dynamically before the "---- אחר ----" option
+                if (!optionExists) {
+                    const newOption = document.createElement('option');
+                    newOption.value = researcherName;
+                    newOption.textContent = researcherName;
+
+                    // Find the "---- אחר ----" option and insert before it
+                    const otherOption = Array.from(AppState.currentActiveResearcherInput.options).find(
+                        opt => opt.value === '__other__'
+                    );
+
+                    if (otherOption) {
+                        AppState.currentActiveResearcherInput.insertBefore(newOption, otherOption);
+                    } else {
+                        AppState.currentActiveResearcherInput.appendChild(newOption);
+                    }
+                }
+            }
+
+            // Set the researcher name in the input/select field
+            AppState.currentActiveResearcherInput.value = researcherName;
+
+            // Trigger change event to ensure any listeners are notified
+            const changeEvent = new Event('change', { bubbles: true });
+            AppState.currentActiveResearcherInput.dispatchEvent(changeEvent);
+
+            // Close the modal
+            closeResearcherModal();
+
+            // Show success message
+            showToast(`החוקר/ת "${researcherName}" נבחר/ה בהצלחה`);
+        };
+
+        window.addNewResearcherFromModal = function() {
+            const input = document.getElementById('modal-new-researcher-name');
+            if (!input) return;
+
+            const newName = input.value.trim();
+            if (!newName) {
+                alert('אנא הזן שם החוקר/ת');
+                return;
+            }
+
+            // Check if already exists in the complete list
+            if (modalAllResearchers.includes(newName)) {
+                alert('החוקר/ת כבר קיים/ת ברשימה הכללית');
+                input.value = '';
+                return;
+            }
+
+            // Add to all researchers list
+            modalAllResearchers.push(newName);
+
+            // Auto-select the new researcher
+            if (!modalTempActiveResearchers.includes(newName)) {
+                modalTempActiveResearchers.push(newName);
+            }
+
+            // Clear input
+            input.value = '';
+
+            // Re-render
+            renderModalResearchers();
+
+            // Show success message
+            showModalMessage(`החוקר/ת "${newName}" נוסף/ה בהצלחה`);
+        };
+
+        function showModalMessage(message) {
+            // Simple toast-like notification in the modal
+            const modalBody = document.querySelector('#researcher-modal .modal-body');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = 'background: #10b981; color: white; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; text-align: center; animation: fadeIn 0.3s ease-in;';
+            messageDiv.textContent = message;
+            modalBody.insertBefore(messageDiv, modalBody.firstChild);
+
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                messageDiv.style.transition = 'opacity 0.3s ease-out';
+                setTimeout(() => messageDiv.remove(), 300);
+            }, 2000);
+        }
+
+        window.saveResearchersFromModal = async function() {
+            if (!AppState.selectedEmployee) {
+                alert('שגיאה: לא נבחר עובד');
+                return;
+            }
+
+            try {
+                const { db, ref, get, set } = window.firebaseApp;
+
+                console.log('Saving researchers for employee:', AppState.selectedEmployee.id);
+                console.log('Active researchers to save:', modalTempActiveResearchers);
+
+                // Update the employee's active researchers
+                const employeeActiveRef = ref(db, `users/${AppState.selectedEmployee.id}/activeResearchers`);
+                await set(employeeActiveRef, modalTempActiveResearchers);
+
+                console.log('Employee active researchers saved successfully');
+
+                // Update local state
+                AppState.selectedEmployee.activeResearchers = [...modalTempActiveResearchers];
+
+                // Try to update global researchers list if we added new ones
+                try {
+                    const globalRef = ref(db, 'global/researchers');
+                    const snapshot = await get(globalRef);
+                    const currentGlobal = snapshot.exists() ? snapshot.val() : [];
+                    const updatedGlobal = [...new Set([...currentGlobal, ...modalAllResearchers])];
+
+                    console.log('Updating global researchers:', updatedGlobal);
+                    await set(globalRef, updatedGlobal);
+                    console.log('Global researchers saved successfully');
+                } catch (e) {
+                    console.log('Could not update global researchers:', e.message);
+                }
+
+                // Close modal
+                closeResearcherModal();
+
+                // Re-render the intermediate report to show updated active researchers
+                if (AppState.reportData) {
+                    renderIntermediateReport(AppState.reportData);
+                }
+
+                alert('החוקרים הפעילים נשמרו בהצלחה!');
+            } catch (error) {
+                console.error('Error saving researchers:', error);
+                alert('שגיאה בשמירת החוקרים: ' + error.message);
+            }
+        };
+
+        window.closeResearcherModal = function() {
+            document.getElementById('researcher-modal').classList.remove('active');
+            // Clear input
+            const input = document.getElementById('modal-new-researcher-name');
+            if (input) input.value = '';
+        };
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('researcher-modal');
+            if (modal && e.target === modal) {
+                closeResearcherModal();
+            }
+        });
+
+        // Track which active researcher dropdown was clicked - for "בחר/י" button functionality
+        document.addEventListener('focus', function(e) {
+            // Check if the focused element is an active researcher select dropdown
+            if (e.target && e.target.classList && e.target.classList.contains('active-select')) {
+                AppState.currentActiveResearcherInput = e.target;
+                console.log('Active researcher dropdown focused:', e.target);
+            }
+        }, true); // Use capture phase to catch the event early
     </script>
 </body>
 </html>
+
