@@ -605,8 +605,8 @@
                     const weekParts = report.week.split(' - ');
                     if (weekParts.length === 2) {
                         const [startPart, endPart] = weekParts;
-                        const [startDay, startMonth, startYear] = startPart.split('/');
-                        const [endDay, endMonth, endYear] = endPart.split('/');
+                        const [startDay, startMonth, startYear] = startPart.split('/').map(Number);
+                        const [endDay, endMonth, endYear] = endPart.split('/').map(Number);
                         reportWeekStart = new Date(startYear, startMonth - 1, startDay);
                         reportWeekEnd = new Date(endYear, endMonth - 1, endDay);
                     }
@@ -2298,29 +2298,82 @@
         }
     }
 
+    async function updateRegisterManagersDropdown() {
+        const managerSelect = document.getElementById('register-my-manager');
+        const loadingElement = document.getElementById('register-manager-loading');
+
+        if (!managerSelect) return;
+
+        try {
+            if (loadingElement) loadingElement.style.display = 'block';
+
+            const managers = await loadManagersList();
+
+            // שמור את הבחירה הנוכחית
+            const currentValue = managerSelect.value;
+
+            // נקה את הרשימה הקיימת (השאר את האופציה הראשונה "בחר/י מנהל/ת")
+            managerSelect.innerHTML = '<option value="">בחר/י מנהל/ת</option>';
+
+            // הוסף מנהלים לרשימה
+            managers.forEach(manager => {
+                const option = document.createElement('option');
+                option.value = `${manager.fullName}|${manager.email}`;
+                option.textContent = `${manager.fullName} (${manager.email})`;
+                managerSelect.appendChild(option);
+            });
+
+            // החזר את הבחירה הקיימת אם קיימת
+            if (currentValue) {
+                managerSelect.value = currentValue;
+            }
+
+            if (loadingElement) loadingElement.style.display = 'none';
+
+        } catch (error) {
+            console.error('Error updating register managers dropdown:', error);
+            if (loadingElement) {
+                loadingElement.textContent = 'שגיאה בטעינת רשימת מנהלים';
+                loadingElement.style.color = '#dc2626';
+            }
+        }
+    }
+
     function updateManagerUIVisibility(position) {
         const managerGroup = document.getElementById('profile-my-manager-group');
         const managerWarning = document.getElementById('profile-manager-warning');
-        const registerManagerNote = document.getElementById('register-manager-selection-note');
+        const registerManagerGroup = document.getElementById('register-my-manager-group');
         const registerManagerWarning = document.getElementById('register-manager-warning');
 
         if (position === 'מהנדס/ת מחקר') {
+            // Profile screen
             if (managerGroup) {
                 managerGroup.style.display = 'block';
                 updateManagersDropdown(); // טען רשימת מנהלים
             }
             if (managerWarning) managerWarning.style.display = 'none';
-            if (registerManagerNote) registerManagerNote.style.display = 'block';
+
+            // Register screen
+            if (registerManagerGroup) {
+                registerManagerGroup.style.display = 'block';
+                updateRegisterManagersDropdown(); // טען רשימת מנהלים בהרשמה
+            }
             if (registerManagerWarning) registerManagerWarning.style.display = 'none';
         } else if (position === 'מנהל/ת') {
+            // Profile screen
             if (managerGroup) managerGroup.style.display = 'none';
             if (managerWarning) managerWarning.style.display = 'block';
-            if (registerManagerNote) registerManagerNote.style.display = 'none';
+
+            // Register screen
+            if (registerManagerGroup) registerManagerGroup.style.display = 'none';
             if (registerManagerWarning) registerManagerWarning.style.display = 'block';
         } else {
+            // Profile screen
             if (managerGroup) managerGroup.style.display = 'none';
             if (managerWarning) managerWarning.style.display = 'none';
-            if (registerManagerNote) registerManagerNote.style.display = 'none';
+
+            // Register screen
+            if (registerManagerGroup) registerManagerGroup.style.display = 'none';
             if (registerManagerWarning) registerManagerWarning.style.display = 'none';
         }
     }
@@ -2328,3 +2381,4 @@
     // חשוף את הפונקציה לשימוש גלובלי
     window.updateManagerUIVisibility = updateManagerUIVisibility;
 })();
+
