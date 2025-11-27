@@ -1769,121 +1769,157 @@
         function processFinalReport(data, categorizations) {
             const finalData = {
                 categories: new Map(),
-                totalHours: data.totalHours,
+                totalHours: data.totalHours, // שים לב: זה הסכום המקורי, אם תרצה שיתעדכן יש לסכום מחדש
                 categorizedTasks: [],
                 missingDays: data.missingDays,
                 calculation: { relative: [] }
             };
 
+            // אתחול הקטגוריות עם הנתונים המקוריים
             data.researchers.forEach((hours, researcher) => {
-                finalData.categories.set(researcher, hours);
+                finalData.categories.set(researcher, hours); // כאן הסרנו את formatHours כחלק מהתיקון הקודם
             });
 
-            const activeList = AppState.selectedEmployee?.activeResearchers || [];
+            // רשימות עזר לפיצול העיבוד
+            const fixedTasks = [];
+            const relativeTasks = [];
 
-            const processTasks = (tasks, isOtherTask) => {
-                tasks.forEach(task => {
-                    const key = task.id;
-                    const defaultCategorization = isOtherTask ? null : 'seminar';
-                    const categorization = categorizations.get(key) || defaultCategorization;
-                    const customText = categorizations.get(`${key}_custom`);
-                    const chosenActive = categorizations.get(`${key}_activeResearcher`);
-                    let displayName = 'לא מקוטלג';
+            // פונקציית עזר למיון המשימות
+            const classifyTask = (task, isOtherTask) => {
+                const key = task.id;
+                const defaultCategorization = isOtherTask ? null : 'seminar';
+                const categorization = categorizations.get(key) || defaultCategorization;
 
-                    switch (categorization) {
-                        case 'active':
-                            if (chosenActive) {
-                                const prev = finalData.categories.get(chosenActive) || 0;
-                                finalData.categories.set(chosenActive, formatHours(prev + task.hours));
-                                displayName = `חוקר פעיל: ${chosenActive}`;
-                            } else {
-                                displayName = 'חוקר פעיל (לא נבחר)';
-                                const prev = finalData.categories.get(displayName) || 0;
-                                finalData.categories.set(displayName, formatHours(prev + task.hours));
-                            }
-                            break;
-
-                        case 'equal':
-                             const researchersForEqual = Array.from(data.researchers.keys()).filter(r => (data.researchers.get(r) || 0) > 0);
-                             if (researchersForEqual.length > 0) {
-                                const portion = task.hours / researchersForEqual.length;
-                                let remaining = task.hours;
-                                researchersForEqual.forEach((r, idx) => {
-                                    const toAdd = (idx === researchersForEqual.length - 1) ? remaining : portion;
-                                    remaining -= toAdd;
-                                    const prev = finalData.categories.get(r) || 0;
-                                    finalData.categories.set(r, formatHours(prev + toAdd));
-                                });
-                                displayName = `חלוקה שווה (${researchersForEqual.length} חוקרים)`;
-                             } else {
-                                displayName = 'חלוקה שווה (אין חוקרים פעילים בתקופה)';
-                                const prev = finalData.categories.get(displayName) || 0;
-                                finalData.categories.set(displayName, formatHours(prev + task.hours));
-                             }
-                            break;
-
-                        case 'relative':
-                            const reportResearchers = Array.from(data.researchers.keys()).filter(r => r && r !== 'משימות אחרות');
-                            if (reportResearchers.length > 0) {
-                                const weights = reportResearchers.map(r => ({ name: r, base: data.researchers.get(r) || 0 }));
-                                const totalBase = weights.reduce((s, w) => s + w.base, 0);
-
-                                if (totalBase > 0) {
-                                    const detail = { type:'relative', method:'proportional', taskName: task.name, taskHours: task.hours, totalBase: totalBase, items: [], note: 'חלוקה יחסית בין החוקרים המופיעים באותה תקופה' };
-                                    let remaining = task.hours;
-                                    weights.forEach((w, idx) => {
-                                        const raw = task.hours * (w.base / totalBase);
-                                        const add = (idx === weights.length - 1) ? remaining : raw;
-                                        remaining -= add;
-                                        const prev = finalData.categories.get(w.name) || 0;
-                                        finalData.categories.set(w.name, formatHours(prev + add));
-                                        detail.items.push({ researcher: w.name, baseHours: w.base, weight: (w.base/totalBase), allocated: add });
-                                    });
-                                    finalData.calculation.relative.push(detail);
-                                    displayName = `חלוקה יחסית (${reportResearchers.length} חוקרים)`;
-                                } else {
-                                    const portion = task.hours / reportResearchers.length;
-                                    const detail = { type:'relative', method:'equal', taskName: task.name, taskHours: task.hours, totalBase: 0, items: [], note: 'חלוקה שווה בין החוקרים המופיעים באותה תקופה (אין שעות בסיס)' };
-                                    let remaining = task.hours;
-                                    reportResearchers.forEach((r, idx) => {
-                                        const add = (idx === reportResearchers.length - 1) ? remaining : portion;
-                                        remaining -= add;
-                                        const prev = finalData.categories.get(r) || 0;
-                                        finalData.categories.set(r, formatHours(prev + add));
-                                        detail.items.push({ researcher: r, baseHours: 0, weight: (1/reportResearchers.length), allocated: add });
-                                    });
-                                    finalData.calculation.relative.push(detail);
-                                    displayName = 'חלוקה יחסית (שווה בהעדר בסיס)';
-                                }
-                            } else {
-                                displayName = 'חלוקה יחסית (ללא חוקרים)';
-                                const prev = finalData.categories.get(displayName) || 0;
-                                finalData.categories.set(displayName, formatHours(prev + task.hours));
-                            }
-                            break;
-
-                        case 'seminar':
-                            displayName = 'סמינר/קורס/הכשרה';
-                            const prevSem = finalData.categories.get(displayName) || 0;
-                            finalData.categories.set(displayName, formatHours(prevSem + task.hours));
-                            break;
-
-                        case 'custom':
-                            displayName = customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
-                            const prevCustom = finalData.categories.get(displayName) || 0;
-                            finalData.categories.set(displayName, formatHours(prevCustom + task.hours));
-                            break;
-
-                        default:
-                            const prevUn = finalData.categories.get(displayName) || 0;
-                            finalData.categories.set(displayName, formatHours(prevUn + task.hours));
-                    }
-                    finalData.categorizedTasks.push({ name: task.name, category: displayName, hours: task.hours });
-                });
+                // אם זו חלוקה יחסית או שווה - שולחים לסיבוב שני
+                if (categorization === 'relative' || categorization === 'equal') {
+                    relativeTasks.push({ task, categorization, key });
+                } else {
+                    fixedTasks.push({ task, categorization, key });
+                }
             };
 
-            processTasks(data.otherTasks, true);
-            processTasks(data.seminars, false);
+            // מיון כל המשימות
+            data.otherTasks.forEach(t => classifyTask(t, true));
+            data.seminars.forEach(t => classifyTask(t, false));
+
+            // לוגיקה לעיבוד משימה (משותפת לשני השלבים)
+            const processSingleTask = (item) => {
+                const { task, categorization, key } = item;
+                const customText = categorizations.get(`${key}_custom`);
+                const chosenActive = categorizations.get(`${key}_activeResearcher`);
+                let displayName = 'לא מקוטלג';
+
+                switch (categorization) {
+                    case 'active':
+                        if (chosenActive) {
+                            const prev = finalData.categories.get(chosenActive) || 0;
+                            // תיקון: שימוש בחיבור רגיל ללא formatHours
+                            finalData.categories.set(chosenActive, prev + task.hours);
+                            displayName = `חוקר פעיל: ${chosenActive}`;
+                        } else {
+                            displayName = 'חוקר פעיל (לא נבחר)';
+                            const prev = finalData.categories.get(displayName) || 0;
+                            finalData.categories.set(displayName, prev + task.hours);
+                        }
+                        break;
+
+                    case 'equal':
+                        // תיקון: מסתכלים על החוקרים שיש להם שעות ב-finalData המעודכן
+                        const researchersForEqual = Array.from(finalData.categories.keys()).filter(r => (finalData.categories.get(r) || 0) > 0);
+
+                        if (researchersForEqual.length > 0) {
+                            const portion = task.hours / researchersForEqual.length;
+                            let remaining = task.hours;
+                            researchersForEqual.forEach((r, idx) => {
+                                const toAdd = (idx === researchersForEqual.length - 1) ? remaining : portion;
+                                remaining -= toAdd;
+                                const prev = finalData.categories.get(r) || 0;
+                                finalData.categories.set(r, prev + toAdd);
+                            });
+                            displayName = `חלוקה שווה (${researchersForEqual.length} חוקרים)`;
+                        } else {
+                            displayName = 'חלוקה שווה (אין חוקרים פעילים)';
+                            const prev = finalData.categories.get(displayName) || 0;
+                            finalData.categories.set(displayName, prev + task.hours);
+                        }
+                        break;
+
+                    case 'relative':
+                        // התיקון הגדול: לוקחים את החוקרים והבסיס מתוך finalData המעודכן!
+                        // מסננים החוצה משימות מערכת שלא רלוונטיות לחלוקה
+                        const currentResearchers = Array.from(finalData.categories.keys())
+                            .filter(r => r && r !== 'משימות אחרות' && !r.includes('חלוקה') && !r.includes('חיוב חדש'));
+
+                        if (currentResearchers.length > 0) {
+                            // חישוב המשקולות לפי המצב *הנוכחי*
+                            const weights = currentResearchers.map(r => ({ name: r, base: finalData.categories.get(r) || 0 }));
+                            const totalBase = weights.reduce((s, w) => s + w.base, 0);
+
+                            if (totalBase > 0) {
+                                const detail = { type:'relative', method:'proportional', taskName: task.name, taskHours: task.hours, totalBase: totalBase, items: [], note: 'חלוקה יחסית לפי בסיס מעודכן' };
+                                let remaining = task.hours;
+                                weights.forEach((w, idx) => {
+                                    const raw = task.hours * (w.base / totalBase);
+                                    const add = (idx === weights.length - 1) ? remaining : raw;
+                                    remaining -= add;
+                                    const prev = finalData.categories.get(w.name) || 0;
+                                    finalData.categories.set(w.name, prev + add);
+
+                                    // שמירה לפירוט החישוב
+                                    if (add > 0) {
+                                        detail.items.push({ researcher: w.name, baseHours: w.base, weight: (w.base/totalBase), allocated: add });
+                                    }
+                                });
+                                finalData.calculation.relative.push(detail);
+                                displayName = `חלוקה יחסית (${weights.filter(w=>w.base>0).length} חוקרים בבסיס)`;
+                            } else {
+                                // אם אין בסיס (כל החוקרים על 0), עוברים לחלוקה שווה
+                                const portion = task.hours / currentResearchers.length;
+                                const detail = { type:'relative', method:'equal', taskName: task.name, taskHours: task.hours, totalBase: 0, items: [], note: 'חלוקה יחסית (אין בסיס - בוצעה חלוקה שווה)' };
+                                let remaining = task.hours;
+                                currentResearchers.forEach((r, idx) => {
+                                    const add = (idx === currentResearchers.length - 1) ? remaining : portion;
+                                    remaining -= add;
+                                    const prev = finalData.categories.get(r) || 0;
+                                    finalData.categories.set(r, prev + add);
+                                    detail.items.push({ researcher: r, baseHours: 0, weight: (1/currentResearchers.length), allocated: add });
+                                });
+                                finalData.calculation.relative.push(detail);
+                                displayName = 'חלוקה יחסית (שווה בהעדר בסיס)';
+                            }
+                        } else {
+                            displayName = 'חלוקה יחסית (ללא חוקרים)';
+                            const prev = finalData.categories.get(displayName) || 0;
+                            finalData.categories.set(displayName, prev + task.hours);
+                        }
+                        break;
+
+                    case 'seminar':
+                        displayName = 'סמינר/קורס/הכשרה';
+                        const prevSem = finalData.categories.get(displayName) || 0;
+                        finalData.categories.set(displayName, prevSem + task.hours);
+                        break;
+
+                    case 'custom':
+                        displayName = customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
+                        const prevCustom = finalData.categories.get(displayName) || 0;
+                        finalData.categories.set(displayName, prevCustom + task.hours);
+                        break;
+
+                    default:
+                        displayName = 'לא מקוטלג';
+                        const prevUn = finalData.categories.get(displayName) || 0;
+                        finalData.categories.set(displayName, prevUn + task.hours);
+                }
+                finalData.categorizedTasks.push({ name: task.name, category: displayName, hours: task.hours });
+            };
+
+            // שלב 1: הרצת המשימות הקבועות (מעדכן את הבסיס)
+            fixedTasks.forEach(processSingleTask);
+
+            // שלב 2: הרצת המשימות היחסיות (משתמש בבסיס המעודכן)
+            relativeTasks.forEach(processSingleTask);
+
             return finalData;
         }
 
@@ -2295,10 +2331,6 @@
 
             // Set the researcher name in the input/select field
             AppState.currentActiveResearcherInput.value = researcherName;
-
-            // Trigger change event to ensure any listeners are notified
-            const changeEvent = new Event('change', { bubbles: true });
-            AppState.currentActiveResearcherInput.dispatchEvent(changeEvent);
 
             // Close the modal
             closeResearcherModal();
