@@ -1767,161 +1767,205 @@
         }
 
         function processFinalReport(data, categorizations) {
-            const finalData = {
-                categories: new Map(),
-                totalHours: data.totalHours, // שים לב: זה הסכום המקורי, אם תרצה שיתעדכן יש לסכום מחדש
-                categorizedTasks: [],
-                missingDays: data.missingDays,
-                calculation: { relative: [] }
-            };
+    // ==========================================
+    // אזור הגדרות - שינוי קל של לוגיקת החלוקה
+    // ==========================================
+    const DISTRIBUTION_CONFIG = {
+        // האם קטגוריית "סמינר/קורס/הכשרה" (הכללית) תיחשב כבסיס לחלוקה יחסית?
+        // false = הסמינר הכללי לא יקבל תוספת שעות מהמשימות האחרות (ברירת מחדל).
+        // true = הסמינר הכללי ייחשב כמו חוקר ויקבל חלק יחסי מהמשימות האחרות.
+        includeSeminarInRelative: false,
 
-            // אתחול הקטגוריות עם הנתונים המקוריים
-            data.researchers.forEach((hours, researcher) => {
-                finalData.categories.set(researcher, hours); // כאן הסרנו את formatHours כחלק מהתיקון הקודם
-            });
+        // האם קטגוריית "חיוב חדש" (Custom) תיחשב כבסיס לחלוקה יחסית?
+        includeCustomChargeInRelative: false
+    };
+    // ==========================================
 
-            // רשימות עזר לפיצול העיבוד
-            const fixedTasks = [];
-            const relativeTasks = [];
+    const finalData = {
+        categories: new Map(),
+        totalHours: data.totalHours,
+        categorizedTasks: [],
+        missingDays: data.missingDays,
+        calculation: { relative: [] }
+    };
 
-            // פונקציית עזר למיון המשימות
-            const classifyTask = (task, isOtherTask) => {
-                const key = task.id;
-                const defaultCategorization = isOtherTask ? null : 'seminar';
-                const categorization = categorizations.get(key) || defaultCategorization;
+    // אתחול הקטגוריות עם הנתונים הגולמיים
+    data.researchers.forEach((hours, researcher) => {
+        finalData.categories.set(researcher, hours);
+    });
 
-                // אם זו חלוקה יחסית או שווה - שולחים לסיבוב שני
-                if (categorization === 'relative' || categorization === 'equal') {
-                    relativeTasks.push({ task, categorization, key });
-                } else {
-                    fixedTasks.push({ task, categorization, key });
-                }
-            };
+    const fixedTasks = [];
+    const relativeTasks = [];
 
-            // מיון כל המשימות
-            data.otherTasks.forEach(t => classifyTask(t, true));
-            data.seminars.forEach(t => classifyTask(t, false));
+    // מיון המשימות
+    const classifyTask = (task, isOtherTask) => {
+        const key = task.id;
+        const defaultCategorization = isOtherTask ? null : 'seminar';
+        const categorization = categorizations.get(key) || defaultCategorization;
 
-            // לוגיקה לעיבוד משימה (משותפת לשני השלבים)
-            const processSingleTask = (item) => {
-                const { task, categorization, key } = item;
-                const customText = categorizations.get(`${key}_custom`);
-                const chosenActive = categorizations.get(`${key}_activeResearcher`);
-                let displayName = 'לא מקוטלג';
-
-                switch (categorization) {
-                    case 'active':
-                        if (chosenActive) {
-                            const prev = finalData.categories.get(chosenActive) || 0;
-                            // תיקון: שימוש בחיבור רגיל ללא formatHours
-                            finalData.categories.set(chosenActive, prev + task.hours);
-                            displayName = `חוקר פעיל: ${chosenActive}`;
-                        } else {
-                            displayName = 'חוקר פעיל (לא נבחר)';
-                            const prev = finalData.categories.get(displayName) || 0;
-                            finalData.categories.set(displayName, prev + task.hours);
-                        }
-                        break;
-
-                    case 'equal':
-                        // תיקון: מסתכלים על החוקרים שיש להם שעות ב-finalData המעודכן
-                        const researchersForEqual = Array.from(finalData.categories.keys()).filter(r => (finalData.categories.get(r) || 0) > 0);
-
-                        if (researchersForEqual.length > 0) {
-                            const portion = task.hours / researchersForEqual.length;
-                            let remaining = task.hours;
-                            researchersForEqual.forEach((r, idx) => {
-                                const toAdd = (idx === researchersForEqual.length - 1) ? remaining : portion;
-                                remaining -= toAdd;
-                                const prev = finalData.categories.get(r) || 0;
-                                finalData.categories.set(r, prev + toAdd);
-                            });
-                            displayName = `חלוקה שווה (${researchersForEqual.length} חוקרים)`;
-                        } else {
-                            displayName = 'חלוקה שווה (אין חוקרים פעילים)';
-                            const prev = finalData.categories.get(displayName) || 0;
-                            finalData.categories.set(displayName, prev + task.hours);
-                        }
-                        break;
-
-                    case 'relative':
-                        // התיקון הגדול: לוקחים את החוקרים והבסיס מתוך finalData המעודכן!
-                        // מסננים החוצה משימות מערכת שלא רלוונטיות לחלוקה
-                        const currentResearchers = Array.from(finalData.categories.keys())
-                            .filter(r => r && r !== 'משימות אחרות' && !r.includes('חלוקה') && !r.includes('חיוב חדש'));
-
-                        if (currentResearchers.length > 0) {
-                            // חישוב המשקולות לפי המצב *הנוכחי*
-                            const weights = currentResearchers.map(r => ({ name: r, base: finalData.categories.get(r) || 0 }));
-                            const totalBase = weights.reduce((s, w) => s + w.base, 0);
-
-                            if (totalBase > 0) {
-                                const detail = { type:'relative', method:'proportional', taskName: task.name, taskHours: task.hours, totalBase: totalBase, items: [], note: 'חלוקה יחסית לפי בסיס מעודכן' };
-                                let remaining = task.hours;
-                                weights.forEach((w, idx) => {
-                                    const raw = task.hours * (w.base / totalBase);
-                                    const add = (idx === weights.length - 1) ? remaining : raw;
-                                    remaining -= add;
-                                    const prev = finalData.categories.get(w.name) || 0;
-                                    finalData.categories.set(w.name, prev + add);
-
-                                    // שמירה לפירוט החישוב
-                                    if (add > 0) {
-                                        detail.items.push({ researcher: w.name, baseHours: w.base, weight: (w.base/totalBase), allocated: add });
-                                    }
-                                });
-                                finalData.calculation.relative.push(detail);
-                                displayName = `חלוקה יחסית (${weights.filter(w=>w.base>0).length} חוקרים בבסיס)`;
-                            } else {
-                                // אם אין בסיס (כל החוקרים על 0), עוברים לחלוקה שווה
-                                const portion = task.hours / currentResearchers.length;
-                                const detail = { type:'relative', method:'equal', taskName: task.name, taskHours: task.hours, totalBase: 0, items: [], note: 'חלוקה יחסית (אין בסיס - בוצעה חלוקה שווה)' };
-                                let remaining = task.hours;
-                                currentResearchers.forEach((r, idx) => {
-                                    const add = (idx === currentResearchers.length - 1) ? remaining : portion;
-                                    remaining -= add;
-                                    const prev = finalData.categories.get(r) || 0;
-                                    finalData.categories.set(r, prev + add);
-                                    detail.items.push({ researcher: r, baseHours: 0, weight: (1/currentResearchers.length), allocated: add });
-                                });
-                                finalData.calculation.relative.push(detail);
-                                displayName = 'חלוקה יחסית (שווה בהעדר בסיס)';
-                            }
-                        } else {
-                            displayName = 'חלוקה יחסית (ללא חוקרים)';
-                            const prev = finalData.categories.get(displayName) || 0;
-                            finalData.categories.set(displayName, prev + task.hours);
-                        }
-                        break;
-
-                    case 'seminar':
-                        displayName = 'סמינר/קורס/הכשרה';
-                        const prevSem = finalData.categories.get(displayName) || 0;
-                        finalData.categories.set(displayName, prevSem + task.hours);
-                        break;
-
-                    case 'custom':
-                        displayName = customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
-                        const prevCustom = finalData.categories.get(displayName) || 0;
-                        finalData.categories.set(displayName, prevCustom + task.hours);
-                        break;
-
-                    default:
-                        displayName = 'לא מקוטלג';
-                        const prevUn = finalData.categories.get(displayName) || 0;
-                        finalData.categories.set(displayName, prevUn + task.hours);
-                }
-                finalData.categorizedTasks.push({ name: task.name, category: displayName, hours: task.hours });
-            };
-
-            // שלב 1: הרצת המשימות הקבועות (מעדכן את הבסיס)
-            fixedTasks.forEach(processSingleTask);
-
-            // שלב 2: הרצת המשימות היחסיות (משתמש בבסיס המעודכן)
-            relativeTasks.forEach(processSingleTask);
-
-            return finalData;
+        if (categorization === 'relative' || categorization === 'equal') {
+            relativeTasks.push({ task, categorization, key });
+        } else {
+            fixedTasks.push({ task, categorization, key });
         }
+    };
+
+    data.otherTasks.forEach(t => classifyTask(t, true));
+    data.seminars.forEach(t => classifyTask(t, false));
+
+    // פונקציית עזר קריטית: מי זכאי להשתתף בחלוקה היחסית?
+    const isEligibleForDistribution = (name) => {
+        if (!name) return false;
+
+        // משימות מערכת שאף פעם לא משתתפות (כי הן המקור לחלוקה או שגיאות)
+        if (name === 'משימות אחרות') return false;
+        if (name === 'לא מקוטלג') return false;
+        if (name.includes('חלוקה יחסית')) return false;
+        if (name.includes('חלוקה שווה')) return false;
+
+        // בדיקה לפי הקונפיגורציה שהגדרנו למעלה
+        if (name === 'סמינר/קורס/הכשרה') {
+            return DISTRIBUTION_CONFIG.includeSeminarInRelative;
+        }
+
+        if (name.startsWith('חיוב חדש')) {
+            return DISTRIBUTION_CONFIG.includeCustomChargeInRelative;
+        }
+
+        // כל שם אחר (חוקר קיים, חוקר חדש שהוסף ידנית, חוקר שנבחר מתוך סמינר) - זכאי!
+        return true;
+    };
+
+    const processSingleTask = (item) => {
+        const { task, categorization, key } = item;
+        const customText = categorizations.get(`${key}_custom`);
+        const chosenActive = categorizations.get(`${key}_activeResearcher`);
+        let displayName = 'לא מקוטלג';
+
+        switch (categorization) {
+            case 'active':
+                // כאן נכנס המקרה שציינת: אם מנהלת שייכה סמינר לחוקר X -> הוא יקבל את השעות
+                // ומכיוון ששמו הוא "ישראל ישראלי" (ולא "סמינר"), הוא אוטומטית ייכנס לחלוקה היחסית.
+                if (chosenActive) {
+                    const prev = finalData.categories.get(chosenActive) || 0;
+                    finalData.categories.set(chosenActive, prev + task.hours);
+                    displayName = `חוקר פעיל: ${chosenActive}`;
+                } else {
+                    displayName = 'חוקר פעיל (לא נבחר)';
+                    const prev = finalData.categories.get(displayName) || 0;
+                    finalData.categories.set(displayName, prev + task.hours);
+                }
+                break;
+
+            case 'equal':
+                // מסננים רק את מי שזכאי לפי ההגדרות
+                const researchersForEqual = Array.from(finalData.categories.keys())
+                    .filter(r => (finalData.categories.get(r) || 0) > 0 && isEligibleForDistribution(r));
+
+                if (researchersForEqual.length > 0) {
+                    const portion = task.hours / researchersForEqual.length;
+                    let remaining = task.hours;
+                    researchersForEqual.forEach((r, idx) => {
+                        const toAdd = (idx === researchersForEqual.length - 1) ? remaining : portion;
+                        remaining -= toAdd;
+                        const prev = finalData.categories.get(r) || 0;
+                        finalData.categories.set(r, prev + toAdd);
+                    });
+                    displayName = `חלוקה שווה (${researchersForEqual.length} זכאים)`;
+                } else {
+                    displayName = 'חלוקה שווה (אין זכאים לחלוקה)';
+                    const prev = finalData.categories.get(displayName) || 0;
+                    finalData.categories.set(displayName, prev + task.hours);
+                }
+                break;
+
+            case 'relative':
+                // מסננים רק את מי שזכאי לפי ההגדרות
+                const currentResearchers = Array.from(finalData.categories.keys())
+                    .filter(r => isEligibleForDistribution(r));
+
+                if (currentResearchers.length > 0) {
+                    const weights = currentResearchers.map(r => ({ name: r, base: finalData.categories.get(r) || 0 }));
+                    const totalBase = weights.reduce((s, w) => s + w.base, 0);
+
+                    if (totalBase > 0) {
+                        const detail = {
+                            type: 'relative',
+                            method: 'proportional',
+                            taskName: task.name,
+                            taskHours: task.hours,
+                            totalBase: totalBase,
+                            items: [],
+                            note: 'חלוקה יחסית לפי בסיס מעודכן'
+                        };
+
+                        let remaining = task.hours;
+                        weights.forEach((w, idx) => {
+                            const raw = task.hours * (w.base / totalBase);
+                            const add = (idx === weights.length - 1) ? remaining : raw;
+                            remaining -= add;
+
+                            const prev = finalData.categories.get(w.name) || 0;
+                            finalData.categories.set(w.name, prev + add);
+
+                            if (add > 0) {
+                                detail.items.push({
+                                    researcher: w.name,
+                                    baseHours: w.base,
+                                    weight: (w.base/totalBase),
+                                    allocated: add
+                                });
+                            }
+                        });
+                        finalData.calculation.relative.push(detail);
+                        displayName = `חלוקה יחסית (${weights.filter(w=>w.base>0).length} זכאים בבסיס)`;
+                    } else {
+                        // אם אין בסיס (כל הזכאים על 0), מבצעים חלוקה שווה
+                        const portion = task.hours / currentResearchers.length;
+                        const detail = { type:'relative', method:'equal', taskName: task.name, taskHours: task.hours, totalBase: 0, items: [], note: 'חלוקה יחסית (אין בסיס - בוצעה חלוקה שווה)' };
+                        let remaining = task.hours;
+                        currentResearchers.forEach((r, idx) => {
+                            const add = (idx === currentResearchers.length - 1) ? remaining : portion;
+                            remaining -= add;
+                            const prev = finalData.categories.get(r) || 0;
+                            finalData.categories.set(r, prev + add);
+                            detail.items.push({ researcher: r, baseHours: 0, weight: (1/currentResearchers.length), allocated: add });
+                        });
+                        finalData.calculation.relative.push(detail);
+                        displayName = 'חלוקה יחסית (שווה בהעדר בסיס)';
+                    }
+                } else {
+                    displayName = 'חלוקה יחסית (ללא זכאים)';
+                    const prev = finalData.categories.get(displayName) || 0;
+                    finalData.categories.set(displayName, prev + task.hours);
+                }
+                break;
+
+            case 'seminar':
+                displayName = 'סמינר/קורס/הכשרה';
+                const prevSem = finalData.categories.get(displayName) || 0;
+                finalData.categories.set(displayName, prevSem + task.hours);
+                break;
+
+            case 'custom':
+                displayName = customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
+                const prevCustom = finalData.categories.get(displayName) || 0;
+                finalData.categories.set(displayName, prevCustom + task.hours);
+                break;
+
+            default:
+                displayName = 'לא מקוטלג';
+                const prevUn = finalData.categories.get(displayName) || 0;
+                finalData.categories.set(displayName, prevUn + task.hours);
+        }
+        finalData.categorizedTasks.push({ name: task.name, category: displayName, hours: task.hours });
+    };
+
+    fixedTasks.forEach(processSingleTask);
+    relativeTasks.forEach(processSingleTask);
+
+    return finalData;
+}
 
 
         function renderFinalReport(data) {
@@ -2465,4 +2509,3 @@
     </script>
 </body>
 </html>
-
