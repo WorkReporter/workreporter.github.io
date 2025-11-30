@@ -1159,6 +1159,7 @@
         };
 
         const CACHE_PREFIX = 'reportCategorizationCache_';
+        const CATEGORIZATIONS_DB_PATH = 'managerSelectionPreferences';
 
         // Toast notification function
         function showToast(message, type = 'success') {
@@ -1200,30 +1201,76 @@
         }
 
         function getCacheKey() {
-            if (!AppState.selectedEmployee) return null;
-            return `${CACHE_PREFIX}${AppState.selectedEmployee.id}`;
+            if (!AppState.selectedEmployee || !AppState.currentUser) return null;
+            return `${AppState.currentUser.uid}/${AppState.selectedEmployee.id}`;
+        }
+
+        function getManagerCategorizationsPath() {
+            if (!AppState.currentUser || !AppState.selectedEmployee) return null;
+            return `${CATEGORIZATIONS_DB_PATH}/${AppState.currentUser.uid}/${AppState.selectedEmployee.id}`;
+        }
+
+        async function saveManagerCategorizationsToDB(dataMap = AppState.categorizations) {
+            const path = getManagerCategorizationsPath();
+            console.log('[SAVE] Starting save operation. Path:', path);
+            console.log('[SAVE] DataMap size:', dataMap?.size);
+            if (!path || !(dataMap instanceof Map)) {
+                console.warn('[SAVE] Aborted - missing path or invalid dataMap');
+                return;
+            }
+            try {
+                const { db, ref, set } = window.firebaseApp;
+                const categRef = ref(db, path);
+                const payload = Object.fromEntries(dataMap.entries());
+                console.log('[SAVE] Payload to save:', payload);
+                await set(categRef, payload);
+                console.log('[SAVE] ✅ Successfully saved to Firebase at:', path);
+                showToast('✅ הקיטלוגים נשמרו בהצלחה', 'success');
+            } catch (error) {
+                console.error('[SAVE] ❌ Failed to save:', error);
+                showToast('❌ שגיאה בשמירת הקיטלוגים', 'error');
+            }
+        }
+
+        async function loadManagerCategorizationsFromDB() {
+            const path = getManagerCategorizationsPath();
+            console.log('[LOAD] Starting load operation. Path:', path);
+            if (!path) {
+                console.warn('[LOAD] Aborted - missing path');
+                return new Map();
+            }
+            try {
+                const { db, ref, get } = window.firebaseApp;
+                const snapshot = await get(ref(db, path));
+                if (snapshot.exists()) {
+                    const payload = snapshot.val() || {};
+                    console.log('[LOAD] ✅ Successfully loaded from Firebase:', payload);
+                    console.log('[LOAD] Number of entries loaded:', Object.keys(payload).length);
+                    showToast('✅ הקיטלוגים נטענו בהצלחה', 'info');
+                    return new Map(Object.entries(payload));
+                } else {
+                    console.log('[LOAD] ℹ️ No data found at path (first time)');
+                }
+            } catch (error) {
+                console.error('[LOAD] ❌ Failed to load:', error);
+                showToast('❌ שגיאה בטעינת הקיטלוגים', 'error');
+            }
+            return new Map();
         }
 
         function saveCategorizationsToCache() {
-            const key = getCacheKey();
-            if (!key) return;
-            const dataToSave = Object.fromEntries(AppState.categorizations.entries());
-            localStorage.setItem(key, JSON.stringify(dataToSave));
+            saveManagerCategorizationsToDB().catch(e => console.error('Error saving categorizations to Firebase:', e));
+        }
+
+        async function loadCategorizationsFromServer() {
+            return loadManagerCategorizationsFromDB();
         }
 
         function loadCategorizationsFromCache() {
-            const key = getCacheKey();
-            if (!key) return new Map();
-            const savedData = localStorage.getItem(key);
-            if (savedData) {
-                try {
-                    return new Map(Object.entries(JSON.parse(savedData)));
-                } catch (e) {
-                    console.error('Error parsing cached categorizations:', e);
-                    return new Map();
-                }
-            }
-            return new Map();
+            // שמירה של אותה חתימה כמו פעם: מחזיר Map מסונכרן מתוך AppState
+            return AppState.categorizations instanceof Map
+                ? AppState.categorizations
+                : new Map();
         }
 
         async function loadEmployeesForManager(managerName) {
@@ -1492,9 +1539,13 @@
         async function generateIntermediateReport() {
             showIntermediateScreen();
             try {
+                console.log('[REPORT] Starting intermediate report generation');
                 const reports = await loadEmployeeReports(AppState.selectedEmployee.id, AppState.selectedStartDate, AppState.selectedEndDate);
                 AppState.reportData = processReportData(reports);
-                AppState.categorizations = loadCategorizationsFromCache();
+                // טוען פעם אחת מהשרת (אם צריך) ואז שומר ב-AppState, כמו שהיה פע�� בקאש המקומי
+                console.log('[REPORT] Loading categorizations from server...');
+                AppState.categorizations = await loadCategorizationsFromServer();
+                console.log('[REPORT] Categorizations loaded:', AppState.categorizations.size, 'entries');
                 renderIntermediateReport(AppState.reportData);
             } catch (error) {
                 console.error('Error generating intermediate report:', error);
@@ -1659,10 +1710,10 @@
                             ${(isOtherTask || !isOtherTask) && displayDate ? `<div class="task-date">מתאריך: ${displayDate}</div>` : ''}
                         </div>
                         <div class="categorization-options">
-                            <button class="option-btn ${savedType === 'seminar' ? 'active' : ''}" onclick="${selectCall} 'seminar')">סמינר</button>
+                            <button class="option-btn ${savedType === 'seminar' ? 'active' : ''}" onclick="${selectCall} 'seminar')">מכון</button>
                             <button class="option-btn ${savedType === 'active' ? 'active' : ''}" onclick="${selectCall} 'active')">חוקר פעיל <span class="dropdown-arrow">▾</span></button>
                             <button class="option-btn ${savedType === buttonType ? 'active' : ''}" onclick="${selectCall} '${buttonType}')">${buttonText}</button>
-                            <button class="option-btn ${savedType === 'custom' ? 'active' : ''}" onclick="${selectCall} 'custom')">חיוב חדש</button>
+                            <button class="option-btn ${savedType === 'custom' ? 'active' : ''}" onclick="${selectCall} 'custom')" style="display:none;">חיוב חדש</button>
                         </div>
                     </div>
                     <div id="${task.isGroup ? 'group' : task.id}_dynamic_content">`;
@@ -1746,7 +1797,7 @@
             }
 
             if (data.seminars.length > 0) {
-                html += `<div class="report-section"><h3 class="section-title">סמינר/קורס/הכשרה:</h3>`;
+                html += `<div class="report-section"><h3 class="section-title">מכון - סמינר/קורס/הכשרה:</h3>`;
                 data.seminars.forEach(task => {
                     html += renderTaskItem({...task, isGroup: false, originalIds: [task.id]}, false);
                 });
@@ -1786,8 +1837,8 @@
     // אזור הגדרות - שינוי קל של לוגיקת החלוקה
     // ==========================================
     const DISTRIBUTION_CONFIG = {
-        // האם קטגוריית "סמינר/קורס/הכשרה" (הכללית) תיחשב כבסיס לחלוקה יחסית?
-        // false = הסמינר הכללי לא יקבל תוספת שעות מהמשימות האחרות (ברירת מחדל).
+        // האם קטגוריית "מכון - סמינר/קורס/הכשרה" (הכללית) תיחשב כבסיס לחלוקה יחסית?
+        // false = הסמינר הכללי לא יקבל תוספת שעות מהמשימ��ת האחרות (ברירת מחדל).
         // true = הסמינר הכללי ייחשב כמו חוקר ויקבל חלק יחסי מהמשימות האחרות.
         includeSeminarInRelative: false,
 
@@ -1839,7 +1890,7 @@
         if (name.includes('חלוקה שווה')) return false;
 
         // בדיקה לפי הקונפיגורציה שהגדרנו למעלה
-        if (name === 'סמינר/קורס/הכשרה') {
+        if (name === 'מכון - סמינר/קורס/הכשרה') {
             return DISTRIBUTION_CONFIG.includeSeminarInRelative;
         }
 
@@ -1957,7 +2008,7 @@
                 break;
 
             case 'seminar':
-                displayName = 'סמינר/קורס/הכשרה';
+                displayName = 'מכון - סמינר/קורס/הכשרה';
                 const prevSem = finalData.categories.get(displayName) || 0;
                 finalData.categories.set(displayName, prevSem + task.hours);
                 break;
