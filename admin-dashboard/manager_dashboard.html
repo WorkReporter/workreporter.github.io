@@ -1190,6 +1190,15 @@
         // Helper to format hours - shows integer if whole, otherwise shows decimal
         const formatHours = (hours) => parseFloat(Number(hours).toFixed(2));
 
+        // Helper to format a YYYY-MM-DD string as dd-mm-yyyy for display
+        function formatDisplayDate(dateStr) {
+            if (!dateStr || typeof dateStr !== 'string') return '';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const [y, m, d] = parts;
+            return `${d.padStart(2,'0')}-${m.padStart(2,'0')}-${y}`;
+        }
+
         function getCacheKey() {
             if (!AppState.selectedEmployee) return null;
             return `${CACHE_PREFIX}${AppState.selectedEmployee.id}`;
@@ -1619,6 +1628,9 @@
             const savedCustomText = AppState.categorizations.get(`${firstId}_custom`) || '';
             const savedActiveResearcher = AppState.categorizations.get(`${firstId}_activeResearcher`) || '';
 
+            // Format report date for display (dd-mm-yyyy) if available
+            const displayDate = task.date ? formatDisplayDate(task.date) : '';
+
             const buttonType = isOtherTask ? 'relative' : 'equal';
             const buttonText = isOtherTask ? 'חלוקה יחסית' : 'חלוקה שווה';
 
@@ -1644,6 +1656,7 @@
                         <div class="task-info">
                             <div class="task-name">${task.name} ${groupBadge}</div>
                             <div class="task-hours">סה"כ שעות: ${formatHours(task.hours)}</div>
+                            ${(isOtherTask || !isOtherTask) && displayDate ? `<div class="task-date">מתאריך: ${displayDate}</div>` : ''}
                         </div>
                         <div class="categorization-options">
                             <button class="option-btn ${savedType === 'seminar' ? 'active' : ''}" onclick="${selectCall} 'seminar')">סמינר</button>
@@ -1705,6 +1718,7 @@
                                 ids: [],
                                 name: cleanName,
                                 hours: 0,
+                                // keep the date of the first task in the group as the report date reference
                                 date: task.date
                             };
                         }
@@ -1718,7 +1732,8 @@
                         count: g.ids.length,
                         originalIds: g.ids,
                         name: g.name,
-                        hours: g.hours
+                        hours: g.hours,
+                        date: g.date
                     }));
                 } else {
                     tasksToRender = data.otherTasks.map(t => ({...t, isGroup: false, count: 1, originalIds: [t.id]}));
@@ -2509,3 +2524,4 @@
     </script>
 </body>
 </html>
+
