@@ -1799,7 +1799,7 @@
             if (data.seminars.length > 0) {
                 html += `<div class="report-section"><h3 class="section-title">מכון - סמינר/קורס/הכשרה:</h3>`;
                 data.seminars.forEach(task => {
-                    html += renderTaskItem({...task, isGroup: false, originalIds: [task.id]}, false);
+                    html += renderTaskItem({...task, isGroup: false, originalIds: [task.id]}, true);
                 });
                 html += '</div>';
             }
