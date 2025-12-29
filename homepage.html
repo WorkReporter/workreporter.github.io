@@ -1817,27 +1817,92 @@
 
     <div id="reports-screen" class="container hidden">
         <h2 style="text-align: center; margin-bottom: 30px;">דוחות</h2>
-        <div class="form-group">
-            <label>חודש:</label>
-            <select id="report-month">
-                <option value="1">ינואר</option>
-                <option value="2">פברואר</option>
-                <option value="3">מרץ</option>
-                <option value="4">אפריל</option>
-                <option value="5">מאי</option>
-                <option value="6">יוני</option>
-                <option value="7">יולי</option>
-                <option value="8">אוגוסט</option>
-                <option value="9">ספטמבר</option>
-                <option value="10">אוקטובר</option>
-                <option value="11">נובמבר</option>
-                <option value="12">דצמבר</option>
-            </select>
+
+        <!-- Toggle between single month and period -->
+        <div class="toggle-btn" id="report-period-toggle" style="margin-bottom: 20px;">
+            <div class="toggle-option active" data-mode="single">חודש בודד</div>
+            <div class="toggle-option" data-mode="period">סיכום תקופה</div>
         </div>
-        <div class="form-group">
-            <label>שנה:</label>
-            <select id="report-year"></select>
+
+        <!-- Single month selection -->
+        <div id="single-month-selection">
+            <div class="form-group">
+                <label>חודש:</label>
+                <select id="report-month">
+                    <option value="1">ינואר</option>
+                    <option value="2">פברואר</option>
+                    <option value="3">מרץ</option>
+                    <option value="4">אפריל</option>
+                    <option value="5">מאי</option>
+                    <option value="6">יוני</option>
+                    <option value="7">יולי</option>
+                    <option value="8">אוגוסט</option>
+                    <option value="9">ספטמבר</option>
+                    <option value="10">אוקטובר</option>
+                    <option value="11">נובמבר</option>
+                    <option value="12">דצמבר</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>שנה:</label>
+                <select id="report-year"></select>
+            </div>
         </div>
+
+        <!-- Period selection (multiple months) -->
+        <div id="period-selection" class="hidden">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <p style="font-weight: 600; margin-bottom: 10px; color: #374151;"><span class="material-symbols-outlined" style="vertical-align: middle; margin-left: 4px; color: #2563eb;">event</span>מתאריך:</p>
+                    <div class="form-group">
+                        <label>חודש:</label>
+                        <select id="report-month-from">
+                            <option value="1">ינואר</option>
+                            <option value="2">פברואר</option>
+                            <option value="3">מרץ</option>
+                            <option value="4">אפריל</option>
+                            <option value="5">מאי</option>
+                            <option value="6">יוני</option>
+                            <option value="7">יולי</option>
+                            <option value="8">אוגוסט</option>
+                            <option value="9">ספטמבר</option>
+                            <option value="10">אוקטובר</option>
+                            <option value="11">נובמבר</option>
+                            <option value="12">דצמבר</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>שנה:</label>
+                        <select id="report-year-from"></select>
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <p style="font-weight: 600; margin-bottom: 10px; color: #374151;"><span class="material-symbols-outlined" style="vertical-align: middle; margin-left: 4px; color: #2563eb;">event</span>עד תאריך:</p>
+                    <div class="form-group">
+                        <label>חודש:</label>
+                        <select id="report-month-to">
+                            <option value="1">ינואר</option>
+                            <option value="2">פברואר</option>
+                            <option value="3">מרץ</option>
+                            <option value="4">אפריל</option>
+                            <option value="5">מאי</option>
+                            <option value="6">יוני</option>
+                            <option value="7">יולי</option>
+                            <option value="8">אוגוסט</option>
+                            <option value="9">ספטמבר</option>
+                            <option value="10">אוקטובר</option>
+                            <option value="11">נובמבר</option>
+                            <option value="12">דצמבר</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>שנה:</label>
+                        <select id="report-year-to"></select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <button class="btn" onclick="generateReport()">הצגת דו"ח</button>
         <div id="report-results" style="margin-top: 30px;"></div>
     </div>
@@ -1916,6 +1981,10 @@
             <div id="weekly-entries"></div>
             <button class="btn add" onclick="addWeeklyEntry()"><span class="material-symbols-outlined" aria-hidden="true" style="margin-left:6px;">add</span>הוספת שורה</button>
             <div class="total-display"><strong>סה"כ ימים: <span id="total-days">0</span></strong></div>
+        </div>
+        <div class="form-group" style="margin-top: 20px;">
+            <label for="personal-notes"><span class="material-symbols-outlined" style="vertical-align: middle; margin-left: 4px; color: #6b7280;">edit_note</span>הערות לעצמי:</label>
+            <textarea id="personal-notes" placeholder="הערות אישיות לדיווח זה (אופציונלי)..." rows="3" style="width: 100%; resize: vertical; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; direction: rtl;"></textarea>
         </div>
         <button class="btn" onclick="submitReport()">שמירת דיווח</button>
         <button class="btn secondary" onclick="showScreen('main')">ביטול</button>

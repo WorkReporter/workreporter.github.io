@@ -788,11 +788,15 @@
             return;
         }
 
+        // Get personal notes
+        const personalNotes = (document.getElementById('personal-notes')?.value || '').trim();
+
         const reportData = {
             date: reportDate,
             type: isWeekly ? 'weekly' : 'daily',
             timestamp: firebase.database.ServerValue.TIMESTAMP,
-            entries: []
+            entries: [],
+            personalNotes: personalNotes
         };
 
         if (!isWeekly) {
@@ -950,6 +954,9 @@
         if (weeklyEntries) weeklyEntries.innerHTML = '';
         setInputValue('total-hours', 0);
         setInputValue('total-days', 0);
+        // Clear personal notes
+        const personalNotesField = document.getElementById('personal-notes');
+        if (personalNotesField) personalNotesField.value = '';
     }
 
     // ---------- UI: Daily/Weekly Entries ----------
@@ -1025,6 +1032,12 @@
                 });
             }
             updateTotalDays();
+        }
+
+        // Load personal notes if exists
+        const personalNotesField = document.getElementById('personal-notes');
+        if (personalNotesField) {
+            personalNotesField.value = report.personalNotes || '';
         }
     }
 
@@ -1406,63 +1419,179 @@
     // ---------- Reports Screen ----------
     function initializeReportScreen() {
         const yearSelect = document.getElementById('report-year');
+        const yearFromSelect = document.getElementById('report-year-from');
+        const yearToSelect = document.getElementById('report-year-to');
         const nowY = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+
+        // Initialize single month year dropdown
         yearSelect.innerHTML = '';
-        for (let y = nowY - 2; y <= nowY + 1; y++) { const opt = document.createElement('option'); opt.value = y; opt.textContent = y; if (y === nowY) opt.selected = true; yearSelect.appendChild(opt); }
-        document.getElementById('report-month').value = (new Date().getMonth() + 1);
+        for (let y = nowY - 2; y <= nowY + 1; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === nowY) opt.selected = true;
+            yearSelect.appendChild(opt);
+        }
+        document.getElementById('report-month').value = currentMonth;
+
+        // Initialize period year dropdowns
+        if (yearFromSelect) {
+            yearFromSelect.innerHTML = '';
+            for (let y = nowY - 2; y <= nowY + 1; y++) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                if (y === nowY) opt.selected = true;
+                yearFromSelect.appendChild(opt);
+            }
+            document.getElementById('report-month-from').value = 1; // January by default
+        }
+
+        if (yearToSelect) {
+            yearToSelect.innerHTML = '';
+            for (let y = nowY - 2; y <= nowY + 1; y++) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                if (y === nowY) opt.selected = true;
+                yearToSelect.appendChild(opt);
+            }
+            document.getElementById('report-month-to').value = currentMonth; // Current month by default
+        }
+
+        // Setup toggle between single month and period
+        setupReportPeriodToggle();
+    }
+
+    function setupReportPeriodToggle() {
+        const toggleContainer = document.getElementById('report-period-toggle');
+        if (!toggleContainer) return;
+
+        toggleContainer.querySelectorAll('.toggle-option').forEach(option => {
+            option.addEventListener('click', function() {
+                // Update active state
+                toggleContainer.querySelectorAll('.toggle-option').forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+
+                const mode = this.dataset.mode;
+                const singleSelection = document.getElementById('single-month-selection');
+                const periodSelection = document.getElementById('period-selection');
+
+                if (mode === 'single') {
+                    singleSelection.classList.remove('hidden');
+                    periodSelection.classList.add('hidden');
+                } else {
+                    singleSelection.classList.add('hidden');
+                    periodSelection.classList.remove('hidden');
+                }
+            });
+        });
+    }
+
+    function getReportPeriodMode() {
+        const activeToggle = document.querySelector('#report-period-toggle .toggle-option.active');
+        return activeToggle?.dataset.mode || 'single';
     }
 
     function generateReport() {
-        const month = parseInt(getInputValue('report-month'));
-        const year = parseInt(getInputValue('report-year'));
         const resultsDiv = document.getElementById('report-results');
-        // Collect reports that are relevant to the selected month/year
-        const monthReports = reports.filter(r => {
-            if (r.type === 'daily' && r.date) {
-                const [y, m, d] = r.date.split('-').map(Number);
-                const dt = new Date(y, m - 1, d);
-                return dt.getMonth() + 1 === month && dt.getFullYear() === year;
-            }
-            if (r.type === 'weekly' && (r.weekStart || r.weekEnd || r.week)) {
-                // We'll include weekly reports if any part of their week falls into the selected month
-                let weekStart, weekEnd;
-                if (r.weekStart && r.weekEnd) {
-                    weekStart = new Date(r.weekStart);
-                    weekEnd = new Date(r.weekEnd);
-                } else if (r.week) {
-                    const parts = r.week.split(' - ');
-                    if (parts.length === 2) {
-                        const [sDay, sMonth, sYear] = parts[0].split('/').map(Number);
-                        const [eDay, eMonth, eYear] = parts[1].split('/').map(Number);
-                        weekStart = new Date(sYear, sMonth - 1, sDay);
-                        weekEnd = new Date(eYear, eMonth - 1, eDay);
-                    }
-                }
-                if (!weekStart || !weekEnd) return false;
-                // If any date in the week is in the requested month/year, include this weekly report
-                const startMonth = weekStart.getMonth() + 1;
-                const endMonth = weekEnd.getMonth() + 1;
-                const startYear = weekStart.getFullYear();
-                const endYear = weekEnd.getFullYear();
-                // If the week spans months/years, check overlap
-                if ((startYear === year && startMonth === month) || (endYear === year && endMonth === month)) return true;
-                // Also handle weeks that start in previous month and end in next month but include the target month
-                // Check if the target month-year is between start and end
-                const monthStart = new Date(year, month - 1, 1);
-                const monthEnd = new Date(year, month, 0);
-                return weekStart <= monthEnd && weekEnd >= monthStart;
-            }
-            return false;
-        });
-        if (monthReports.length === 0) { resultsDiv.innerHTML = '<div class="notification">לא נמצאו דיווחים לחודש שנבחר</div>'; return; }
+        const mode = getReportPeriodMode();
 
-        let html = '<h3>דוח חודשי</h3>';
+        let monthsToInclude = [];
+        let periodLabel = '';
+
+        if (mode === 'single') {
+            const month = parseInt(getInputValue('report-month'));
+            const year = parseInt(getInputValue('report-year'));
+            monthsToInclude.push({ month, year });
+            const monthNames = ['', 'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+            periodLabel = `${monthNames[month]} ${year}`;
+        } else {
+            const monthFrom = parseInt(getInputValue('report-month-from'));
+            const yearFrom = parseInt(getInputValue('report-year-from'));
+            const monthTo = parseInt(getInputValue('report-month-to'));
+            const yearTo = parseInt(getInputValue('report-year-to'));
+
+            // Validate period
+            const fromDate = new Date(yearFrom, monthFrom - 1, 1);
+            const toDate = new Date(yearTo, monthTo - 1, 1);
+
+            if (fromDate > toDate) {
+                showError('תאריך התחלה חייב להיות לפני תאריך סיום');
+                return;
+            }
+
+            // Generate all months in the range
+            let current = new Date(yearFrom, monthFrom - 1, 1);
+            const end = new Date(yearTo, monthTo - 1, 1);
+
+            while (current <= end) {
+                monthsToInclude.push({
+                    month: current.getMonth() + 1,
+                    year: current.getFullYear()
+                });
+                current.setMonth(current.getMonth() + 1);
+            }
+
+            const monthNames = ['', 'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+            periodLabel = `${monthNames[monthFrom]} ${yearFrom} - ${monthNames[monthTo]} ${yearTo}`;
+        }
+
+        // Collect reports that are relevant to the selected months
+        const periodReports = reports.filter(r => {
+            return monthsToInclude.some(({ month, year }) => {
+                if (r.type === 'daily' && r.date) {
+                    const [y, m, d] = r.date.split('-').map(Number);
+                    const dt = new Date(y, m - 1, d);
+                    return dt.getMonth() + 1 === month && dt.getFullYear() === year;
+                }
+                if (r.type === 'weekly' && (r.weekStart || r.weekEnd || r.week)) {
+                    let weekStart, weekEnd;
+                    if (r.weekStart && r.weekEnd) {
+                        weekStart = new Date(r.weekStart);
+                        weekEnd = new Date(r.weekEnd);
+                    } else if (r.week) {
+                        const parts = r.week.split(' - ');
+                        if (parts.length === 2) {
+                            const [sDay, sMonth, sYear] = parts[0].split('/').map(Number);
+                            const [eDay, eMonth, eYear] = parts[1].split('/').map(Number);
+                            weekStart = new Date(sYear, sMonth - 1, sDay);
+                            weekEnd = new Date(eYear, eMonth - 1, eDay);
+                        }
+                    }
+                    if (!weekStart || !weekEnd) return false;
+                    const monthStart = new Date(year, month - 1, 1);
+                    const monthEnd = new Date(year, month, 0);
+                    return weekStart <= monthEnd && weekEnd >= monthStart;
+                }
+                return false;
+            });
+        });
+
+        if (periodReports.length === 0) {
+            resultsDiv.innerHTML = '<div class="notification">לא נמצאו דיווחים לתקופה שנבחרה</div>';
+            return;
+        }
+
+        // Sort reports by date
+        periodReports.sort((a, b) => {
+            const getDateValue = (r) => {
+                if (r.type === 'daily' && r.date) return new Date(r.date).getTime();
+                if (r.type === 'weekly' && r.weekStart) return new Date(r.weekStart).getTime();
+                return 0;
+            };
+            return getDateValue(a) - getDateValue(b);
+        });
+
+        const titleText = mode === 'single' ? 'דוח חודשי' : 'סיכום תקופה';
+        let html = `<h3>${titleText}: ${periodLabel}</h3>`;
         let totalHours = 0;
-        // totalDays should count unique calendar days in the selected month that have any report (daily or covered by weekly)
         const uniqueDays = new Set();
         const summary = {};
+        let notesIdCounter = 0;
 
-        monthReports.forEach(report => {
+        periodReports.forEach(report => {
             html += `<div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">`;
             if (report.type === 'daily' && report.date) {
                 // Add this calendar day to uniqueDays
@@ -1487,9 +1616,27 @@
                         totalHours += hrs;
                         summary[name] = summary[name] || { hours: 0, days: 0 };
                         summary[name].hours += hrs;
-                        // each daily report represents one day for the researcher (counted per calendar day, not per entry)
-                        summary[name].days = summary[name].days || 0; // days will be computed globally from uniqueDays
                     });
+                }
+                // Display personal notes if exists
+                if (report.personalNotes && report.personalNotes.trim()) {
+                    const noteId = `personal-note-${notesIdCounter++}`;
+                    const notes = report.personalNotes.trim();
+                    const truncateLength = 80;
+                    const needsTruncation = notes.length > truncateLength;
+                    const truncatedText = needsTruncation ? notes.substring(0, truncateLength) + '...' : notes;
+
+                    html += `<div style="margin-top: 10px; padding: 10px; background: #f8fafc; border-radius: 6px; border-right: 3px solid #6b7280;">`;
+                    html += `<p style="margin: 0; color: #4b5563; font-size: 14px;"><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-left: 4px; color: #6b7280;">edit_note</span><strong>הערות לעצמי:</strong></p>`;
+                    html += `<p id="${noteId}-short" style="margin: 4px 0 0 0; color: #374151; font-size: 14px;">${truncatedText}`;
+                    if (needsTruncation) {
+                        html += ` <a href="javascript:void(0);" onclick="document.getElementById('${noteId}-short').style.display='none'; document.getElementById('${noteId}-full').style.display='block';" style="color: #2563eb; font-weight: bold; cursor: pointer; text-decoration: none;">הצג עוד</a>`;
+                    }
+                    html += `</p>`;
+                    if (needsTruncation) {
+                        html += `<p id="${noteId}-full" style="margin: 4px 0 0 0; color: #374151; font-size: 14px; display: none;">${notes} <a href="javascript:void(0);" onclick="document.getElementById('${noteId}-full').style.display='none'; document.getElementById('${noteId}-short').style.display='block';" style="color: #6b7280; font-size: 12px; cursor: pointer; text-decoration: none;">הסתר</a></p>`;
+                    }
+                    html += `</div>`;
                 }
             } else if (report.type === 'weekly') {
                 // For weekly reports, compute the week range and list entries
@@ -1512,14 +1659,11 @@
                     }
                 }
 
-                // Add each date in the weekly range that falls into the selected month to uniqueDays
+                // Add each date in the weekly range to uniqueDays
                 if (weekStart && weekEnd) {
                     const iter = new Date(weekStart);
                     while (iter <= weekEnd) {
-                        const ds = formatDate(iter);
-                        const y = iter.getFullYear();
-                        const m = iter.getMonth() + 1;
-                        if (y === year && m === month) uniqueDays.add(ds);
+                        uniqueDays.add(formatDate(iter));
                         iter.setDate(iter.getDate() + 1);
                     }
                 }
@@ -1533,21 +1677,40 @@
                     summary[e.researcher].days += days;
                     summary[e.researcher].hours += hours;
                 });
+                // Display personal notes if exists for weekly report
+                if (report.personalNotes && report.personalNotes.trim()) {
+                    const noteId = `personal-note-${notesIdCounter++}`;
+                    const notes = report.personalNotes.trim();
+                    const truncateLength = 80; // approximately 1.5 sentences
+                    const needsTruncation = notes.length > truncateLength;
+                    const truncatedText = needsTruncation ? notes.substring(0, truncateLength) + '...' : notes;
+
+                    html += `<div style="margin-top: 10px; padding: 10px; background: #f8fafc; border-radius: 6px; border-right: 3px solid #6b7280;">`;
+                    html += `<p style="margin: 0; color: #4b5563; font-size: 14px;"><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-left: 4px; color: #6b7280;">edit_note</span><strong>הערות לעצמי:</strong></p>`;
+                    html += `<p id="${noteId}-short" style="margin: 4px 0 0 0; color: #374151; font-size: 14px;">${truncatedText}`;
+                    if (needsTruncation) {
+                        html += ` <a href="javascript:void(0);" onclick="document.getElementById('${noteId}-short').style.display='none'; document.getElementById('${noteId}-full').style.display='block';" style="color: #2563eb; font-weight: bold; cursor: pointer; text-decoration: none;">הצג עוד</a>`;
+                    }
+                    html += `</p>`;
+                    if (needsTruncation) {
+                        html += `<p id="${noteId}-full" style="margin: 4px 0 0 0; color: #374151; font-size: 14px; display: none;">${notes} <a href="javascript:void(0);" onclick="document.getElementById('${noteId}-full').style.display='none'; document.getElementById('${noteId}-short').style.display='block';" style="color: #6b7280; font-size: 12px; cursor: pointer; text-decoration: none;">הסתר</a></p>`;
+                    }
+                    html += `</div>`;
+                }
             }
             html += '</div>';
         });
 
-        // totalDays is number of unique calendar days in the selected month that had any report
+        // totalDays is number of unique calendar days in the selected period that had any report
         const totalDays = uniqueDays.size;
 
+        const summaryTitle = mode === 'single' ? 'סיכום חודשי' : 'סיכום תקופה';
         html += '<div style="margin-top: 30px; padding: 20px; background-color: #f9fafb; border-radius: 8px; border:1px dashed #e5e7eb;">';
-        html += `<h3><span class="material-symbols-outlined" style="vertical-align: middle; color:#2563eb; margin-left:6px;">insights</span>סיכום חודשי</h3><p><strong>סה"כ שעות: ${totalHours}</strong></p><p><strong>סה"כ ימים: ${totalDays}</strong></p><h4 style="margin-top:12px;">פילוח לפי חוקר/פרויקט:</h4>`;
+        html += `<h3><span class="material-symbols-outlined" style="vertical-align: middle; color:#2563eb; margin-left:6px;">insights</span>${summaryTitle}</h3><p><strong>סה"כ שעות: ${totalHours}</strong></p><p><strong>סה"כ ימים: ${totalDays}</strong></p><h4 style="margin-top:12px;">פילוח לפי חוקר/פרויקט:</h4>`;
 
-        // For the per-researcher summary, ensure hours already reflect aggregation; days in this summary may remain as previously computed (for weekly entries we used reported days)
+        // For the per-researcher summary, display only hours (days from weekly reports are already converted to hours)
         Object.entries(summary).forEach(([name, s]) => {
-            const hoursText = s.hours > 0 ? s.hours + ' שעות ' : '';
-            const daysText = s.days > 0 ? s.days + ' ימים' : '';
-            html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#6b7280; margin-left:6px;">person</span>${name}: ${hoursText}${daysText}</p>`;
+            html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#6b7280; margin-left:6px;">person</span>${name}: ${s.hours} שעות</p>`;
         });
         html += '</div>';
         resultsDiv.innerHTML = html;
