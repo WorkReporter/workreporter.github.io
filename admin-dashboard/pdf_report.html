@@ -392,14 +392,38 @@
         let employeeData = null;
         let charts = { pie: null, bar: null };
 
-        function getUrlParams() {
+        function getReportDataFromStorage() {
+            // Try sessionStorage first (new method for large data)
+            const storedData = sessionStorage.getItem('pdfReportData');
+            if (storedData) {
+                try {
+                    const parsed = JSON.parse(storedData);
+                    return {
+                        employee: parsed.employee,
+                        startDate: parsed.startDate,
+                        endDate: parsed.endDate,
+                        reportData: parsed.reportData
+                    };
+                } catch (e) {
+                    console.error('Error parsing sessionStorage data:', e);
+                }
+            }
+
+            // Fallback to URL params (backward compatibility for small data)
             const params = new URLSearchParams(window.location.search);
-            return {
-                employee: params.get('employee'),
-                startDate: params.get('startDate'),
-                endDate: params.get('endDate'),
-                reportData: params.get('reportData')
-            };
+            const employeeParam = params.get('employee');
+            const reportDataParam = params.get('reportData');
+
+            if (employeeParam && reportDataParam) {
+                return {
+                    employee: JSON.parse(decodeURIComponent(employeeParam)),
+                    startDate: params.get('startDate'),
+                    endDate: params.get('endDate'),
+                    reportData: JSON.parse(decodeURIComponent(reportDataParam))
+                };
+            }
+
+            return null;
         }
 
         function normalizeReportData(raw) {
@@ -430,16 +454,16 @@
         // --- Main Initialization ---
         (function init() {
             try {
-                const params = getUrlParams();
-                if (!params.employee || !params.reportData) {
-                    throw new Error('Missing required URL parameters.');
+                const data = getReportDataFromStorage();
+                if (!data || !data.employee || !data.reportData) {
+                    throw new Error('Missing required report data.');
                 }
 
-                employeeData = JSON.parse(decodeURIComponent(params.employee));
-                reportData = normalizeReportData(JSON.parse(decodeURIComponent(params.reportData)));
+                employeeData = data.employee;
+                reportData = normalizeReportData(data.reportData);
 
-                const startDate = new Date(params.startDate);
-                const endDate = new Date(params.endDate);
+                const startDate = new Date(data.startDate);
+                const endDate = new Date(data.endDate);
 
                 // Populate report content
                 populateProfileAndHeader(employeeData, startDate, endDate);

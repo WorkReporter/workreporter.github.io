@@ -2211,11 +2211,17 @@
                     otherTasksTotal: formatHours(rawOtherTasksTotal)
                 }
             };
-            const employeeData = encodeURIComponent(JSON.stringify(AppState.selectedEmployee));
-            const reportData = encodeURIComponent(JSON.stringify(serializableReport));
-            const startDate = AppState.selectedStartDate.toISOString();
-            const endDate = AppState.selectedEndDate.toISOString();
-            const url = `pdf_report.html?employee=${employeeData}&startDate=${startDate}&endDate=${endDate}&reportData=${reportData}`;
+
+            // Use sessionStorage to avoid URI Too Long error with large data
+            const pdfReportData = {
+                employee: AppState.selectedEmployee,
+                reportData: serializableReport,
+                startDate: AppState.selectedStartDate.toISOString(),
+                endDate: AppState.selectedEndDate.toISOString()
+            };
+            sessionStorage.setItem('pdfReportData', JSON.stringify(pdfReportData));
+
+            const url = `pdf_report.html`;
             window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
         };
 
