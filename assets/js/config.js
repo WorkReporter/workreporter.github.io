@@ -34,7 +34,7 @@ window.APP_CONFIG = {
     // Toggle enabled to true when you want to allow reporting further back
     // Optionally set minDate (YYYY-MM-DD) to restrict how far back is allowed
     backdateOverride: {
-        enabled: true,
+        enabled: false,
         // Allow backdating starting from Sep 1, 2025 (adjust as needed)
         minDate: '2025-12-01'
     }
