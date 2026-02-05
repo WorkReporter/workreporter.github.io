@@ -31,12 +31,17 @@ window.APP_CONFIG = {
     "רני אריאלי"
     ],
     // One-time temporary override to allow backdating beyond one previous week
-    // Toggle enabled to true when you want to allow reporting further back
-    // Optionally set minDate (YYYY-MM-DD) to restrict how far back is allowed
+    // NOTE: These settings are now managed from Firebase (global/backdateOverride)
+    // This serves as a fallback only if Firebase settings are not available
     backdateOverride: {
-        enabled: true,
-        // Allow backdating starting from jan 1, 2025 (adjust as needed)
-        minDate: '2026-01-01'
-
+        enabled: false,
+        // Allow backdating starting from this date (YYYY-MM-DD)
+        minDate: null,
+        // Allow backdating up to this date (YYYY-MM-DD) - does not affect current/previous week
+        maxDate: null,
+        // Permission expiration date (optional) - after this date, backdate is disabled
+        permissionEndDate: null,
+        // List of user IDs allowed for backdate (empty = all users)
+        allowedEmployees: []
     }
 };

@@ -53,6 +53,7 @@
     let selectedDate = null;
     let currentWeek = getCurrentWeek();
     let activeResearchersRef = null; // live subscription ref for cleanup
+    let backdateOverrideCache = null; // cached backdate settings from Firebase
 
     // Expose for admin module and UI
     window.getAppState = function () {
@@ -76,7 +77,8 @@
                     ensureGlobalResearchersSeed(),
                     loadUserProfile(user.uid),
                     loadActiveResearchers(user.uid),
-                    loadReports(user.uid)
+                    loadReports(user.uid),
+                    loadBackdateOverrideSettings()
                 ]).then(async () => {
                     // Merge user-specific researchers with global list after loading
                     await mergeUserSpecificResearchers(user.uid);
@@ -359,6 +361,57 @@
         });
     }
 
+    // ---------- Backdate Override Settings from Firebase ----------
+    async function loadBackdateOverrideSettings() {
+        try {
+            const snapshot = await database.ref('global/backdateOverride').once('value');
+            if (snapshot.exists()) {
+                backdateOverrideCache = snapshot.val();
+                console.log('Loaded backdate settings from Firebase:', backdateOverrideCache);
+            } else {
+                // Fallback to config.js if no Firebase settings exist
+                backdateOverrideCache = (window.APP_CONFIG && window.APP_CONFIG.backdateOverride) || { enabled: false };
+                console.log('No Firebase backdate settings, using config.js fallback:', backdateOverrideCache);
+            }
+        } catch (error) {
+            console.error('Error loading backdate settings:', error);
+            // Fallback to config.js on error
+            backdateOverrideCache = (window.APP_CONFIG && window.APP_CONFIG.backdateOverride) || { enabled: false };
+        }
+        return backdateOverrideCache;
+    }
+
+    function getBackdateOverrideSettings() {
+        // Check if permission has expired based on permissionEndDate (or legacy endDate)
+        const settings = backdateOverrideCache || { enabled: false };
+        const permEndDate = settings.permissionEndDate || settings.endDate; // support legacy field
+
+        if (settings.enabled && permEndDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const endDate = new Date(permEndDate);
+            endDate.setHours(23, 59, 59, 999);
+            if (today > endDate) {
+                // Permission expired - return as disabled
+                return { ...settings, enabled: false, expired: true };
+            }
+        }
+        return settings;
+    }
+
+    function isUserAllowedForBackdate(userId) {
+        const settings = getBackdateOverrideSettings();
+        if (!settings.enabled) return false;
+
+        // If allowedEmployees is empty or not set, all users are allowed
+        if (!settings.allowedEmployees || settings.allowedEmployees.length === 0) {
+            return true;
+        }
+
+        // Check if user is in the allowed list
+        return settings.allowedEmployees.includes(userId);
+    }
+
     // ---------- Report Validation Functions ----------
 
     function isInCurrentWeek(date) {
@@ -532,9 +585,12 @@
         }
 
         // Temporary one-time override: allow reporting further back than one week
-        const overrideCfg = (window.APP_CONFIG && window.APP_CONFIG.backdateOverride) || {};
-        if (overrideCfg.enabled) {
-            // Optional lower bound (inclusive)
+        // Now reads from Firebase (global/backdateOverride) instead of config.js
+        const overrideCfg = getBackdateOverrideSettings();
+
+        // Check if backdate is enabled AND user is allowed
+        if (overrideCfg.enabled && currentUser && isUserAllowedForBackdate(currentUser.uid)) {
+            // Check lower bound (minDate - inclusive)
             if (overrideCfg.minDate) {
                 const min = new Date(overrideCfg.minDate);
                 min.setHours(0, 0, 0, 0);
@@ -545,7 +601,22 @@
                     };
                 }
             }
-            return { allowed: true, message: '' };
+
+            // Check upper bound (maxDate - inclusive)
+            if (overrideCfg.maxDate) {
+                const max = new Date(overrideCfg.maxDate);
+                max.setHours(23, 59, 59, 999);
+                if (dateOnly > max) {
+                    // Date is after maxDate - not covered by backdate permission
+                    // But still allow if it's in current/previous week (handled above)
+                    return {
+                        allowed: false,
+                        message: 'התאריך מאוחר מהתאריך המותר לדיווח בדיעבד'
+                    };
+                }
+            }
+
+            return { allowed: true, message: 'דיווח בדיעבד' };
         }
 
         // For any other dates - not allowed
