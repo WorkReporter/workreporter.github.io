@@ -1611,8 +1611,8 @@
                 const payload = Object.fromEntries(dataMap.entries());
                 console.log('[SAVE] Payload to save:', payload);
                 await set(categRef, payload);
-                console.log('[SAVE] ✅ Successfully saved to Firebase at:', path);
-                showToast('✅ הקיטלוגים נשמרו בהצלחה', 'success');
+                console.log('[SAVE]  Successfully saved to Firebase at:', path);
+                showToast(' הקיטלוגים נשמרו בהצלחה', 'success');
             } catch (error) {
                 console.error('[SAVE] ❌ Failed to save:', error);
                 showToast('❌ שגיאה בשמירת הקיטלוגים', 'error');
@@ -1631,9 +1631,9 @@
                 const snapshot = await get(ref(db, path));
                 if (snapshot.exists()) {
                     const payload = snapshot.val() || {};
-                    console.log('[LOAD] ✅ Successfully loaded from Firebase:', payload);
+                    console.log('[LOAD]  Successfully loaded from Firebase:', payload);
                     console.log('[LOAD] Number of entries loaded:', Object.keys(payload).length);
-                    showToast('✅ הקיטלוגים נטענו בהצלחה', 'info');
+                    showToast(' הקיטלוגים נטענו בהצלחה', 'info');
                     return new Map(Object.entries(payload));
                 } else {
                     console.log('[LOAD] ℹ️ No data found at path (first time)');
@@ -2998,7 +2998,7 @@
             }
 
             if (settings.enabled && !isExpired) {
-                let statusText = '✅ דיווח בדיעבד פתוח';
+                let statusText = ' דיווח בדיעבד פתוח';
                 if (settings.minDate) {
                     statusText += ` מתאריך ${formatDisplayDate(settings.minDate)}`;
                 }
@@ -3201,7 +3201,7 @@
 
             if (success) {
                 updateBackdateStatusDisplay(settings);
-                showToast('✅ הגדרות הדיווח בדיעבד נשמרו בהצלחה', 'success');
+                showToast(' הגדרות הדיווח בדיעבד נשמרו בהצלחה', 'success');
                 closeBackdateSettingsModal();
             } else {
                 showToast('❌ שגיאה בשמירת ההגדרות', 'error');
@@ -3231,5 +3231,6 @@
     </script>
 </body>
 </html>
+
 
 
