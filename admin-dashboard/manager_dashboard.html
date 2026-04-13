@@ -2425,12 +2425,12 @@
             let html = `
                 <div class="report-section">
                     <h3 class="section-title">סך השעות:</h3>
-                    <table class="stats-table">
+                    <table class="stats-table" style="border-collapse: collapse; border-spacing: 0;">
                         <thead><tr><th></th><th>סה"כ שעות</th><th>אחוז מסך השעות</th></tr></thead>
                         <tbody>`;
             data.categories.forEach((hours, category) => {
                 const percentage = data.totalHours > 0 ? Math.round((hours / data.totalHours) * 100) : 0;
-                html += `<tr><td style="font-weight: 500;">${category}</td><td style="text-align: center;">${formatHours(hours)}</td><td class="percentage-cell">${percentage}%</td></tr>`;
+                html += `<tr><td style="font-weight: 500; border-bottom: 1px solid var(--border);">${category}</td><td style="text-align: center; border-bottom: 1px solid var(--border);">${formatHours(hours)}</td><td class="percentage-cell" style="border-bottom: 1px solid var(--border);">${percentage}%</td></tr>`;
             });
             html += `</tbody></table>
                     <div class="calc-actions">
@@ -2737,7 +2737,7 @@
                 console.log('Could not load global researchers, using default list');
             }
 
-            // Fallback to default list from researchers.json structure
+            // Fallback to built-in default list
             return [
                 "אביטל בכר", "אילן הלחמי", "אלון סלע", "גיאורגי שטנברג",
                 "היבה אבו תאיה", "ויקטור אלחנתי", "ויקטור בלוך", "ילנה ויטושקין",
@@ -2852,9 +2852,9 @@
                 return;
             }
 
-            // Check if already exists in the complete list
+            // Check if already exists in the current selection list
             if (modalAllResearchers.includes(newName)) {
-                alert('החוקר/ת כבר קיים/ת ברשימה הכללית');
+                alert('החוקר/ת כבר קיים/ת ברשימה');
                 input.value = '';
                 return;
             }
@@ -2899,7 +2899,7 @@
             }
 
             try {
-                const { db, ref, get, set } = window.firebaseApp;
+                const { db, ref, set } = window.firebaseApp;
 
                 console.log('Saving researchers for employee:', AppState.selectedEmployee.id);
                 console.log('Active researchers to save:', modalTempActiveResearchers);
@@ -2912,20 +2912,6 @@
 
                 // Update local state
                 AppState.selectedEmployee.activeResearchers = [...modalTempActiveResearchers];
-
-                // Try to update global researchers list if we added new ones
-                try {
-                    const globalRef = ref(db, 'global/researchers');
-                    const snapshot = await get(globalRef);
-                    const currentGlobal = snapshot.exists() ? snapshot.val() : [];
-                    const updatedGlobal = [...new Set([...currentGlobal, ...modalAllResearchers])];
-
-                    console.log('Updating global researchers:', updatedGlobal);
-                    await set(globalRef, updatedGlobal);
-                    console.log('Global researchers saved successfully');
-                } catch (e) {
-                    console.log('Could not update global researchers:', e.message);
-                }
 
                 // Close modal
                 closeResearcherModal();

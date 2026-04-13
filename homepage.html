@@ -101,7 +101,7 @@
         }
 
         .calendar-day.has-report {
-            /* animation removed for professional look */
+            transition: background 0.25s ease, transform 0.2s ease;
         }
 
         .btn:hover {
@@ -1066,6 +1066,75 @@
             cursor: pointer;
         }
 
+        .researcher-setting-badge {
+            margin-right: auto;
+            margin-left: 0;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 1px solid #93c5fd;
+        }
+
+        .researcher-setting-badge.no-setting {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+            border-color: #fbbf24;
+        }
+
+        /* Progress bar styles for reports */
+        .report-progress-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .report-progress-bar {
+            flex: 1;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .report-progress-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.6s ease;
+            background: linear-gradient(90deg, #3b82f6 0%, #1e40af 100%);
+        }
+
+        .report-progress-fill.overflow {
+            background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
+        }
+
+        .report-progress-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            min-width: 45px;
+            text-align: left;
+        }
+
+        .report-overflow-warning {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #dc2626;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 4px;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-radius: 8px;
+            border: 1px solid #fecaca;
+        }
+
         .calendar-legend {
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             padding: 20px;
@@ -1125,11 +1194,21 @@
         /* === Add New Researcher Styles === */
         .add-new-researcher-container {
             margin-bottom: 20px;
-            padding: 15px;
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            border: 2px solid #bbf7d0;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(22, 101, 52, 0.1);
+            padding: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid #dbeafe;
+            border-radius: 14px;
+            box-shadow: 0 6px 18px rgba(2, 24, 43, 0.08);
+        }
+
+        .add-new-researcher-container.existing-researcher-card {
+            border-color: #bfdbfe;
+            background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+        }
+
+        .add-new-researcher-container.new-researcher-card {
+            border-color: #c7d2fe;
+            background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
         }
 
         .add-new-btn {
@@ -1173,10 +1252,16 @@
         }
 
         .add-researcher-title {
-            font-size: 14px;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 6px;
+        }
+
+        .add-researcher-subtitle {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 12px;
         }
 
         .add-researcher-row {
@@ -1185,10 +1270,14 @@
             align-items: center;
         }
 
+        .add-researcher-row + .add-researcher-row {
+            margin-top: 8px;
+        }
+
         .add-researcher-form input {
             flex: 1;
             padding: 10px 12px;
-            border: 2px solid #d1d5db;
+            border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 14px;
             direction: rtl;
@@ -1198,18 +1287,31 @@
 
         .add-researcher-form input:focus {
             outline: none;
-            border-color: #10b981;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+        }
+
+        #all-researchers {
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 10px !important;
+            background: #ffffff;
+            min-height: 42px;
+        }
+
+        #all-researchers:focus {
+            outline: none;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
         }
 
         .add-researcher-form .btn-add {
             padding: 10px 16px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(180deg, #1e6fca 0%, #165ea8 100%);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 10px;
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
@@ -1219,7 +1321,7 @@
         }
 
         .add-researcher-form .btn-add:hover {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            background: linear-gradient(180deg, #165ea8 0%, #0b3b76 100%);
             transform: translateY(-1px);
         }
 
@@ -1700,16 +1802,59 @@
 
         <div class="researchers-list" id="researchers-list"></div>
 
-        <!-- Add New Researcher Section - moved to bottom -->
-        <div class="add-new-researcher-container">
-            <div class="add-researcher-title">הוספת חוקר.ת חדש.ה</div>
-
-            <div id="add-researcher-form" class="add-researcher-form">
+        <!-- Add Existing Researcher from Global List -->
+        <div class="add-new-researcher-container existing-researcher-card" style="margin-top: 14px; margin-bottom: 24px;">
+            <div class="add-researcher-title">בחירת חוקר.ת מהרשימה</div>
+            <div class="add-researcher-subtitle">בחירה מהרשימה הגלובלית ושיוך מיידי לרשימת החוקרים הפעילים שלך</div>
+            <div class="add-researcher-form">
                 <div class="add-researcher-row">
-                    <input type="text" id="new-researcher-name" placeholder="יש להזין את שם החוקר.ת החדש.ה ..." maxlength="50">
-                    <button class="btn-add" onclick="addNewResearcher()">
+                    <select id="all-researchers" class="researcher-select" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px;">
+                        <option value="">טוען חוקרים...</option>
+                    </select>
+                </div>
+                <div class="add-researcher-row" style="margin-top: 8px;">
+                    <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                        <label style="font-size:13px; font-weight:500; color:#374151;">% פעילות:</label>
+                        <input type="number" id="existing-researcher-percent" placeholder="למשל: 10" min="0" max="100" step="0.1" oninput="onExistingResearcherPercentInput(this)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+                    </div>
+                    <div style="display:flex; align-items:flex-end; padding-bottom:10px; font-weight:600; color:#6b7280;">או</div>
+                    <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                        <label style="font-size:13px; font-weight:500; color:#374151;">ימי עבודה (מתוך 110):</label>
+                        <input type="number" id="existing-researcher-days" placeholder="למשל: 11" min="0" max="110" step="0.1" oninput="onExistingResearcherDaysInput(this)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+                    </div>
+                </div>
+                <div class="add-researcher-row" style="margin-top: 8px;">
+                    <button class="btn-add" onclick="addSelectedResearcher()" style="width:100%;">
                         <span class="material-symbols-outlined">add</span>
-                        הוספה
+                        שיוך חוקר.ת מתוך הרשימה
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add New Researcher Section - popup style form -->
+        <div class="add-new-researcher-container new-researcher-card">
+            <div class="add-researcher-title">הוספת חוקר.ת חדש.ה שאיננו.ה ברשימה</div>
+            <div class="add-researcher-subtitle">החוקר יתווסף לרשימת החוקרים הפעילים שלך בלבד</div>
+            <div class="add-researcher-form" id="add-researcher-form">
+                <div class="add-researcher-row">
+                    <input type="text" id="new-researcher-name" placeholder="שם החוקר.ת החדש.ה ..." maxlength="50" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+                </div>
+                <div class="add-researcher-row" style="margin-top: 8px;">
+                    <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                        <label style="font-size:13px; font-weight:500; color:#374151;">% פעילות:</label>
+                        <input type="number" id="new-researcher-percent" placeholder="למשל: 10" min="0" max="100" step="0.1" oninput="onResearcherPercentInput(this)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+                    </div>
+                    <div style="display:flex; align-items:flex-end; padding-bottom:10px; font-weight:600; color:#6b7280;">או</div>
+                    <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                        <label style="font-size:13px; font-weight:500; color:#374151;">ימי עבודה (מתוך 110):</label>
+                        <input type="number" id="new-researcher-days" placeholder="למשל: 11" min="0" max="110" step="0.1" oninput="onResearcherDaysInput(this)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+                    </div>
+                </div>
+                <div class="add-researcher-row" style="margin-top: 8px;">
+                    <button class="btn-add" onclick="addNewResearcher()" style="width:100%;">
+                        <span class="material-symbols-outlined">add</span>
+                        הוספת חוקר.ת חדש.ה
                     </button>
                 </div>
             </div>
@@ -1717,6 +1862,55 @@
 
         <button class="btn" onclick="saveResearchers()">שמירה</button>
     </div>
+
+    <script>
+    // Auto-calculation between percent and days (110 days per half-year base)
+    function onResearcherPercentInput(el) {
+        const val = parseFloat(el.value);
+        const daysInput = document.getElementById('new-researcher-days');
+        if (!daysInput) return;
+        if (!isNaN(val) && val >= 0) {
+            const totalDays = window.APP_CONFIG?.totalWorkDaysPerHalfYear || window.APP_CONFIG?.totalWorkDaysPerYear || 110;
+            daysInput.value = Math.round((val / 100) * totalDays * 10) / 10;
+        } else {
+            daysInput.value = '';
+        }
+    }
+    function onResearcherDaysInput(el) {
+        const val = parseFloat(el.value);
+        const pctInput = document.getElementById('new-researcher-percent');
+        if (!pctInput) return;
+        if (!isNaN(val) && val >= 0) {
+            const totalDays = window.APP_CONFIG?.totalWorkDaysPerHalfYear || window.APP_CONFIG?.totalWorkDaysPerYear || 110;
+            pctInput.value = Math.round((val / totalDays) * 100 * 10) / 10;
+        } else {
+            pctInput.value = '';
+        }
+    }
+    
+    function onExistingResearcherPercentInput(el) {
+        const val = parseFloat(el.value);
+        const daysInput = document.getElementById('existing-researcher-days');
+        if (!daysInput) return;
+        if (!isNaN(val) && val >= 0) {
+            const totalDays = window.APP_CONFIG?.totalWorkDaysPerHalfYear || window.APP_CONFIG?.totalWorkDaysPerYear || 110;
+            daysInput.value = Math.round((val / 100) * totalDays * 10) / 10;
+        } else {
+            daysInput.value = '';
+        }
+    }
+    function onExistingResearcherDaysInput(el) {
+        const val = parseFloat(el.value);
+        const pctInput = document.getElementById('existing-researcher-percent');
+        if (!pctInput) return;
+        if (!isNaN(val) && val >= 0) {
+            const totalDays = window.APP_CONFIG?.totalWorkDaysPerHalfYear || window.APP_CONFIG?.totalWorkDaysPerYear || 110;
+            pctInput.value = Math.round((val / totalDays) * 100 * 10) / 10;
+        } else {
+            pctInput.value = '';
+        }
+    }
+    </script>
 
     <div id="about-screen" class="container hidden">
         <h2 style="text-align: center; margin-bottom: 30px;">אודות המערכת</h2>
@@ -1818,39 +2012,8 @@
     <div id="reports-screen" class="container hidden">
         <h2 style="text-align: center; margin-bottom: 30px;">דוחות</h2>
 
-        <!-- Toggle between single month and period -->
-        <div class="toggle-btn" id="report-period-toggle" style="margin-bottom: 20px;">
-            <div class="toggle-option active" data-mode="single">חודש בודד</div>
-            <div class="toggle-option" data-mode="period">סיכום תקופה</div>
-        </div>
-
-        <!-- Single month selection -->
-        <div id="single-month-selection">
-            <div class="form-group">
-                <label>חודש:</label>
-                <select id="report-month">
-                    <option value="1">ינואר</option>
-                    <option value="2">פברואר</option>
-                    <option value="3">מרץ</option>
-                    <option value="4">אפריל</option>
-                    <option value="5">מאי</option>
-                    <option value="6">יוני</option>
-                    <option value="7">יולי</option>
-                    <option value="8">אוגוסט</option>
-                    <option value="9">ספטמבר</option>
-                    <option value="10">אוקטובר</option>
-                    <option value="11">נובמבר</option>
-                    <option value="12">דצמבר</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>שנה:</label>
-                <select id="report-year"></select>
-            </div>
-        </div>
-
-        <!-- Period selection (multiple months) -->
-        <div id="period-selection" class="hidden">
+        <!-- Period selection (from-to) - always visible -->
+        <div id="period-selection">
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 200px;">
                     <p style="font-weight: 600; margin-bottom: 10px; color: #374151;"><span class="material-symbols-outlined" style="vertical-align: middle; margin-left: 4px; color: #2563eb;">event</span>מתאריך:</p>

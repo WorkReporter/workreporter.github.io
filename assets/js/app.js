@@ -54,10 +54,11 @@
     let currentWeek = getCurrentWeek();
     let activeResearchersRef = null; // live subscription ref for cleanup
     let backdateOverrideCache = null; // cached backdate settings from Firebase
+    let researcherSettings = {}; // { "researcher name": { activityPercent: N, workDays: N } }
 
     // Expose for admin module and UI
     window.getAppState = function () {
-        return { currentUser, isAdmin, activeResearchers, allResearchers, reports, currentMonth, currentYear, selectedDate, currentWeek };
+        return { currentUser, isAdmin, activeResearchers, allResearchers, reports, currentMonth, currentYear, selectedDate, currentWeek, researcherSettings };
     };
     window.setIsAdmin = function (v) { isAdmin = v; updateAdminUI(); };
 
@@ -78,7 +79,8 @@
                     loadUserProfile(user.uid),
                     loadActiveResearchers(user.uid),
                     loadReports(user.uid),
-                    loadBackdateOverrideSettings()
+                    loadBackdateOverrideSettings(),
+                    loadResearcherSettings(user.uid)
                 ]).then(async () => {
                     // Merge user-specific researchers with global list after loading
                     await mergeUserSpecificResearchers(user.uid);
@@ -213,23 +215,6 @@
 
     // ---------- Firebase: Users / Researchers ----------
     async function ensureGlobalResearchersSeed() {
-        try {
-            // First try to load from JSON file
-            const response = await fetch('/assets/researchers.json');
-            if (response.ok) {
-                const data = await response.json();
-                if (data.researchers && Array.isArray(data.researchers) && data.researchers.length > 0) {
-                    allResearchers = data.researchers;
-                    // Update Firebase with the JSON data
-                    await database.ref('global/researchers').set(data.researchers);
-                    return;
-                }
-            }
-        } catch (error) {
-            console.log('Could not load researchers from JSON, using Firebase fallback');
-        }
-
-        // Fallback to Firebase
         return database.ref('global/researchers').once('value').then(snap => {
             let list = snap.val();
             if (!Array.isArray(list) || list.length === 0) {
@@ -345,6 +330,126 @@
             }, () => resolve());
         });
     }
+
+    // ---------- Researcher Settings (activity %, work days) ----------
+    function loadResearcherSettings(uid) {
+        if (!uid) return Promise.resolve();
+        return database.ref('users/' + uid + '/researcherSettings').once('value').then(snap => {
+            const data = snap.val();
+            researcherSettings = normalizeResearcherSettingsMap(data && typeof data === 'object' ? data : {});
+        }).catch(() => { researcherSettings = {}; });
+    }
+
+    function saveResearcherSettings(uid, settings) {
+        if (!uid) return Promise.resolve();
+        researcherSettings = normalizeResearcherSettingsMap(settings || researcherSettings);
+        return database.ref('users/' + uid + '/researcherSettings').set(researcherSettings);
+    }
+
+    function roundToSingleDecimal(value) {
+        return Math.round(value * 10) / 10;
+    }
+
+    function parseOptionalNumber(value) {
+        if (value === null || value === undefined || value === '') return null;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function normalizeResearcherSetting(setting) {
+        if (!setting || typeof setting !== 'object') return null;
+
+        let activityPercent = parseOptionalNumber(setting.activityPercent);
+        let workDays = parseOptionalNumber(setting.workDays);
+
+        if (activityPercent == null && workDays == null) return null;
+        if (activityPercent != null && activityPercent < 0) activityPercent = null;
+        if (workDays != null && workDays < 0) workDays = null;
+        if (activityPercent == null && workDays == null) return null;
+
+        if (activityPercent == null && workDays != null) {
+            activityPercent = workDaysToPercent(workDays);
+        }
+        if (workDays == null && activityPercent != null) {
+            workDays = percentToWorkDays(activityPercent);
+        }
+
+        return {
+            activityPercent: activityPercent != null ? roundToSingleDecimal(activityPercent) : null,
+            workDays: workDays != null ? roundToSingleDecimal(workDays) : null
+        };
+    }
+
+    function normalizeResearcherSettingsMap(settingsMap) {
+        const normalized = {};
+        Object.entries(settingsMap || {}).forEach(([name, setting]) => {
+            const normalizedSetting = normalizeResearcherSetting(setting);
+            if (normalizedSetting) {
+                normalized[name] = normalizedSetting;
+            }
+        });
+        return normalized;
+    }
+
+    function getResearcherSetting(name) {
+        return normalizeResearcherSetting(researcherSettings[name]);
+    }
+
+    // Convert between activity percent and work days (110 days per half-year)
+    const TOTAL_WORK_DAYS = window.APP_CONFIG.totalWorkDaysPerHalfYear || window.APP_CONFIG.totalWorkDaysPerYear || 110;
+
+    function percentToWorkDays(percent) {
+        const parsedPercent = parseOptionalNumber(percent);
+        if (parsedPercent == null) return null;
+        return roundToSingleDecimal((parsedPercent / 100) * TOTAL_WORK_DAYS);
+    }
+
+    function workDaysToPercent(days) {
+        const parsedDays = parseOptionalNumber(days);
+        if (parsedDays == null) return null;
+        if (!TOTAL_WORK_DAYS) return null;
+        return roundToSingleDecimal((parsedDays / TOTAL_WORK_DAYS) * 100);
+    }
+
+    function getResearcherWorkDays(setting) {
+        const normalized = normalizeResearcherSetting(setting);
+        return normalized ? normalized.workDays : null;
+    }
+
+    function calculateResearcherActivityPercent(setting) {
+        const normalized = normalizeResearcherSetting(setting);
+        return normalized ? normalized.activityPercent : null;
+    }
+
+    function getHalfYearKey(dateObj) {
+        const d = new Date(dateObj);
+        const half = d.getMonth() <= 5 ? 'H1' : 'H2';
+        return `${d.getFullYear()}-${half}`;
+    }
+
+    function getHalfYearsInPeriod(fromDate, toDate) {
+        const from = new Date(fromDate.getFullYear(), fromDate.getMonth(), 1);
+        const to = new Date(toDate.getFullYear(), toDate.getMonth(), 1);
+        const keys = new Set();
+        const cursor = new Date(from);
+
+        while (cursor <= to) {
+            keys.add(getHalfYearKey(cursor));
+            cursor.setMonth(cursor.getMonth() + 1);
+        }
+
+        return Array.from(keys);
+    }
+
+    // Expose for admin/external modules
+    window.getResearcherSetting = getResearcherSetting;
+    window.saveResearcherSettings = (uid, s) => saveResearcherSettings(uid, s);
+    window.loadResearcherSettings = (uid) => loadResearcherSettings(uid);
+    window.getResearcherWorkDays = getResearcherWorkDays;
+    window.calculateResearcherActivityPercent = calculateResearcherActivityPercent;
+    window.percentToWorkDays = percentToWorkDays;
+    window.workDaysToPercent = workDaysToPercent;
+    window.TOTAL_WORK_DAYS = TOTAL_WORK_DAYS;
 
     // ---------- Reports ----------
     function loadReports(uid) {
@@ -1318,6 +1423,8 @@
         }
 
         document.querySelectorAll('.researcher-select').forEach(sel => {
+            // אל תיגע ברשימת "בחירת חוקר.ת מהרשימה" במסך חוקרים פעילים
+            if (sel.id === 'all-researchers') return;
             const current = sel.value || '';
             sel.innerHTML = [...available.map(r => `<option value="${r}">${r}</option>`)].join('');
             if (current && available.includes(current)) sel.value = current;
@@ -1406,7 +1513,6 @@
                 div.style.background = 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)';
                 div.style.color = '#9ca3af';
             }
-            // --- MODIFIED ---: Updated click event listener
             div.addEventListener('click', () => {
                 if (date.getDay() === 5 || date.getDay() === 6) {
                     showError('לא ניתן להוסיף דיווח לימי שישי ושבת');
@@ -1489,22 +1595,10 @@
 
     // ---------- Reports Screen ----------
     function initializeReportScreen() {
-        const yearSelect = document.getElementById('report-year');
         const yearFromSelect = document.getElementById('report-year-from');
         const yearToSelect = document.getElementById('report-year-to');
         const nowY = new Date().getFullYear();
         const currentMonth = new Date().getMonth() + 1;
-
-        // Initialize single month year dropdown
-        yearSelect.innerHTML = '';
-        for (let y = nowY - 2; y <= nowY + 1; y++) {
-            const opt = document.createElement('option');
-            opt.value = y;
-            opt.textContent = y;
-            if (y === nowY) opt.selected = true;
-            yearSelect.appendChild(opt);
-        }
-        document.getElementById('report-month').value = currentMonth;
 
         // Initialize period year dropdowns
         if (yearFromSelect) {
@@ -1516,7 +1610,9 @@
                 if (y === nowY) opt.selected = true;
                 yearFromSelect.appendChild(opt);
             }
-            document.getElementById('report-month-from').value = 1; // January by default
+            if (!yearFromSelect.dataset.initialized) {
+                document.getElementById('report-month-from').value = 1; // January by default
+            }
         }
 
         if (yearToSelect) {
@@ -1528,86 +1624,54 @@
                 if (y === nowY) opt.selected = true;
                 yearToSelect.appendChild(opt);
             }
-            document.getElementById('report-month-to').value = currentMonth; // Current month by default
+            if (!yearToSelect.dataset.initialized) {
+                document.getElementById('report-month-to').value = currentMonth; // Current month by default
+            }
         }
 
-        // Setup toggle between single month and period
-        setupReportPeriodToggle();
-    }
-
-    function setupReportPeriodToggle() {
-        const toggleContainer = document.getElementById('report-period-toggle');
-        if (!toggleContainer) return;
-
-        toggleContainer.querySelectorAll('.toggle-option').forEach(option => {
-            option.addEventListener('click', function() {
-                // Update active state
-                toggleContainer.querySelectorAll('.toggle-option').forEach(o => o.classList.remove('active'));
-                this.classList.add('active');
-
-                const mode = this.dataset.mode;
-                const singleSelection = document.getElementById('single-month-selection');
-                const periodSelection = document.getElementById('period-selection');
-
-                if (mode === 'single') {
-                    singleSelection.classList.remove('hidden');
-                    periodSelection.classList.add('hidden');
-                } else {
-                    singleSelection.classList.add('hidden');
-                    periodSelection.classList.remove('hidden');
-                }
-            });
-        });
+        if (yearFromSelect) yearFromSelect.dataset.initialized = '1';
+        if (yearToSelect) yearToSelect.dataset.initialized = '1';
     }
 
     function getReportPeriodMode() {
-        const activeToggle = document.querySelector('#report-period-toggle .toggle-option.active');
-        return activeToggle?.dataset.mode || 'single';
+        return 'period'; // Always period mode now
     }
 
     function generateReport() {
         const resultsDiv = document.getElementById('report-results');
-        const mode = getReportPeriodMode();
 
-        let monthsToInclude = [];
-        let periodLabel = '';
+        const monthFrom = parseInt(getInputValue('report-month-from'));
+        const yearFrom = parseInt(getInputValue('report-year-from'));
+        const monthTo = parseInt(getInputValue('report-month-to'));
+        const yearTo = parseInt(getInputValue('report-year-to'));
 
-        if (mode === 'single') {
-            const month = parseInt(getInputValue('report-month'));
-            const year = parseInt(getInputValue('report-year'));
-            monthsToInclude.push({ month, year });
-            const monthNames = ['', 'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
-            periodLabel = `${monthNames[month]} ${year}`;
-        } else {
-            const monthFrom = parseInt(getInputValue('report-month-from'));
-            const yearFrom = parseInt(getInputValue('report-year-from'));
-            const monthTo = parseInt(getInputValue('report-month-to'));
-            const yearTo = parseInt(getInputValue('report-year-to'));
+        // Validate period
+        const fromDate = new Date(yearFrom, monthFrom - 1, 1);
+        const toDate = new Date(yearTo, monthTo - 1, 1);
 
-            // Validate period
-            const fromDate = new Date(yearFrom, monthFrom - 1, 1);
-            const toDate = new Date(yearTo, monthTo - 1, 1);
-
-            if (fromDate > toDate) {
-                showError('תאריך התחלה חייב להיות לפני תאריך סיום');
-                return;
-            }
-
-            // Generate all months in the range
-            let current = new Date(yearFrom, monthFrom - 1, 1);
-            const end = new Date(yearTo, monthTo - 1, 1);
-
-            while (current <= end) {
-                monthsToInclude.push({
-                    month: current.getMonth() + 1,
-                    year: current.getFullYear()
-                });
-                current.setMonth(current.getMonth() + 1);
-            }
-
-            const monthNames = ['', 'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
-            periodLabel = `${monthNames[monthFrom]} ${yearFrom} - ${monthNames[monthTo]} ${yearTo}`;
+        if (fromDate > toDate) {
+            showError('תאריך התחלה חייב להיות לפני תאריך סיום');
+            return;
         }
+
+        // Generate all months in the selected work period
+        let monthsToInclude = [];
+        let current = new Date(yearFrom, monthFrom - 1, 1);
+        const end = new Date(yearTo, monthTo - 1, 1);
+        const periodEndDate = new Date(yearTo, monthTo, 0);
+        const coveredHalfYears = getHalfYearsInPeriod(fromDate, periodEndDate);
+        const coveredHalfYearsCount = Math.max(coveredHalfYears.length, 1);
+
+        while (current <= end) {
+            monthsToInclude.push({
+                month: current.getMonth() + 1,
+                year: current.getFullYear()
+            });
+            current.setMonth(current.getMonth() + 1);
+        }
+
+        const monthNames = ['', 'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+        const periodLabel = `${monthNames[monthFrom]} ${yearFrom} - ${monthNames[monthTo]} ${yearTo}`;
 
         // Collect reports that are relevant to the selected months
         const periodReports = reports.filter(r => {
@@ -1655,26 +1719,15 @@
             return getDateValue(a) - getDateValue(b);
         });
 
-        const titleText = mode === 'single' ? 'דוח חודשי' : 'סיכום תקופה';
-        let html = `<h3>${titleText}: ${periodLabel}</h3>`;
+        // ---- PASS 1: Collect summary data ----
         let totalHours = 0;
         const uniqueDays = new Set();
         const summary = {};
-        let notesIdCounter = 0;
 
         periodReports.forEach(report => {
-            html += `<div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">`;
             if (report.type === 'daily' && report.date) {
-                // Add this calendar day to uniqueDays
                 uniqueDays.add(report.date);
-
-                const [yearStr, monthStr, dayStr] = report.date.split('-').map(Number);
-                const d = new Date(yearStr, monthStr - 1, dayStr);
-                html += `<h4><span class="material-symbols-outlined" style="vertical-align: middle; color:#2563eb; margin-left:6px;">calendar_today</span>${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}</h4>`;
-                if (report.workStatus === 'no-work') {
-                    html += '<p>לא עבד</p>';
-                } else {
-                    // Aggregate entries by researcher for this daily report
+                if (report.workStatus !== 'no-work') {
                     const agg = {};
                     (report.entries || []).forEach(e => {
                         const name = e.researcher || 'לא ידוע';
@@ -1683,13 +1736,129 @@
                         agg[name] += hrs;
                     });
                     Object.entries(agg).forEach(([name, hrs]) => {
-                        html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#059669; margin-left:6px;">schedule</span>${name}: ${hrs} שעות${''}</p>`;
                         totalHours += hrs;
                         summary[name] = summary[name] || { hours: 0, days: 0 };
                         summary[name].hours += hrs;
                     });
                 }
-                // Display personal notes if exists
+            } else if (report.type === 'weekly') {
+                let weekStart, weekEnd;
+                if (report.weekStart && report.weekEnd) {
+                    weekStart = new Date(report.weekStart);
+                    weekEnd = new Date(report.weekEnd);
+                } else if (report.week) {
+                    const weekParts = report.week.split(' - ');
+                    if (weekParts.length === 2) {
+                        const [startDay, startMonth, startYear] = weekParts[0].split('/').map(Number);
+                        const [endDay, endMonth, endYear] = weekParts[1].split('/').map(Number);
+                        weekStart = new Date(startYear, startMonth - 1, startDay);
+                        weekEnd = new Date(endYear, endMonth - 1, endDay);
+                    }
+                }
+                if (weekStart && weekEnd) {
+                    const iter = new Date(weekStart);
+                    while (iter <= weekEnd) {
+                        uniqueDays.add(formatDate(iter));
+                        iter.setDate(iter.getDate() + 1);
+                    }
+                }
+                (report.entries || []).forEach(e => {
+                    const days = Number(e.days || 0) || 0;
+                    const hours = days * (window.APP_CONFIG?.hoursPerDay || 8);
+                    totalHours += hours;
+                    summary[e.researcher] = summary[e.researcher] || { hours: 0, days: 0 };
+                    summary[e.researcher].days += days;
+                    summary[e.researcher].hours += hours;
+                });
+            }
+        });
+
+        const totalDays = uniqueDays.size;
+
+        // ---- BUILD HTML: Summary FIRST ----
+        let html = `<h3>סיכום תקופה: ${periodLabel}</h3>`;
+
+        // Summary section
+        html += '<div style="margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 12px; border:1px solid #bae6fd;">';
+        html += `<h3 style="margin-bottom: 12px;"><span class="material-symbols-outlined" style="vertical-align: middle; color:#2563eb; margin-left:6px;">insights</span>סיכום תקופה</h3>`;
+        html += `<p style="font-size: 16px; margin-bottom: 6px;"><strong>סה"כ שעות: ${totalHours}</strong></p>`;
+        html += `<p style="font-size: 16px; margin-bottom: 16px;"><strong>סה"כ ימים: ${totalDays}</strong></p>`;
+        html += `<h4 style="margin-top:12px; margin-bottom: 12px; border-bottom: 1px solid #bae6fd; padding-bottom: 8px;">פילוח לפי חוקר/פרויקט:</h4>`;
+
+        // Per-researcher summary with progress bars
+        Object.entries(summary).forEach(([name, s]) => {
+            const setting = getResearcherSetting(name);
+            const hoursPerDay = window.APP_CONFIG?.hoursPerDay || 8;
+            const actualDays = s.hours / hoursPerDay;
+            const settingDaysPerHalfYear = getResearcherWorkDays(setting);
+            const settingPercent = calculateResearcherActivityPercent(setting);
+
+            html += '<div style="margin-bottom: 16px; padding: 12px; background: white; border-radius: 8px; border: 1px solid #e2e8f0;">';
+            html += `<p style="margin: 0 0 4px 0; font-weight: 600;"><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#6b7280; margin-left:6px;">person</span>${name}: ${s.hours} שעות`;
+
+            if (settingPercent != null && settingDaysPerHalfYear != null) {
+                html += ` <span class="researcher-setting-badge" style="font-size:11px; padding:2px 8px;">${settingPercent}% | ${settingDaysPerHalfYear} ימים לחצי שנה</span>`;
+            } else {
+                html += ' <span class="researcher-setting-badge no-setting" style="font-size:11px; padding:2px 8px;">לא הוגדרו אחוז/ימים לחוקר</span>';
+            }
+            html += `</p>`;
+
+            // Progress bar - only if we have researcher settings
+            if (settingDaysPerHalfYear != null) {
+                const targetDays = roundToSingleDecimal(settingDaysPerHalfYear * coveredHalfYearsCount);
+                if (targetDays <= 0) {
+                    html += '<div style="font-size:12px; color:#64748b; margin-top: 6px;">לא ניתן לחשב התקדמות כי יעד התקופה הוא 0 ימים</div>';
+                    html += '</div>';
+                    return;
+                }
+                const percentage = Math.min(Math.round((actualDays / targetDays) * 100), 100);
+                const actualPct = Math.round((actualDays / targetDays) * 100);
+                const isOverflow = actualDays > targetDays;
+
+                html += '<div class="report-progress-container">';
+                html += `<span style="font-size:12px; color:#64748b; min-width: 80px;">${actualDays.toFixed(1)} / ${targetDays} ימים</span>`;
+                html += '<div class="report-progress-bar">';
+                html += `<div class="report-progress-fill ${isOverflow ? 'overflow' : ''}" style="width: ${percentage}%"></div>`;
+                html += '</div>';
+                html += `<span class="report-progress-label">${actualPct}%</span>`;
+                html += '</div>';
+
+                if (isOverflow) {
+                    const overflowDays = (actualDays - targetDays).toFixed(1);
+                    html += `<div class="report-overflow-warning"><span class="material-symbols-outlined" style="font-size:16px;">warning</span>חריגה מתוכנית העבודה: ${overflowDays} ימים מעל היעד לתקופה</div>`;
+                }
+            }
+
+            html += '</div>';
+        });
+
+        html += '</div>';
+
+        // ---- PASS 2: Daily details (BELOW the summary) ----
+        html += '<h3 style="margin-top: 20px; margin-bottom: 16px;">פירוט ימים:</h3>';
+        let notesIdCounter = 0;
+
+        periodReports.forEach(report => {
+            html += `<div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">`;
+            if (report.type === 'daily' && report.date) {
+                const [yearStr, monthStr, dayStr] = report.date.split('-').map(Number);
+                const d = new Date(yearStr, monthStr - 1, dayStr);
+                html += `<h4><span class="material-symbols-outlined" style="vertical-align: middle; color:#2563eb; margin-left:6px;">calendar_today</span>${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}</h4>`;
+                if (report.workStatus === 'no-work') {
+                    html += '<p>לא עבד</p>';
+                } else {
+                    const agg = {};
+                    (report.entries || []).forEach(e => {
+                        const name = e.researcher || 'לא ידוע';
+                        const hrs = Number(e.hours || 0) || 0;
+                        if (!agg[name]) agg[name] = 0;
+                        agg[name] += hrs;
+                    });
+                    Object.entries(agg).forEach(([name, hrs]) => {
+                        html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#059669; margin-left:6px;">schedule</span>${name}: ${hrs} שעות</p>`;
+                    });
+                }
+                // Display personal notes
                 if (report.personalNotes && report.personalNotes.trim()) {
                     const noteId = `personal-note-${notesIdCounter++}`;
                     const notes = report.personalNotes.trim();
@@ -1710,49 +1879,19 @@
                     html += `</div>`;
                 }
             } else if (report.type === 'weekly') {
-                // For weekly reports, compute the week range and list entries
-                const rangeLabel = report.week || `${(report.weekStart || '').split('-').reverse().join('/') } - ${(report.weekEnd || '').split('-').reverse().join('/')}`;
+                const rangeLabel = report.week || `${(report.weekStart || '').split('-').reverse().join('/')} - ${(report.weekEnd || '').split('-').reverse().join('/')}`;
                 html += `<h4><span class="material-symbols-outlined" style="vertical-align: middle; color:#7c3aed; margin-left:6px;">event</span>${rangeLabel}</h4>`;
-
-                // Determine week start/end as Date objects
-                let weekStart, weekEnd;
-                if (report.weekStart && report.weekEnd) {
-                    weekStart = new Date(report.weekStart);
-                    weekEnd = new Date(report.weekEnd);
-                } else if (report.week) {
-                    const weekParts = report.week.split(' - ');
-                    if (weekParts.length === 2) {
-                        const [startPart, endPart] = weekParts;
-                        const [startDay, startMonth, startYear] = startPart.split('/').map(Number);
-                        const [endDay, endMonth, endYear] = endPart.split('/').map(Number);
-                        weekStart = new Date(startYear, startMonth - 1, startDay);
-                        weekEnd = new Date(endYear, endMonth - 1, endDay);
-                    }
-                }
-
-                // Add each date in the weekly range to uniqueDays
-                if (weekStart && weekEnd) {
-                    const iter = new Date(weekStart);
-                    while (iter <= weekEnd) {
-                        uniqueDays.add(formatDate(iter));
-                        iter.setDate(iter.getDate() + 1);
-                    }
-                }
 
                 (report.entries || []).forEach(e => {
                     const days = Number(e.days || 0) || 0;
                     const hours = days * (window.APP_CONFIG?.hoursPerDay || 8);
                     html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#059669; margin-left:6px;">schedule</span>${e.researcher}: ${e.days} ימים (${hours} שעות)${e.detail ? ' - ' + e.detail : ''}</p>`;
-                    totalHours += hours;
-                    summary[e.researcher] = summary[e.researcher] || { hours: 0, days: 0 };
-                    summary[e.researcher].days += days;
-                    summary[e.researcher].hours += hours;
                 });
-                // Display personal notes if exists for weekly report
+                // Display personal notes for weekly report
                 if (report.personalNotes && report.personalNotes.trim()) {
                     const noteId = `personal-note-${notesIdCounter++}`;
                     const notes = report.personalNotes.trim();
-                    const truncateLength = 80; // approximately 1.5 sentences
+                    const truncateLength = 80;
                     const needsTruncation = notes.length > truncateLength;
                     const truncatedText = needsTruncation ? notes.substring(0, truncateLength) + '...' : notes;
 
@@ -1772,21 +1911,10 @@
             html += '</div>';
         });
 
-        // totalDays is number of unique calendar days in the selected period that had any report
-        const totalDays = uniqueDays.size;
-
-        const summaryTitle = mode === 'single' ? 'סיכום חודשי' : 'סיכום תקופה';
-        html += '<div style="margin-top: 30px; padding: 20px; background-color: #f9fafb; border-radius: 8px; border:1px dashed #e5e7eb;">';
-        html += `<h3><span class="material-symbols-outlined" style="vertical-align: middle; color:#2563eb; margin-left:6px;">insights</span>${summaryTitle}</h3><p><strong>סה"כ שעות: ${totalHours}</strong></p><p><strong>סה"כ ימים: ${totalDays}</strong></p><h4 style="margin-top:12px;">פילוח לפי חוקר/פרויקט:</h4>`;
-
-        // For the per-researcher summary, display only hours (days from weekly reports are already converted to hours)
-        Object.entries(summary).forEach(([name, s]) => {
-            html += `<p><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#6b7280; margin-left:6px;">person</span>${name}: ${s.hours} שעות</p>`;
-        });
-        html += '</div>';
         resultsDiv.innerHTML = html;
     }
     window.generateReport = generateReport;
+
 
     // ---------- Notifications ----------
     function updateNotifications() {
@@ -1891,7 +2019,20 @@
             div.className = 'researcher-item';
             const id = `researcher-${name}`;
             const checked = activeResearchers.includes(name) ? 'checked' : '';
-            div.innerHTML = `<input type="checkbox" id="${id}" ${checked}><label for="${id}">${name}</label>`;
+            const setting = getResearcherSetting(name);
+
+            let settingBadge = '';
+            if (checked) {
+                if (setting && (setting.activityPercent || setting.workDays)) {
+                    const pct = setting.activityPercent != null ? setting.activityPercent : workDaysToPercent(setting.workDays);
+                    const days = setting.workDays != null ? setting.workDays : percentToWorkDays(setting.activityPercent);
+                    settingBadge = `<span class="researcher-setting-badge">${pct}% | ${days} ימים/חצי שנה</span>`;
+                } else {
+                    settingBadge = `<span class="researcher-setting-badge no-setting">לא הוזנו אחוז/ימים</span>`;
+                }
+            }
+
+            div.innerHTML = `<input type="checkbox" id="${id}" ${checked}><label for="${id}">${name}</label>${settingBadge}`;
             container.appendChild(div);
         });
         // Add fixed, non-editable items at the end per spec
@@ -1901,8 +2042,36 @@
             div.innerHTML = `<input type="checkbox" checked disabled><label>${item}</label>`;
             container.appendChild(div);
         });
+        
+        // Update the select dropdown
+        populateAllResearchersSelect();
     }
     window.renderResearchers = renderResearchers;
+
+    function populateAllResearchersSelect() {
+        const select = document.getElementById('all-researchers');
+        if (!select) return;
+        const previousValue = select.value;
+        select.innerHTML = '<option value="">בחר/י חוקר/ת...</option>';
+        const list = Array.isArray(allResearchers) ? [...allResearchers] : [];
+
+        list.sort((a,b) => a.localeCompare(b, 'he')).forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            select.appendChild(opt);
+        });
+
+        if (list.length === 0) {
+            select.innerHTML = '<option value="">אין חוקרים זמינים</option>';
+            return;
+        }
+
+        if (previousValue && list.includes(previousValue)) {
+            select.value = previousValue;
+        }
+    }
+    window.populateAllResearchersSelect = populateAllResearchersSelect;
 
     function saveResearchers() {
         // Update local state immediately from checkboxes
@@ -1925,6 +2094,8 @@
                     refreshResearcherDropdowns();
                 })
                 .catch(() => {});
+            // Also save researcher settings (activity %, work days)
+            saveResearcherSettings(currentUser.uid).catch(() => {});
         }
     }
     window.saveResearchers = saveResearchers;
@@ -2413,7 +2584,62 @@
         currentWeek = getCurrentWeek();
     }
 
-    // ---------- Add New Researcher Functions ----------
+    // ---------- Add Existing Researcher Selection Function ----------
+    function addSelectedResearcher() {
+        const select = document.getElementById('all-researchers');
+        if (!select || !select.value) {
+            showError('אנא בחר/י חוקר/ת מהרשימה');
+            return;
+        }
+
+        const selectedName = select.value;
+        const isAlreadyActive = activeResearchers.includes(selectedName);
+
+        // Add to active list locally if needed
+        if (!isAlreadyActive) {
+            activeResearchers.push(selectedName);
+        }
+
+        // Read percent/days
+        const pctInput = document.getElementById('existing-researcher-percent');
+        const daysInput = document.getElementById('existing-researcher-days');
+        const pctVal = pctInput ? parseFloat(pctInput.value) : NaN;
+        const daysVal = daysInput ? parseFloat(daysInput.value) : NaN;
+
+        // Save settings if provided
+        if (!isNaN(pctVal) || !isNaN(daysVal)) {
+            const normalized = normalizeResearcherSetting({
+                activityPercent: !isNaN(pctVal) ? pctVal : null,
+                workDays: !isNaN(daysVal) ? daysVal : null
+            });
+            if (normalized) {
+                researcherSettings[selectedName] = normalized;
+            }
+        }
+
+        // Refresh UI
+        renderResearchers();
+        refreshResearcherDropdowns();
+        if (isAlreadyActive) {
+            showPopup(`החוקר/ת "${selectedName}" עודכן/ה בהצלחה`);
+        } else {
+            showPopup(`החוקר/ת "${selectedName}" שויך/ה בהצלחה`);
+        }
+
+        // Reset fields
+        select.value = '';
+        if (pctInput) pctInput.value = '';
+        if (daysInput) daysInput.value = '';
+
+        // Save to Firebase
+        if (currentUser) {
+            database.ref('users/' + currentUser.uid + '/activeResearchers').set(activeResearchers).catch(() => {
+                showError('שגיאה בשמירת הרשימה הפעילה');
+            });
+            saveResearcherSettings(currentUser.uid).catch(() => {});
+        }
+    }
+    window.addSelectedResearcher = addSelectedResearcher;
     function addNewResearcher() {
         const input = document.getElementById('new-researcher-name');
         if (!input) return;
@@ -2436,11 +2662,28 @@
             return;
         }
 
+        // קרא אחוז פעילות / ימי עבודה
+        const pctInput = document.getElementById('new-researcher-percent');
+        const daysInput = document.getElementById('new-researcher-days');
+        const pctVal = pctInput ? parseFloat(pctInput.value) : NaN;
+        const daysVal = daysInput ? parseFloat(daysInput.value) : NaN;
+
         // הוסף את החוקר לרשימה הגלובלית מקומית
         allResearchers.push(newName);
 
         // הוסף את החוקר לרשימת החוקרים הפעילים מקומית
         activeResearchers.push(newName);
+
+        // שמור הגדרות אחוז/ימים אם הוזנו
+        if (!isNaN(pctVal) || !isNaN(daysVal)) {
+            const normalized = normalizeResearcherSetting({
+                activityPercent: !isNaN(pctVal) ? pctVal : null,
+                workDays: !isNaN(daysVal) ? daysVal : null
+            });
+            if (normalized) {
+                researcherSettings[newName] = normalized;
+            }
+        }
 
         // רענן את התצוגה מיד
         renderResearchers();
@@ -2448,22 +2691,17 @@
 
         showPopup(`החוקר "${newName}" נוסף בהצלחה לרשימת החוקרים הפעילים`);
 
-        // נקה את השדה
+        // נקה את השדות
         input.value = '';
+        if (pctInput) pctInput.value = '';
+        if (daysInput) daysInput.value = '';
 
-        // נסה לעדכן את Firebase אבל אל תיכשל אם אין הרשאות
-        // זה יקרה רק אם המשתמש הוא מנהל
-        if (currentUser && isAdmin) {
-            database.ref('global/researchers').set(allResearchers).catch(() => {
-                // שקט - לא נציג שגיאה כי המשתמש רגיל לא צריך הרשאות לעדכן את הרשימה הגלובלית
-            });
-        }
-
-        // עדכן את Firebase עם הרשימה הפעילה המעודכנת
+        // עדכן את Firebase עם הרשימה הפעילה + הגדרות
         if (currentUser) {
             database.ref('users/' + currentUser.uid + '/activeResearchers').set(activeResearchers).catch(() => {
                 showError('שגיאה בשמירת החוקר ברשימה הפעילה');
             });
+            saveResearcherSettings(currentUser.uid).catch(() => {});
         }
     }
     window.addNewResearcher = addNewResearcher;
