@@ -1085,6 +1085,106 @@
             border-color: #fbbf24;
         }
 
+        .researcher-setting-btn {
+            margin-right: auto;
+            margin-left: 0;
+            border: 1px solid #93c5fd;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .researcher-setting-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(59, 130, 246, 0.25);
+        }
+
+        .researcher-setting-btn.no-setting {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+            border-color: #fbbf24;
+        }
+
+        .researcher-settings-modal {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(4px);
+            z-index: 30000;
+            padding: 16px;
+        }
+
+        .researcher-settings-dialog {
+            width: min(92vw, 460px);
+            background: #ffffff;
+            border-radius: 14px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.25);
+            padding: 18px;
+        }
+
+        .researcher-settings-modal.hidden {
+            display: none !important;
+        }
+
+        .researcher-settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .researcher-settings-close {
+            border: none;
+            background: transparent;
+            color: #6b7280;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+
+        .researcher-settings-close:hover {
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        .researcher-settings-title {
+            margin-bottom: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            text-align: center;
+            flex: 1;
+        }
+
+        .researcher-settings-name {
+            margin-bottom: 14px;
+            text-align: center;
+            color: #4b5563;
+            font-weight: 600;
+        }
+
+        .researcher-settings-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .researcher-settings-actions .btn {
+            flex: 1;
+            margin-top: 0;
+        }
+
         /* Progress bar styles for reports */
         .report-progress-container {
             display: flex;
@@ -1110,7 +1210,7 @@
         }
 
         .report-progress-fill.overflow {
-            background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
+            background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
         }
 
         .report-progress-label {
@@ -1125,14 +1225,14 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            color: #dc2626;
+            color: #111827;
             font-size: 13px;
             font-weight: 600;
             margin-top: 4px;
             padding: 4px 10px;
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
             border-radius: 8px;
-            border: 1px solid #fecaca;
+            border: 1px solid #fdba74;
         }
 
         .calendar-legend {
@@ -1804,8 +1904,8 @@
 
         <!-- Add Existing Researcher from Global List -->
         <div class="add-new-researcher-container existing-researcher-card" style="margin-top: 14px; margin-bottom: 24px;">
-            <div class="add-researcher-title">בחירת חוקר.ת מהרשימה</div>
-            <div class="add-researcher-subtitle">בחירה מהרשימה הגלובלית ושיוך מיידי לרשימת החוקרים הפעילים שלך</div>
+            <div class="add-researcher-title">בחירה או עדכון חוקר.ת מהרשימה</div>
+            <div class="add-researcher-subtitle">בחירה או עדכון מהרשימה ושיוך מיידי לרשימת החוקרים הפעילים שלך</div>
             <div class="add-researcher-form">
                 <div class="add-researcher-row">
                     <select id="all-researchers" class="researcher-select" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px;">
@@ -1826,7 +1926,7 @@
                 <div class="add-researcher-row" style="margin-top: 8px;">
                     <button class="btn-add" onclick="addSelectedResearcher()" style="width:100%;">
                         <span class="material-symbols-outlined">add</span>
-                        שיוך חוקר.ת מתוך הרשימה
+                        עדכנ.י
                     </button>
                 </div>
             </div>
@@ -1854,13 +1954,39 @@
                 <div class="add-researcher-row" style="margin-top: 8px;">
                     <button class="btn-add" onclick="addNewResearcher()" style="width:100%;">
                         <span class="material-symbols-outlined">add</span>
-                        הוספת חוקר.ת חדש.ה
+                       עדכנ.י
                     </button>
                 </div>
             </div>
         </div>
 
         <button class="btn" onclick="saveResearchers()">שמירה</button>
+    </div>
+
+    <div id="researcher-settings-modal" class="researcher-settings-modal hidden" onclick="closeResearcherSettingsPopup(event)">
+        <div class="researcher-settings-dialog" onclick="event.stopPropagation()">
+            <div class="researcher-settings-header">
+                <button type="button" class="researcher-settings-close" aria-label="סגור" onclick="closeResearcherSettingsPopup()">×</button>
+                <div class="researcher-settings-title">עדכון אחוז/ימים</div>
+                <span style="width:30px;"></span>
+            </div>
+            <div id="researcher-settings-name" class="researcher-settings-name"></div>
+
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label style="font-size:13px; font-weight:500; color:#374151;">% פעילות:</label>
+                <input type="number" id="popup-researcher-percent" placeholder="למשל: 10" min="0" max="100" step="0.1" oninput="onPopupResearcherPercentInput(this)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size:13px; font-weight:500; color:#374151;">ימי עבודה (מתוך 110):</label>
+                <input type="number" id="popup-researcher-days" placeholder="למשל: 11" min="0" max="110" step="0.1" oninput="onPopupResearcherDaysInput(this)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+            </div>
+
+            <div class="researcher-settings-actions">
+                <button class="btn secondary" onclick="closeResearcherSettingsPopup()">ביטול</button>
+                <button class="btn" onclick="saveResearcherSettingsFromPopup()">שמירה</button>
+            </div>
+        </div>
     </div>
 
     <script>

@@ -1794,7 +1794,7 @@
             const settingPercent = calculateResearcherActivityPercent(setting);
 
             html += '<div style="margin-bottom: 16px; padding: 12px; background: white; border-radius: 8px; border: 1px solid #e2e8f0;">';
-            html += `<p style="margin: 0 0 4px 0; font-weight: 600;"><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#6b7280; margin-left:6px;">person</span>${name}: ${s.hours} שעות`;
+            html += `<p style="margin: 0 0 4px 0; font-weight: 600;"><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#6b7280; margin-left:6px;">person</span>${name}: ${actualDays.toFixed(1)} ימים`;
 
             if (settingPercent != null && settingDaysPerHalfYear != null) {
                 html += ` <span class="researcher-setting-badge" style="font-size:11px; padding:2px 8px;">${settingPercent}% | ${settingDaysPerHalfYear} ימים לחצי שנה</span>`;
@@ -1816,7 +1816,7 @@
                 const isOverflow = actualDays > targetDays;
 
                 html += '<div class="report-progress-container">';
-                html += `<span style="font-size:12px; color:#64748b; min-width: 80px;">${actualDays.toFixed(1)} / ${targetDays} ימים</span>`;
+                html += `<span style="font-size:12px; color:#64748b; min-width: 80px;">${targetDays} / ${actualDays.toFixed(1)} ימים</span>`;
                 html += '<div class="report-progress-bar">';
                 html += `<div class="report-progress-fill ${isOverflow ? 'overflow' : ''}" style="width: ${percentage}%"></div>`;
                 html += '</div>';
@@ -2023,12 +2023,13 @@
 
             let settingBadge = '';
             if (checked) {
+                const encodedName = encodeURIComponent(name);
                 if (setting && (setting.activityPercent || setting.workDays)) {
                     const pct = setting.activityPercent != null ? setting.activityPercent : workDaysToPercent(setting.workDays);
                     const days = setting.workDays != null ? setting.workDays : percentToWorkDays(setting.activityPercent);
-                    settingBadge = `<span class="researcher-setting-badge">${pct}% | ${days} ימים/חצי שנה</span>`;
+                    settingBadge = `<button type="button" class="researcher-setting-btn" onclick="openResearcherSettingsPopup('${encodedName}')">${pct}% | ${days} ימים/חצי שנה</button>`;
                 } else {
-                    settingBadge = `<span class="researcher-setting-badge no-setting">לא הוזנו אחוז/ימים</span>`;
+                    settingBadge = `<button type="button" class="researcher-setting-btn no-setting" onclick="openResearcherSettingsPopup('${encodedName}')">הגדרת אחוז/ימים</button>`;
                 }
             }
 
@@ -2047,6 +2048,102 @@
         populateAllResearchersSelect();
     }
     window.renderResearchers = renderResearchers;
+
+    let popupSelectedResearcherName = null;
+
+    function openResearcherSettingsPopup(encodedName) {
+        const name = decodeURIComponent(encodedName || '');
+        if (!name) return;
+
+        popupSelectedResearcherName = name;
+
+        const titleEl = document.getElementById('researcher-settings-name');
+        const percentInput = document.getElementById('popup-researcher-percent');
+        const daysInput = document.getElementById('popup-researcher-days');
+        const modal = document.getElementById('researcher-settings-modal');
+        if (!titleEl || !percentInput || !daysInput || !modal) return;
+
+        const setting = getResearcherSetting(name);
+        titleEl.textContent = name;
+        percentInput.value = setting?.activityPercent != null ? setting.activityPercent : '';
+        daysInput.value = setting?.workDays != null ? setting.workDays : '';
+
+        modal.classList.remove('hidden');
+    }
+    window.openResearcherSettingsPopup = openResearcherSettingsPopup;
+
+    function closeResearcherSettingsPopup(event) {
+        if (event && event.target && event.target.id !== 'researcher-settings-modal') return;
+        const modal = document.getElementById('researcher-settings-modal');
+        if (!modal) return;
+        modal.classList.add('hidden');
+        popupSelectedResearcherName = null;
+    }
+    window.closeResearcherSettingsPopup = closeResearcherSettingsPopup;
+
+    function onPopupResearcherPercentInput(el) {
+        const val = parseFloat(el?.value || '');
+        const daysInput = document.getElementById('popup-researcher-days');
+        if (!daysInput) return;
+        if (!isNaN(val) && val >= 0) {
+            daysInput.value = percentToWorkDays(val);
+        } else {
+            daysInput.value = '';
+        }
+    }
+    window.onPopupResearcherPercentInput = onPopupResearcherPercentInput;
+
+    function onPopupResearcherDaysInput(el) {
+        const val = parseFloat(el?.value || '');
+        const pctInput = document.getElementById('popup-researcher-percent');
+        if (!pctInput) return;
+        if (!isNaN(val) && val >= 0) {
+            pctInput.value = workDaysToPercent(val);
+        } else {
+            pctInput.value = '';
+        }
+    }
+    window.onPopupResearcherDaysInput = onPopupResearcherDaysInput;
+
+    function saveResearcherSettingsFromPopup() {
+        if (!popupSelectedResearcherName) return;
+
+        const pctInput = document.getElementById('popup-researcher-percent');
+        const daysInput = document.getElementById('popup-researcher-days');
+        const pctVal = parseOptionalNumber(pctInput?.value);
+        const daysVal = parseOptionalNumber(daysInput?.value);
+
+        if (pctVal == null && daysVal == null) {
+            delete researcherSettings[popupSelectedResearcherName];
+        } else {
+            const normalized = normalizeResearcherSetting({
+                activityPercent: pctVal,
+                workDays: daysVal
+            });
+            if (!normalized) {
+                showError('יש להזין אחוז או ימים תקינים');
+                return;
+            }
+            researcherSettings[popupSelectedResearcherName] = normalized;
+        }
+
+        const finalizeSave = () => {
+            renderResearchers();
+            refreshResearcherDropdowns();
+            closeResearcherSettingsPopup();
+            showPopup('הגדרות החוקר עודכנו בהצלחה');
+        };
+
+        if (currentUser?.uid) {
+            saveResearcherSettings(currentUser.uid)
+                .then(finalizeSave)
+                .catch(() => showError('שגיאה בשמירת ההגדרות'));
+            return;
+        }
+
+        finalizeSave();
+    }
+    window.saveResearcherSettingsFromPopup = saveResearcherSettingsFromPopup;
 
     function populateAllResearchersSelect() {
         const select = document.getElementById('all-researchers');
