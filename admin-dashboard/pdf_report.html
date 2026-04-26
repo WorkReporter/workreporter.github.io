@@ -130,6 +130,8 @@
         /* Specific KPI Colors */
         .kpi-card.total-hours { border-left-color: var(--brand-primary); }
         .kpi-card.total-hours .icon { color: var(--brand-primary); }
+        .kpi-card.total-activity { border-left-color: var(--kpi-accent-1); }
+        .kpi-card.total-activity .icon { color: var(--kpi-accent-1); }
         .kpi-card.missing-days { border-left-color: var(--kpi-accent-3); }
         .kpi-card.missing-days .icon { color: var(--kpi-accent-3); }
 
@@ -190,6 +192,42 @@
         }
         .percentage-cell {
             font-weight: 600;
+        }
+
+        .comparison-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 0.9rem;
+            font-size: 0.95rem;
+        }
+
+        .status-chip {
+            display: inline-block;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-chip.good {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-chip.exact {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-chip.warn {
+            background: transparent;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+
+        .status-chip.na {
+            background: #e2e8f0;
+            color: #475569;
         }
 
         /* Other sections */
@@ -312,6 +350,11 @@
             <section class="printable-section">
                 <h3 class="section-title">מדדים מרכזיים</h3>
                 <div class="kpi-grid">
+                    <div class="kpi-card total-activity">
+                        <div class="icon">📅</div>
+                        <div class="value" id="kpi-total-activity">0 (0)</div>
+                        <div class="label">סה"כ פעילות בימים (שעות)</div>
+                    </div>
                     <div class="kpi-card total-hours">
                         <div class="icon">⏱️</div>
                         <div class="value" id="kpi-total-hours">0</div>
@@ -355,6 +398,45 @@
             </section>
 
             <section class="printable-section">
+                <h3 class="section-title">מתוכנן מול בפועל</h3>
+                <div class="table-container" style="margin-bottom:1rem;">
+                    <h4 style="margin-bottom:0.35rem;">דיווח גולמי לפי חוקרים</h4>
+                    <div class="comparison-subtitle" id="comparison-raw-note"></div>
+                    <table class="table-bi">
+                        <thead>
+                            <tr>
+                                <th>חוקר/קטגוריה</th>
+                                <th>תכנון למחצית</th>
+                                <th>יעד לתקופה (ימים)</th>
+                                <th>בפועל (ימים [שעות])</th>
+                                <th>פער (ימים)</th>
+                                <th>סטטוס</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparison-raw-body"></tbody>
+                    </table>
+                </div>
+
+                <div class="table-container">
+                    <h4 style="margin-bottom:0.35rem;">אחרי מיפוי/קטלוג מנהל/ת</h4>
+                    <div class="comparison-subtitle" id="comparison-mapped-note"></div>
+                    <table class="table-bi">
+                        <thead>
+                            <tr>
+                                <th>חוקר/קטגוריה</th>
+                                <th>תכנון למחצית</th>
+                                <th>יעד לתקופה (ימים)</th>
+                                <th>בפועל (ימים [שעות])</th>
+                                <th>פער (ימים)</th>
+                                <th>סטטוס</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparison-mapped-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="printable-section">
                  <h3 class="section-title">פירוט נוסף</h3>
                  <div class="details-section">
                     <h4>ימים ללא דיווח</h4>
@@ -391,6 +473,7 @@
         let reportData = null;
         let employeeData = null;
         let charts = { pie: null, bar: null };
+        const HOURS_PER_DAY = 8;
 
         function getReportDataFromStorage() {
             // Try sessionStorage first (new method for large data)
@@ -448,6 +531,10 @@
 
             out.missingDays = Array.isArray(out.missingDays) ? out.missingDays.map(d => new Date(d)) : [];
             out.totalHours = Number(out.totalHours || 0);
+            out.totalDays = Number(out.totalDays || (out.totalHours / HOURS_PER_DAY));
+            out.coveredHalfYearsCount = Math.max(Number(out.coveredHalfYearsCount || 1), 1);
+            out.plannedComparisonRaw = Array.isArray(out.plannedComparisonRaw) ? out.plannedComparisonRaw : [];
+            out.plannedComparisonMapped = Array.isArray(out.plannedComparisonMapped) ? out.plannedComparisonMapped : [];
             return out;
         }
 
@@ -497,15 +584,18 @@
 
             let totalHours = reportData.totalHours || catSeries.values.reduce((a, b) => a + b, 0);
             totalHours = Math.round(totalHours * 100) / 100;
+            const totalDays = Number(reportData.totalDays || (totalHours / HOURS_PER_DAY));
 
             const missingDaysCount = reportData.missingDays.length;
 
             // 3. Populate KPIs
             document.getElementById('kpi-total-hours').textContent = totalHours;
+            document.getElementById('kpi-total-activity').textContent = `${totalDays.toFixed(1)} ימים (${totalHours} שעות)`;
             document.getElementById('kpi-missing-days').textContent = missingDaysCount;
 
             // 4. Render Table & Details with both raw and processed data
             renderSummaryTable(catSeries.labels, catSeries.values, rawSeries, totalHours);
+            renderPlannedVsActualSection(reportData.plannedComparisonRaw, reportData.plannedComparisonMapped, reportData.coveredHalfYearsCount);
             renderMissingDays(reportData.missingDays);
 
             // 5. Render Charts with raw data for bar chart
@@ -624,6 +714,54 @@
             container.innerHTML = days.map(d =>
                 `<div class="missing-day-chip">${d.toLocaleDateString('he-IL')}</div>`
             ).join('');
+        }
+
+        function renderPlannedVsActualSection(rawRows, mappedRows, coveredHalfYearsCount) {
+            const rawNote = document.getElementById('comparison-raw-note');
+            const mappedNote = document.getElementById('comparison-mapped-note');
+            const rawBody = document.getElementById('comparison-raw-body');
+            const mappedBody = document.getElementById('comparison-mapped-body');
+            const noteText = `יעד לתקופה חושב לפי ${coveredHalfYearsCount} מחציות מכוסות (זהה ללוגיקת צד העובד/ת).`;
+
+            rawNote.textContent = noteText;
+            mappedNote.textContent = noteText;
+
+            const renderRows = (rows) => {
+                if (!rows || rows.length === 0) {
+                    return '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary);">אין נתונים להצגה</td></tr>';
+                }
+
+                return rows.map(row => {
+                    const plannedHalfText = row.plannedPerHalf != null
+                        ? `${Number(row.plannedPerHalf).toFixed(1)} ימים (${row.plannedPercent != null ? Number(row.plannedPercent).toFixed(1) : '—'}%)`
+                        : 'N/A';
+
+                    const plannedPeriodText = row.plannedForPeriod != null
+                        ? Number(row.plannedForPeriod).toFixed(1)
+                        : 'N/A';
+
+                    const diffText = row.diffDays != null
+                        ? `${Number(row.diffDays) > 0 ? '+' : ''}${Number(row.diffDays).toFixed(1)}`
+                        : 'N/A';
+
+                    const actualDays = Number(row.actualDays || 0).toFixed(1);
+                    const actualHours = Number(row.actualHours || 0).toFixed(2);
+                    const statusClass = row.statusClass || 'na';
+                    const statusText = row.status || 'N/A';
+
+                    return `<tr>
+                        <td>${escapeHtml(row.name)}</td>
+                        <td>${plannedHalfText}</td>
+                        <td>${plannedPeriodText}</td>
+                        <td>${actualDays} (${actualHours})</td>
+                        <td>${diffText}</td>
+                        <td><span class="status-chip ${statusClass}">${escapeHtml(statusText)}</span></td>
+                    </tr>`;
+                }).join('');
+            };
+
+            rawBody.innerHTML = renderRows(rawRows);
+            mappedBody.innerHTML = renderRows(mappedRows);
         }
 
         function destroyCharts() {

@@ -535,6 +535,195 @@
             font-weight: 600;
         }
 
+        .activity-summary-card {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1e3a8a;
+        }
+
+        .activity-summary-card .label {
+            font-weight: 600;
+        }
+
+        .activity-summary-card .value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e40af;
+        }
+
+        .comparison-table-wrap {
+            margin-top: 1rem;
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .comparison-table-wrap .stats-table {
+            min-width: 620px;
+        }
+
+        .comparison-table-wrap .stats-table th,
+        .comparison-table-wrap .stats-table td {
+            vertical-align: middle;
+        }
+
+        .comparison-table-wrap .col-status,
+        .comparison-table-wrap .col-action {
+            width: 110px;
+            min-width: 110px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .comparison-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .comparison-toggle-btn {
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #1e293b;
+            border-radius: 999px;
+            padding: 0.35rem 0.85rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .comparison-toggle-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .comparison-body.hidden {
+            display: none;
+        }
+
+        .row-toggle-btn {
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #334155;
+            border-radius: 8px;
+            padding: 0.25rem 0.6rem;
+            font-size: 0.82rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 62px;
+        }
+
+        .row-toggle-btn:hover {
+            background: #f8fafc;
+        }
+
+        .row-detail {
+            display: none;
+            background: #f8fafc;
+        }
+
+        .row-detail.open {
+            display: table-row;
+        }
+
+        .row-detail-content {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(180px, 1fr));
+            gap: 0.5rem 1rem;
+            padding: 0.75rem 0;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+
+        .row-detail-progress {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.25rem 0;
+        }
+
+        .progress-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .progress-bar {
+            width: 160px;
+            height: 10px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .progress-fill.overflow {
+            background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .progress-text {
+            min-width: 52px;
+            font-size: 0.85rem;
+            color: #334155;
+            font-weight: 600;
+        }
+
+        .comparison-note {
+            margin-top: 0.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .status-chip {
+            display: inline-block;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-chip.good {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-chip.exact {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-chip.warn {
+            background: transparent;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+
+        .status-chip.na {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
         /* Show-calculation panel styles */
         .calc-actions { margin: 12px 0 0; text-align: left; }
         .calc-btn { background:#0ea5e9; color:#fff; border:none; border-radius:8px; padding:8px 12px; font-weight:600; cursor:pointer; }
@@ -679,6 +868,232 @@
             .action-btn {
                 padding: 0.875rem 1.25rem;
                 font-size: 0.95rem;
+            }
+
+            .activity-summary-card {
+                padding: 0.85rem 1rem;
+            }
+
+            .activity-summary-card .value {
+                font-size: 1rem;
+            }
+
+            .comparison-section-header {
+                align-items: stretch;
+            }
+
+            .comparison-toggle-btn {
+                width: 100%;
+                text-align: center;
+                padding: 0.55rem 0.85rem;
+            }
+
+            .comparison-table-wrap {
+                border-radius: 8px;
+            }
+
+            .stats-table th,
+            .stats-table td {
+                padding: 0.65rem 0.45rem;
+                font-size: 0.86rem;
+            }
+
+            .comparison-table-wrap .stats-table th,
+            .comparison-table-wrap .stats-table td {
+                white-space: normal;
+            }
+
+            .comparison-table-wrap .col-status,
+            .comparison-table-wrap .col-action {
+                width: 96px;
+                min-width: 96px;
+                white-space: nowrap;
+            }
+
+            .progress-wrap {
+                gap: 0.45rem;
+            }
+
+            .progress-bar {
+                width: 120px;
+                height: 9px;
+            }
+
+            .progress-text {
+                min-width: 44px;
+                font-size: 0.8rem;
+            }
+
+            .row-toggle-btn {
+                width: auto;
+                padding: 0.35rem 0.5rem;
+                font-size: 0.8rem;
+            }
+
+            .row-detail-content {
+                grid-template-columns: 1fr;
+                gap: 0.4rem;
+                font-size: 0.84rem;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .report-section {
+                padding: 1rem;
+            }
+
+            .section-title {
+                font-size: 1.05rem;
+                margin-bottom: 0.85rem;
+            }
+
+            .comparison-note {
+                font-size: 0.8rem;
+            }
+
+            .activity-summary-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.35rem;
+            }
+
+            .activity-summary-card .value {
+                font-size: 0.95rem;
+            }
+
+            .stats-table th,
+            .stats-table td {
+                font-size: 0.8rem;
+                padding: 0.55rem 0.4rem;
+            }
+
+            .comparison-table-wrap .col-status,
+            .comparison-table-wrap .col-action {
+                width: 88px;
+                min-width: 88px;
+            }
+
+            .comparison-table-wrap {
+                overflow-x: visible;
+            }
+
+            .comparison-table-wrap .stats-table {
+                min-width: 100%;
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+            }
+
+            .comparison-table-wrap .stats-table thead {
+                display: none;
+            }
+
+            .comparison-table-wrap .stats-table tbody,
+            .comparison-table-wrap .stats-table tr,
+            .comparison-table-wrap .stats-table td {
+                display: block;
+                width: 100%;
+            }
+
+            .comparison-table-wrap .stats-table tbody > tr:not(.row-detail) {
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                background: #ffffff;
+                margin-bottom: 0.65rem;
+                padding: 0.25rem 0.65rem;
+            }
+
+            .comparison-table-wrap .stats-table tbody > tr > td {
+                border: none;
+                padding: 0.4rem 0;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
+                white-space: normal;
+                text-align: left !important;
+            }
+
+            .comparison-table-wrap .stats-table tbody > tr > td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: #334155;
+                text-align: right;
+                flex: 0 0 44%;
+            }
+
+            .comparison-table-wrap .stats-table tbody > tr.row-detail {
+                display: none;
+                border: 1px solid #e2e8f0;
+                border-top: none;
+                border-radius: 0 0 10px 10px;
+                background: #f8fafc;
+                margin-top: -0.65rem;
+                margin-bottom: 0.65rem;
+                padding: 0.1rem 0.65rem 0.45rem;
+            }
+
+            .comparison-table-wrap .stats-table tbody > tr.row-detail {
+                padding-top: 0;
+            }
+
+            .comparison-table-wrap .stats-table tbody > tr.row-detail.open {
+                display: block;
+            }
+
+            .comparison-table-wrap .stats-table tbody > tr.row-main.detail-open {
+                border-radius: 10px 10px 0 0;
+                margin-bottom: 0;
+            }
+
+            .comparison-table-wrap .stats-table tbody > tr.row-detail td {
+                display: block;
+                padding: 0.45rem 0;
+            }
+
+            .comparison-table-wrap .stats-table tbody > tr.row-detail td::before {
+                content: none;
+            }
+
+            .comparison-table-wrap .stats-table tfoot,
+            .comparison-table-wrap .stats-table tfoot tr,
+            .comparison-table-wrap .stats-table tfoot td {
+                display: block;
+                width: 100%;
+            }
+
+            .comparison-table-wrap .stats-table tfoot tr {
+                border: 1px dashed #cbd5e1;
+                border-radius: 10px;
+                padding: 0.3rem 0.65rem;
+                background: #f8fafc;
+            }
+
+            .comparison-table-wrap .stats-table tfoot td {
+                border: none;
+                padding: 0.35rem 0;
+                white-space: normal;
+                text-align: right !important;
+            }
+
+            .comparison-table-wrap .col-status,
+            .comparison-table-wrap .col-action {
+                width: auto;
+                min-width: 0;
+            }
+
+            .progress-wrap {
+                justify-content: flex-end;
+                width: 100%;
+            }
+
+            .progress-bar {
+                width: 92px;
+            }
+
+            .status-chip {
+                font-size: 0.75rem;
+                padding: 0.15rem 0.45rem;
             }
         }
 
@@ -1577,6 +1992,289 @@
 
         // Helper to format hours - shows integer if whole, otherwise shows decimal
         const formatHours = (hours) => parseFloat(Number(hours).toFixed(2));
+        const HOURS_PER_DAY = window.APP_CONFIG?.hoursPerDay || 8;
+        const TOTAL_WORK_DAYS = window.APP_CONFIG?.totalWorkDaysPerHalfYear || window.APP_CONFIG?.totalWorkDaysPerYear || 110;
+
+        function roundToSingleDecimal(value) {
+            return Math.round(Number(value || 0) * 10) / 10;
+        }
+
+        function parseOptionalNumber(value) {
+            if (value === null || value === undefined || value === '') return null;
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+
+        function percentToWorkDays(percent) {
+            const parsedPercent = parseOptionalNumber(percent);
+            if (parsedPercent == null) return null;
+            return roundToSingleDecimal((parsedPercent / 100) * TOTAL_WORK_DAYS);
+        }
+
+        function workDaysToPercent(days) {
+            const parsedDays = parseOptionalNumber(days);
+            if (parsedDays == null || !TOTAL_WORK_DAYS) return null;
+            return roundToSingleDecimal((parsedDays / TOTAL_WORK_DAYS) * 100);
+        }
+
+        function normalizeResearcherSetting(setting) {
+            if (!setting || typeof setting !== 'object') return null;
+
+            let activityPercent = parseOptionalNumber(setting.activityPercent);
+            let workDays = parseOptionalNumber(setting.workDays);
+
+            if (activityPercent == null && workDays == null) return null;
+            if (activityPercent != null && activityPercent < 0) activityPercent = null;
+            if (workDays != null && workDays < 0) workDays = null;
+            if (activityPercent == null && workDays == null) return null;
+
+            if (activityPercent == null && workDays != null) {
+                activityPercent = workDaysToPercent(workDays);
+            }
+            if (workDays == null && activityPercent != null) {
+                workDays = percentToWorkDays(activityPercent);
+            }
+
+            return {
+                activityPercent: activityPercent != null ? roundToSingleDecimal(activityPercent) : null,
+                workDays: workDays != null ? roundToSingleDecimal(workDays) : null
+            };
+        }
+
+        function getHalfYearKey(dateObj) {
+            const d = new Date(dateObj);
+            const half = d.getMonth() <= 5 ? 'H1' : 'H2';
+            return `${d.getFullYear()}-${half}`;
+        }
+
+        function getHalfYearsInPeriod(fromDate, toDate) {
+            const from = new Date(fromDate.getFullYear(), fromDate.getMonth(), 1);
+            const to = new Date(toDate.getFullYear(), toDate.getMonth(), 1);
+            const keys = new Set();
+            const cursor = new Date(from);
+
+            while (cursor <= to) {
+                keys.add(getHalfYearKey(cursor));
+                cursor.setMonth(cursor.getMonth() + 1);
+            }
+
+            return Array.from(keys);
+        }
+
+        function getCoveredHalfYearsCount() {
+            if (!AppState.selectedStartDate || !AppState.selectedEndDate) return 1;
+            const periodEndDate = new Date(AppState.selectedEndDate.getFullYear(), AppState.selectedEndDate.getMonth(), AppState.selectedEndDate.getDate());
+            const coveredHalfYears = getHalfYearsInPeriod(AppState.selectedStartDate, periodEndDate);
+            return Math.max(coveredHalfYears.length, 1);
+        }
+
+        function normalizeResearcherSettingsMap(settingsMap) {
+            const normalized = {};
+            Object.entries(settingsMap || {}).forEach(([name, setting]) => {
+                const normalizedSetting = normalizeResearcherSetting(setting);
+                if (normalizedSetting) {
+                    normalized[name] = normalizedSetting;
+                }
+            });
+            return normalized;
+        }
+
+        function getSelectedEmployeeSettingsMap() {
+            return normalizeResearcherSettingsMap(AppState.selectedEmployee?.researcherSettings || {});
+        }
+
+        function calculatePlannedVsActualRows(actualHoursMap, settingsMap, halfYearsCount) {
+            const allNames = new Set([
+                ...Object.keys(settingsMap || {}),
+                ...Array.from((actualHoursMap || new Map()).keys())
+            ]);
+
+            const rows = Array.from(allNames).map(name => {
+                const setting = normalizeResearcherSetting(settingsMap?.[name]);
+                const actualHours = Number(actualHoursMap?.get(name) || 0);
+                const actualDays = roundToSingleDecimal(actualHours / HOURS_PER_DAY);
+                const plannedPerHalf = setting?.workDays ?? null;
+                const plannedPercent = setting?.activityPercent ?? null;
+                const plannedForPeriod = plannedPerHalf != null ? roundToSingleDecimal(plannedPerHalf * halfYearsCount) : null;
+                const diffDays = plannedForPeriod != null ? roundToSingleDecimal(actualDays - plannedForPeriod) : null;
+
+                let status = 'N/A';
+                let statusClass = 'na';
+                if (plannedForPeriod != null) {
+                    status = `ניצל ${actualDays.toFixed(1)} ימים מתוך ${plannedForPeriod.toFixed(1)}`;
+                    if (diffDays > 0) {
+                        statusClass = 'good';
+                    } else if (diffDays < 0) {
+                        statusClass = 'warn';
+                    } else {
+                        statusClass = 'exact';
+                    }
+                }
+
+                return {
+                    name,
+                    actualHours,
+                    actualDays,
+                    plannedPerHalf,
+                    plannedPercent,
+                    plannedForPeriod,
+                    diffDays,
+                    status,
+                    statusClass
+                };
+            });
+
+            rows.sort((a, b) => {
+                if (b.actualHours !== a.actualHours) return b.actualHours - a.actualHours;
+                return a.name.localeCompare(b.name, 'he');
+            });
+
+            return rows;
+        }
+
+        function calculateComparisonTotals(rows) {
+            const totals = {
+                plannedDaysComparable: 0,
+                actualDaysComparable: 0,
+                actualDaysAll: 0
+            };
+
+            (rows || []).forEach(row => {
+                totals.actualDaysAll += Number(row.actualDays || 0);
+                if (row.plannedForPeriod != null) {
+                    totals.plannedDaysComparable += Number(row.plannedForPeriod || 0);
+                    totals.actualDaysComparable += Number(row.actualDays || 0);
+                }
+            });
+
+            totals.plannedDaysComparable = roundToSingleDecimal(totals.plannedDaysComparable);
+            totals.actualDaysComparable = roundToSingleDecimal(totals.actualDaysComparable);
+            totals.actualDaysAll = roundToSingleDecimal(totals.actualDaysAll);
+            totals.diffComparable = roundToSingleDecimal(totals.actualDaysComparable - totals.plannedDaysComparable);
+            return totals;
+        }
+
+        function getProgressForRow(row) {
+            if (row.plannedForPeriod == null || row.plannedForPeriod <= 0) {
+                return {
+                    percentRaw: null,
+                    percentLabel: 'N/A',
+                    widthPercent: 0,
+                    isOverflow: false
+                };
+            }
+            const percentRaw = (row.actualDays / row.plannedForPeriod) * 100;
+            return {
+                percentRaw,
+                percentLabel: `${Math.round(percentRaw)}%`,
+                widthPercent: Math.max(0, Math.min(percentRaw, 100)),
+                isOverflow: percentRaw > 100
+            };
+        }
+
+        window.toggleComparisonSection = function(sectionId) {
+            const body = document.getElementById(`${sectionId}-body`);
+            const btn = document.getElementById(`${sectionId}-toggle-btn`);
+            if (!body || !btn) return;
+            const isHidden = body.classList.toggle('hidden');
+            btn.textContent = isHidden ? 'הצגה' : 'הסתרה';
+        };
+
+        window.toggleComparisonRow = function(sectionId, rowIndex) {
+            const detail = document.getElementById(`${sectionId}-row-${rowIndex}-detail`);
+            const btn = document.getElementById(`${sectionId}-row-${rowIndex}-btn`);
+            const mainRow = document.getElementById(`${sectionId}-row-${rowIndex}-main`);
+            if (!detail || !btn) return;
+            const isOpen = detail.classList.toggle('open');
+            if (mainRow) {
+                mainRow.classList.toggle('detail-open', isOpen);
+            }
+            btn.textContent = isOpen ? 'סגור' : 'פרטים';
+        };
+
+        function renderComparisonTable(title, rows, halfYearsCount, sectionId) {
+            const totals = calculateComparisonTotals(rows);
+            const rowsHtml = (rows || []).map((row, idx) => {
+                const progress = getProgressForRow(row);
+                const plannedLabel = row.plannedForPeriod != null
+                    ? `${row.plannedForPeriod.toFixed(1)} יעד`
+                    : 'N/A יעד';
+
+                const detailPlannedHalf = row.plannedPerHalf != null
+                    ? `${row.plannedPerHalf.toFixed(1)} ימים (${row.plannedPercent != null ? row.plannedPercent.toFixed(1) : '—'}%)`
+                    : 'N/A';
+
+                const detailDiff = row.diffDays != null
+                    ? `${row.diffDays > 0 ? '+' : ''}${row.diffDays.toFixed(1)} ימים`
+                    : 'N/A';
+
+                const detailProgressText = progress.percentRaw != null
+                    ? `${Math.round(progress.percentRaw)}%`
+                    : 'N/A';
+
+                return `
+                    <tr id="${sectionId}-row-${idx}-main" class="row-main">
+                        <td data-label="חוקר/קטגוריה" style="font-weight:600;">${row.name}</td>
+                        <td data-label="בפועל (ימים)" style="text-align:center;">${row.actualDays.toFixed(1)} ימים</td>
+                        <td data-label="יעד לתקופה" style="text-align:center;">${plannedLabel}</td>
+                        <td data-label="סטטוס" class="col-status" style="text-align:center;"><span class="status-chip ${row.statusClass}">${row.status}</span></td>
+                        <td data-label="פעולות" class="col-action" style="text-align:center;"><button id="${sectionId}-row-${idx}-btn" class="row-toggle-btn" onclick="toggleComparisonRow('${sectionId}', ${idx})">פרטים</button></td>
+                    </tr>
+                    <tr id="${sectionId}-row-${idx}-detail" class="row-detail">
+                        <td colspan="5">
+                            <div class="row-detail-content">
+                                <div class="row-detail-progress">
+                                    <strong>התקדמות:</strong>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill ${progress.isOverflow ? 'overflow' : ''}" style="width:${progress.widthPercent}%;"></div>
+                                    </div>
+                                    <span class="progress-text">${detailProgressText}</span>
+                                </div>
+                                <div><strong>תכנון למחצית:</strong> ${detailPlannedHalf}</div>
+                                <div><strong>בפועל שעות:</strong> ${formatHours(row.actualHours)}</div>
+                                <div><strong>פער מול יעד:</strong> ${detailDiff}</div>
+                                <div><strong>בפועל:</strong> ${row.actualDays.toFixed(1)} ימים</div>
+                            </div>
+                        </td>
+                    </tr>`;
+            }).join('');
+
+            return `
+                <div class="report-section">
+                    <div class="comparison-section-header">
+                        <h3 class="section-title" style="margin-bottom:0;">${title}</h3>
+                        <button id="${sectionId}-toggle-btn" class="comparison-toggle-btn" onclick="toggleComparisonSection('${sectionId}')">הצגה</button>
+                    </div>
+                    <div class="comparison-note">חישוב יעד לתקופה לפי ${halfYearsCount} מחציות מכוסות (זהה ללוגיקת צד העובד/ת).</div>
+                    <div id="${sectionId}-body" class="comparison-body hidden">
+                    <div class="comparison-table-wrap">
+                        <table class="stats-table" style="margin-bottom:0;">
+                            <thead>
+                                <tr>
+                                    <th>חוקר/קטגוריה</th>
+                                    <th>בפועל (ימים)</th>
+                                    <th>יעד לתקופה</th>
+                                    <th class="col-status">סטטוס</th>
+                                    <th class="col-action">פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml || '<tr><td colspan="5" style="text-align:center; color:#64748b;">אין נתונים להצגה</td></tr>'}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td data-label="סיכום" style="font-weight:700;">סה"כ</td>
+                                    <td data-label="בפועל (ימים)" style="text-align:center; font-weight:700;">${totals.actualDaysComparable.toFixed(1)}</td>
+                                    <td data-label="יעד לתקופה" style="text-align:center; font-weight:700;">${totals.plannedDaysComparable.toFixed(1)}</td>
+                                    <td data-label="פער" class="col-status" style="text-align:center; font-weight:700;">${totals.diffComparable > 0 ? '+' : ''}${totals.diffComparable.toFixed(1)}</td>
+                                    <td data-label="הערה" class="col-action" style="text-align:center;">מתוך ${totals.actualDaysAll.toFixed(1)} ימים כולל N/A</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    </div>
+                </div>`;
+        }
 
         // Helper to format a YYYY-MM-DD string as dd-mm-yyyy for display
         function formatDisplayDate(dateStr) {
@@ -2237,14 +2935,22 @@
     const finalData = {
         categories: new Map(),
         totalHours: data.totalHours,
+        totalDays: roundToSingleDecimal((Number(data.totalHours) || 0) / HOURS_PER_DAY),
         categorizedTasks: [],
         missingDays: data.missingDays,
-        calculation: { relative: [] }
+        calculation: { relative: [] },
+        coveredHalfYearsCount: getCoveredHalfYearsCount(),
+        plannedComparisonRaw: [],
+        plannedComparisonMapped: []
     };
+
+    const rawHoursByResearcher = new Map();
 
     // אתחול הקטגוריות עם הנתונים הגולמיים
     data.researchers.forEach((hours, researcher) => {
-        finalData.categories.set(researcher, hours);
+        const numericHours = Number(hours) || 0;
+        finalData.categories.set(researcher, numericHours);
+        rawHoursByResearcher.set(researcher, numericHours);
     });
 
     const fixedTasks = [];
@@ -2417,13 +3123,22 @@
     fixedTasks.forEach(processSingleTask);
     relativeTasks.forEach(processSingleTask);
 
+    const settingsMap = getSelectedEmployeeSettingsMap();
+    finalData.plannedComparisonRaw = calculatePlannedVsActualRows(rawHoursByResearcher, settingsMap, finalData.coveredHalfYearsCount);
+    finalData.plannedComparisonMapped = calculatePlannedVsActualRows(finalData.categories, settingsMap, finalData.coveredHalfYearsCount);
+
     return finalData;
 }
 
 
         function renderFinalReport(data) {
+            const totalDaysText = Number(data.totalDays || 0).toFixed(1);
             let html = `
                 <div class="report-section">
+                    <div class="activity-summary-card">
+                        <span class="label">סך הפעילות בתקופה</span>
+                        <span class="value">${totalDaysText} ימים (${formatHours(data.totalHours)} שעות)</span>
+                    </div>
                     <h3 class="section-title">סך השעות:</h3>
                     <table class="stats-table" style="border-collapse: collapse; border-spacing: 0;">
                         <thead><tr><th></th><th>סה"כ שעות</th><th>אחוז מסך השעות</th></tr></thead>
@@ -2438,6 +3153,9 @@
                     </div>
                     <div id="calc-panel" class="calc-panel" style="display:none;"></div>
                 </div>`;
+
+            html += renderComparisonTable('מתוכנן מול בפועל - דיווח גולמי לפי חוקרים', data.plannedComparisonRaw, data.coveredHalfYearsCount, 'comparison-raw');
+            html += renderComparisonTable('מתוכנן מול בפועל - אחרי מיפוי/קטלוג מנהל/ת', data.plannedComparisonMapped, data.coveredHalfYearsCount, 'comparison-mapped');
 
             if (data.categorizedTasks.length > 0) {
                  html += `<div class="report-section"><h3 class="section-title">פירוט משימות וסמינרים:</h3>
@@ -2547,7 +3265,8 @@
             const startDateStr = selectedStartDate.toLocaleDateString('he-IL');
             const endDateStr = selectedEndDate.toLocaleDateString('he-IL');
             const dateForFilename = new Date().toISOString().slice(0, 10);
-            let csvContent = `דו"ח שעות עבור:,${employeeName}\nתקופה:,${startDateStr} - ${endDateStr}\n\n`;
+            let csvContent = `דו"ח שעות עבור:,${employeeName}\nתקופה:,${startDateStr} - ${endDateStr}\n`;
+            csvContent += `סך פעילות:,${Number(finalReport.totalDays || 0).toFixed(1)} ימים (${formatHours(finalReport.totalHours)} שעות)\n\n`;
 
             const summaryRows = [];
             finalReport.categories.forEach((hours, category) => {
@@ -2561,6 +3280,30 @@
                 { key: 'percentage', header: 'אחוז מסך השעות' }
             ];
             csvContent += toCsv(summaryRows, summaryColumns) + '\n\n';
+
+            const appendComparisonCsv = (title, rows) => {
+                csvContent += `${title}\n`;
+                const comparisonRows = (rows || []).map(r => ({
+                    category: r.name,
+                    plannedHalf: r.plannedPerHalf != null ? `${r.plannedPerHalf.toFixed(1)} ימים (${r.plannedPercent != null ? r.plannedPercent.toFixed(1) : '—'}%)` : 'N/A',
+                    plannedPeriod: r.plannedForPeriod != null ? r.plannedForPeriod.toFixed(1) : 'N/A',
+                    actual: `${r.actualDays.toFixed(1)} (${formatHours(r.actualHours)})`,
+                    diff: r.diffDays != null ? `${r.diffDays > 0 ? '+' : ''}${r.diffDays.toFixed(1)}` : 'N/A',
+                    status: r.status
+                }));
+                const comparisonColumns = [
+                    { key: 'category', header: 'חוקר/קטגוריה' },
+                    { key: 'plannedHalf', header: 'תכנון למחצית' },
+                    { key: 'plannedPeriod', header: 'יעד לתקופה (ימים)' },
+                    { key: 'actual', header: 'בפועל (ימים [שעות])' },
+                    { key: 'diff', header: 'פער (ימים)' },
+                    { key: 'status', header: 'סטטוס' }
+                ];
+                csvContent += toCsv(comparisonRows, comparisonColumns) + '\n\n';
+            };
+
+            appendComparisonCsv('מתוכנן מול בפועל - דיווח גולמי לפי חוקרים', finalReport.plannedComparisonRaw);
+            appendComparisonCsv('מתוכנן מול בפועל - אחרי מיפוי/קטלוג מנהל/ת', finalReport.plannedComparisonMapped);
 
             if (finalReport.missingDays.length > 0) {
                 const missingDaysRows = finalReport.missingDays.map(date => ({ date: date.toLocaleDateString('he-IL') }));
@@ -2584,9 +3327,13 @@
 
             const serializableReport = {
                 totalHours: AppState.finalReport.totalHours,
+                totalDays: AppState.finalReport.totalDays,
                 categorizedTasks: AppState.finalReport.categorizedTasks,
                 missingDays: (AppState.finalReport.missingDays || []).map(d => d.toISOString()),
                 categories: Array.from(AppState.finalReport.categories.entries()),
+                coveredHalfYearsCount: AppState.finalReport.coveredHalfYearsCount,
+                plannedComparisonRaw: AppState.finalReport.plannedComparisonRaw,
+                plannedComparisonMapped: AppState.finalReport.plannedComparisonMapped,
                 raw: {
                     researchers: rawResearchers,
                     seminarsTotal: formatHours(rawSeminarsTotal),
