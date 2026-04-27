@@ -2289,7 +2289,7 @@
                                     <td data-label="בפועל (ימים)" style="text-align:center; font-weight:700;">${totals.actualDaysComparable.toFixed(1)}</td>
                                     <td data-label="יעד לתקופה" style="text-align:center; font-weight:700;">${totals.plannedDaysComparable.toFixed(1)}</td>
                                     <td data-label="פער" class="col-status" style="text-align:center; font-weight:700;">${totals.diffComparable > 0 ? `נוצל ${totals.diffComparable.toFixed(1)} ימים מעל המכסה` : totals.diffComparable < 0 ? `נותר ${Math.abs(totals.diffComparable).toFixed(1)} ימים למכסה` : '0 ימים'}</td>
-                                    <td data-label="הערה" class="col-action" style="text-align:center;">מתוך ${totals.actualDaysAll.toFixed(1)} ימים כולל N/A</td>
+                                    <td data-label="הערה" class="col-action" style="text-align:center;">—</td>
                                 </tr>
                             </tfoot>
                         </table>
