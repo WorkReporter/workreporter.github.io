@@ -542,11 +542,11 @@
             align-items: center;
             gap: 0.75rem;
             padding: 1rem 1.25rem;
-            margin-bottom: 1rem;
+            margin-top: 0.85rem;
             border-radius: 10px;
-            border: 1px solid #bfdbfe;
-            background: #eff6ff;
-            color: #1e3a8a;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #334155;
         }
 
         .activity-summary-card .label {
@@ -556,7 +556,7 @@
         .activity-summary-card .value {
             font-size: 1.1rem;
             font-weight: 700;
-            color: #1e40af;
+            color: #1e293b;
         }
 
         .comparison-table-wrap {
@@ -3154,6 +3154,7 @@
 
 
         function renderFinalReport(data) {
+            const totalDaysText = Number(data.totalDays || 0).toFixed(1);
             let html = `
                 <div class="report-section">
                     <h3 class="section-title">סך השעות:</h3>
@@ -3165,6 +3166,10 @@
                 html += `<tr><td style="font-weight: 500; border-bottom: 1px solid var(--border);">${category}</td><td style="text-align: center; border-bottom: 1px solid var(--border);">${formatHours(hours)}</td><td class="percentage-cell" style="border-bottom: 1px solid var(--border);">${percentage}%</td></tr>`;
             });
             html += `</tbody></table>
+                    <div class="activity-summary-card">
+                        <span class="label">סך הפעילות בתקופה</span>
+                        <span class="value">${totalDaysText} ימים (${formatHours(data.totalHours)} שעות)</span>
+                    </div>
                     <div class="calc-actions">
                         <button class="calc-btn" onclick="toggleCalculation()">הצגת חישוב - חלוקה יחסית</button>
                     </div>
