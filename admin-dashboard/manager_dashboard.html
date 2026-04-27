@@ -3154,13 +3154,8 @@
 
 
         function renderFinalReport(data) {
-            const totalDaysText = Number(data.totalDays || 0).toFixed(1);
             let html = `
                 <div class="report-section">
-                    <div class="activity-summary-card">
-                        <span class="label">סך הפעילות בתקופה</span>
-                        <span class="value">${totalDaysText} ימים (${formatHours(data.totalHours)} שעות)</span>
-                    </div>
                     <h3 class="section-title">סך השעות:</h3>
                     <table class="stats-table" style="border-collapse: collapse; border-spacing: 0;">
                         <thead><tr><th></th><th>סה"כ שעות</th><th>אחוז מסך השעות</th></tr></thead>
