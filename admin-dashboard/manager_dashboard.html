@@ -2011,6 +2011,7 @@
 
         // Helper to format hours - shows integer if whole, otherwise shows decimal
         const formatHours = (hours) => parseFloat(Number(hours).toFixed(2));
+        const hoursToDaysText = (hours) => roundToSingleDecimal((Number(hours) || 0) / HOURS_PER_DAY).toFixed(1);
         const HOURS_PER_DAY = window.APP_CONFIG?.hoursPerDay || 8;
         const TOTAL_WORK_DAYS = window.APP_CONFIG?.totalWorkDaysPerHalfYear || window.APP_CONFIG?.totalWorkDaysPerYear || 110;
 
@@ -3159,11 +3160,11 @@
                 <div class="report-section">
                     <h3 class="section-title">סך השעות:</h3>
                     <table class="stats-table" style="border-collapse: collapse; border-spacing: 0;">
-                        <thead><tr><th></th><th>סה"כ שעות</th><th>אחוז מסך השעות</th></tr></thead>
+                        <thead><tr><th></th><th>סה"כ שעות</th><th>סה"כ ימים</th><th>אחוז מסך השעות</th></tr></thead>
                         <tbody>`;
             data.categories.forEach((hours, category) => {
                 const percentage = data.totalHours > 0 ? Math.round((hours / data.totalHours) * 100) : 0;
-                html += `<tr><td style="font-weight: 500; border-bottom: 1px solid var(--border);">${category}</td><td style="text-align: center; border-bottom: 1px solid var(--border);">${formatHours(hours)}</td><td class="percentage-cell" style="border-bottom: 1px solid var(--border);">${percentage}%</td></tr>`;
+                html += `<tr><td style="font-weight: 500; border-bottom: 1px solid var(--border);">${category}</td><td style="text-align: center; border-bottom: 1px solid var(--border);">${formatHours(hours)}</td><td style="text-align: center; border-bottom: 1px solid var(--border);">${hoursToDaysText(hours)}</td><td class="percentage-cell" style="border-bottom: 1px solid var(--border);">${percentage}%</td></tr>`;
             });
             html += `</tbody></table>
                     <div class="activity-summary-card">
@@ -3293,12 +3294,13 @@
             const summaryRows = [];
             finalReport.categories.forEach((hours, category) => {
                 const percentage = finalReport.totalHours > 0 ? Math.round((hours / finalReport.totalHours) * 100) : 0;
-                summaryRows.push({ category, hours: formatHours(hours), percentage: `${percentage}%` });
+                summaryRows.push({ category, hours: formatHours(hours), days: hoursToDaysText(hours), percentage: `${percentage}%` });
             });
-            summaryRows.push({ category: 'סה"כ', hours: formatHours(finalReport.totalHours), percentage: '100%' });
+            summaryRows.push({ category: 'סה"כ', hours: formatHours(finalReport.totalHours), days: hoursToDaysText(finalReport.totalHours), percentage: '100%' });
             const summaryColumns = [
                 { key: 'category', header: 'קטגוריה' },
                 { key: 'hours', header: 'סה"כ שעות' },
+                { key: 'days', header: 'סה"כ ימים' },
                 { key: 'percentage', header: 'אחוז מסך השעות' }
             ];
             csvContent += toCsv(summaryRows, summaryColumns) + '\n\n';
