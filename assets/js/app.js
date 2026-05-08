@@ -55,18 +55,100 @@
     let activeResearchersRef = null; // live subscription ref for cleanup
     let backdateOverrideCache = null; // cached backdate settings from Firebase
     let researcherSettings = {}; // { "researcher name": { activityPercent: N, workDays: N } }
+    let managedMode = null; // { uid, name, date } when manager is editing for an employee
+    let currentResearcherSettingsDate = null; // tracks which date loadResearcherSettings was called with
+
+    // ---------- Managed Mode Helpers ----------
+    function getTargetUserId() {
+        return managedMode ? managedMode.uid : (currentUser?.uid || null);
+    }
+
+    function isManagedMode() {
+        return managedMode !== null;
+    }
+
+    function getManagedModeParams() {
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode');
+        if (mode !== 'managedResearchers') return null;
+        const uid = params.get('uid');
+        const name = params.get('name');
+        const date = params.get('date');
+        if (!uid) return null;
+        return { uid, name: name || '', date: date || new Date().toISOString().slice(0, 10) };
+    }
+
+    async function loadActiveResearchersOnce(uid) {
+        if (!uid) return;
+        const snap = await database.ref('users/' + uid + '/activeResearchers').once('value');
+        activeResearchers = Array.isArray(snap.val()) ? snap.val() : [];
+    }
+
+    async function enterManagedResearchersMode(uid, name, dateStr) {
+        const date = dateStr ? new Date(dateStr) : new Date();
+        managedMode = { uid, name, date: dateStr || new Date().toISOString().slice(0, 10) };
+
+        // Reset allResearchers from global list
+        try {
+            const globalSnap = await database.ref('global/researchers').once('value');
+            allResearchers = Array.isArray(globalSnap.val()) ? globalSnap.val() : (window.APP_CONFIG?.defaultResearchers || []);
+        } catch (e) {
+            allResearchers = window.APP_CONFIG?.defaultResearchers || [];
+        }
+
+        // Load employee data (one-shot, no listener)
+        await loadActiveResearchersOnce(uid);
+        await mergeUserSpecificResearchers(uid);
+        await loadResearcherSettings(uid, date);
+
+        // Show managed banner
+        const banner = document.getElementById('managed-mode-banner');
+        const nameEl = document.getElementById('managed-user-name');
+        if (banner) banner.classList.remove('hidden');
+        if (nameEl) nameEl.textContent = name || uid;
+
+        // Show half-year indicator
+        const halfLabel = document.getElementById('managed-half-year-label');
+        if (halfLabel) halfLabel.textContent = getHalfYearKey(date);
+
+        // Hide navigation and other screens, show only researchers screen
+        const nav = document.querySelector('.navigation');
+        if (nav) nav.style.display = 'none';
+
+        showScreen('active-researchers');
+
+        // Remove the injected CSS that was hiding login screen and hide loading
+        const injectedStyle = document.getElementById('managed-mode-hide-login');
+        if (injectedStyle) injectedStyle.remove();
+        hideLoading();
+    }
+
+    function exitManagedMode() {
+        managedMode = null;
+        currentResearcherSettingsDate = null;
+        // Navigate back to manager dashboard
+        window.location.href = '/admin-dashboard/manager_dashboard.html';
+    }
+    window.exitManagedMode = exitManagedMode;
 
     // Expose for admin module and UI
     window.getAppState = function () {
-        return { currentUser, isAdmin, activeResearchers, allResearchers, reports, currentMonth, currentYear, selectedDate, currentWeek, researcherSettings };
+        return { currentUser, isAdmin, activeResearchers, allResearchers, reports, currentMonth, currentYear, selectedDate, currentWeek, researcherSettings, managedMode };
     };
     window.setIsAdmin = function (v) { isAdmin = v; updateAdminUI(); };
 
     // ---------- Auth Flow ----------
     function init() {
         auth.onAuthStateChanged(async (user) => {
-            // show loading overlay while we resolve auth + initial data
-            showLoading('טוען את הנתונים שלך....');
+            // In managed mode, show a different loading message and keep login hidden
+            const managedParams = getManagedModeParams();
+            if (managedParams?.uid) {
+                showLoading('מייבא נתוני עובד...');
+                const loginScreen = document.getElementById('login-screen');
+                if (loginScreen) loginScreen.classList.add('hidden');
+            } else {
+                showLoading('טוען את הנתונים שלך....');
+            }
 
             if (user) {
                 currentUser = user;
@@ -103,7 +185,11 @@
                             await userRef.set({ firstName: '', lastName: '', position: '', email, createdAt: new Date().toISOString() }).catch(() => {});
                         }
                     }
-                    if (isAdmin) {
+                    // Route: managed mode bypasses admin redirect
+                    const managedParams = getManagedModeParams();
+                    if (isAdmin && managedParams?.uid) {
+                        await enterManagedResearchersMode(managedParams.uid, managedParams.name, managedParams.date);
+                    } else if (isAdmin) {
                         window.location.href = '/admin-dashboard/manager_dashboard.html';
                     } else {
                         showScreen('main');
@@ -116,7 +202,11 @@
                     } catch (_) {
                         isAdmin = false;
                     }
-                    if (isAdmin) {
+                    // Route: managed mode bypasses admin redirect
+                    const managedParams = getManagedModeParams();
+                    if (isAdmin && managedParams?.uid) {
+                        await enterManagedResearchersMode(managedParams.uid, managedParams.name, managedParams.date);
+                    } else if (isAdmin) {
                         window.location.href = '/admin-dashboard/manager_dashboard.html';
                     } else {
                         showScreen('main');
@@ -332,18 +422,52 @@
     }
 
     // ---------- Researcher Settings (activity %, work days) ----------
-    function loadResearcherSettings(uid) {
-        if (!uid) return Promise.resolve();
-        return database.ref('users/' + uid + '/researcherSettings').once('value').then(snap => {
-            const data = snap.val();
-            researcherSettings = normalizeResearcherSettingsMap(data && typeof data === 'object' ? data : {});
-        }).catch(() => { researcherSettings = {}; });
+    // Half-year-aware load: checks researcherSettingsByHalfYear/{key} first,
+    // falls back to legacy researcherSettings for 2026-H1 only.
+    async function loadResearcherSettings(uid, date) {
+        if (!uid) return;
+        const effectiveDate = date || new Date();
+        currentResearcherSettingsDate = new Date(effectiveDate);
+        const halfKey = getHalfYearKey(effectiveDate);
+
+        // 1. Try loading from new half-year path
+        try {
+            const snap = await database.ref(
+                'users/' + uid + '/researcherSettingsByHalfYear/' + halfKey
+            ).once('value');
+            if (snap.exists()) {
+                researcherSettings = normalizeResearcherSettingsMap(snap.val());
+                return;
+            }
+        } catch (e) { /* fall through */ }
+
+        // 2. Fallback: only for 2026-H1, read from legacy path
+        if (halfKey === '2026-H1') {
+            try {
+                const snap = await database.ref(
+                    'users/' + uid + '/researcherSettings'
+                ).once('value');
+                const data = snap.val();
+                researcherSettings = normalizeResearcherSettingsMap(
+                    data && typeof data === 'object' ? data : {}
+                );
+                return;
+            } catch (e) { /* ignore */ }
+        }
+
+        // 3. No data found - start with empty settings (e.g., new half-year)
+        researcherSettings = {};
     }
 
-    function saveResearcherSettings(uid, settings) {
-        if (!uid) return Promise.resolve();
+    // Always saves to the new half-year-specific path. NEVER writes to legacy researcherSettings.
+    function saveResearcherSettings(uid, settings, date) {
+        const targetUid = uid || getTargetUserId();
+        if (!targetUid) return Promise.resolve();
+        const halfKey = getHalfYearKey(date || currentResearcherSettingsDate || new Date());
         researcherSettings = normalizeResearcherSettingsMap(settings || researcherSettings);
-        return database.ref('users/' + uid + '/researcherSettings').set(researcherSettings);
+        return database.ref(
+            'users/' + targetUid + '/researcherSettingsByHalfYear/' + halfKey
+        ).set(researcherSettings);
     }
 
     function roundToSingleDecimal(value) {
@@ -443,13 +567,16 @@
 
     // Expose for admin/external modules
     window.getResearcherSetting = getResearcherSetting;
-    window.saveResearcherSettings = (uid, s) => saveResearcherSettings(uid, s);
-    window.loadResearcherSettings = (uid) => loadResearcherSettings(uid);
+    window.saveResearcherSettings = (uid, s, d) => saveResearcherSettings(uid, s, d);
+    window.loadResearcherSettings = (uid, d) => loadResearcherSettings(uid, d);
     window.getResearcherWorkDays = getResearcherWorkDays;
     window.calculateResearcherActivityPercent = calculateResearcherActivityPercent;
     window.percentToWorkDays = percentToWorkDays;
     window.workDaysToPercent = workDaysToPercent;
     window.TOTAL_WORK_DAYS = TOTAL_WORK_DAYS;
+    window.getTargetUserId = getTargetUserId;
+    window.isManagedMode = isManagedMode;
+    window.getHalfYearKey = getHalfYearKey;
 
     // ---------- Reports ----------
     function loadReports(uid) {
@@ -1637,7 +1764,7 @@
         return 'period'; // Always period mode now
     }
 
-    function generateReport() {
+    async function generateReport() {
         const resultsDiv = document.getElementById('report-results');
 
         const monthFrom = parseInt(getInputValue('report-month-from'));
@@ -1775,6 +1902,58 @@
 
         const totalDays = uniqueDays.size;
 
+        // ---- Load per-half-year researcher settings ----
+        const uidForReport = getTargetUserId();
+        const settingsByHalfYear = {};
+        if (uidForReport) {
+            for (const hk of coveredHalfYears) {
+                try {
+                    const snap = await database.ref(
+                        'users/' + uidForReport + '/researcherSettingsByHalfYear/' + hk
+                    ).once('value');
+                    if (snap.exists()) {
+                        settingsByHalfYear[hk] = normalizeResearcherSettingsMap(snap.val());
+                    } else if (hk === '2026-H1') {
+                        // Fallback to legacy for 2026-H1
+                        const legacySnap = await database.ref(
+                            'users/' + uidForReport + '/researcherSettings'
+                        ).once('value');
+                        if (legacySnap.exists()) {
+                            settingsByHalfYear[hk] = normalizeResearcherSettingsMap(legacySnap.val());
+                        }
+                    }
+                } catch (e) { /* ignore per-half-year errors */ }
+            }
+        }
+
+        // Helper: get aggregated workDays across half-years for a researcher
+        function getAggregatedWorkDays(researcherName) {
+            let total = 0;
+            let found = false;
+            for (const hk of coveredHalfYears) {
+                const s = settingsByHalfYear[hk]?.[researcherName];
+                if (s && s.workDays != null) {
+                    total += s.workDays;
+                    found = true;
+                }
+            }
+            return found ? total : null;
+        }
+
+        // Helper: get aggregated activityPercent (average across half-years)
+        function getAggregatedPercent(researcherName) {
+            let total = 0;
+            let count = 0;
+            for (const hk of coveredHalfYears) {
+                const s = settingsByHalfYear[hk]?.[researcherName];
+                if (s && s.activityPercent != null) {
+                    total += s.activityPercent;
+                    count++;
+                }
+            }
+            return count > 0 ? roundToSingleDecimal(total / count) : null;
+        }
+
         // ---- BUILD HTML: Summary FIRST ----
         let html = `<h3>סיכום תקופה: ${periodLabel}</h3>`;
 
@@ -1787,25 +1966,24 @@
 
         // Per-researcher summary with progress bars
         Object.entries(summary).forEach(([name, s]) => {
-            const setting = getResearcherSetting(name);
             const hoursPerDay = window.APP_CONFIG?.hoursPerDay || 8;
             const actualDays = s.hours / hoursPerDay;
-            const settingDaysPerHalfYear = getResearcherWorkDays(setting);
-            const settingPercent = calculateResearcherActivityPercent(setting);
+            const settingDaysAggregated = getAggregatedWorkDays(name);
+            const settingPercent = getAggregatedPercent(name);
 
             html += '<div style="margin-bottom: 16px; padding: 12px; background: white; border-radius: 8px; border: 1px solid #e2e8f0;">';
             html += `<p style="margin: 0 0 4px 0; font-weight: 600;"><span class="material-symbols-outlined" style="font-size:18px; vertical-align: middle; color:#6b7280; margin-left:6px;">person</span>${name}: ${actualDays.toFixed(1)} ימים`;
 
-            if (settingPercent != null && settingDaysPerHalfYear != null) {
-                html += ` <span class="researcher-setting-badge" style="font-size:11px; padding:2px 8px;">${settingPercent}% | ${settingDaysPerHalfYear} ימים לחצי שנה</span>`;
+            if (settingPercent != null && settingDaysAggregated != null) {
+                html += ` <span class="researcher-setting-badge" style="font-size:11px; padding:2px 8px;">${settingPercent}% | ${settingDaysAggregated} ימים לתקופה</span>`;
             } else {
                 html += ' <span class="researcher-setting-badge no-setting" style="font-size:11px; padding:2px 8px;">לא הוגדרו אחוז/ימים לחוקר</span>';
             }
             html += `</p>`;
 
-            // Progress bar - only if we have researcher settings
-            if (settingDaysPerHalfYear != null) {
-                const targetDays = roundToSingleDecimal(settingDaysPerHalfYear * coveredHalfYearsCount);
+            // Progress bar - only if we have aggregated settings
+            if (settingDaysAggregated != null) {
+                const targetDays = roundToSingleDecimal(settingDaysAggregated);
                 if (targetDays <= 0) {
                     html += '<div style="font-size:12px; color:#64748b; margin-top: 6px;">לא ניתן לחשב התקדמות כי יעד התקופה הוא 0 ימים</div>';
                     html += '</div>';
@@ -2134,8 +2312,9 @@
             showPopup('הגדרות החוקר עודכנו בהצלחה');
         };
 
-        if (currentUser?.uid) {
-            saveResearcherSettings(currentUser.uid)
+        const targetUid = getTargetUserId();
+        if (targetUid) {
+            saveResearcherSettings(targetUid)
                 .then(finalizeSave)
                 .catch(() => showError('שגיאה בשמירת ההגדרות'));
             return;
@@ -2182,8 +2361,9 @@
         refreshResearcherDropdowns();
 
         // Persist to database; server listener will also update state
-        if (currentUser) {
-            database.ref('users/' + currentUser.uid + '/activeResearchers')
+        if (currentUser || isManagedMode()) {
+            const targetUid = getTargetUserId();
+            database.ref('users/' + targetUid + '/activeResearchers')
                 .set(activeResearchers)
                 .then(() => {
                     showPopup('החוקרים הפעילים נשמרו בהצלחה');
@@ -2192,7 +2372,7 @@
                 })
                 .catch(() => {});
             // Also save researcher settings (activity %, work days)
-            saveResearcherSettings(currentUser.uid).catch(() => {});
+            saveResearcherSettings(targetUid).catch(() => {});
         }
     }
     window.saveResearchers = saveResearchers;
@@ -2729,11 +2909,12 @@
         if (daysInput) daysInput.value = '';
 
         // Save to Firebase
-        if (currentUser) {
-            database.ref('users/' + currentUser.uid + '/activeResearchers').set(activeResearchers).catch(() => {
+        if (currentUser || isManagedMode()) {
+            const targetUid = getTargetUserId();
+            database.ref('users/' + targetUid + '/activeResearchers').set(activeResearchers).catch(() => {
                 showError('שגיאה בשמירת הרשימה הפעילה');
             });
-            saveResearcherSettings(currentUser.uid).catch(() => {});
+            saveResearcherSettings(targetUid).catch(() => {});
         }
     }
     window.addSelectedResearcher = addSelectedResearcher;
@@ -2794,11 +2975,12 @@
         if (daysInput) daysInput.value = '';
 
         // עדכן את Firebase עם הרשימה הפעילה + הגדרות
-        if (currentUser) {
-            database.ref('users/' + currentUser.uid + '/activeResearchers').set(activeResearchers).catch(() => {
+        if (currentUser || isManagedMode()) {
+            const targetUid = getTargetUserId();
+            database.ref('users/' + targetUid + '/activeResearchers').set(activeResearchers).catch(() => {
                 showError('שגיאה בשמירת החוקר ברשימה הפעילה');
             });
-            saveResearcherSettings(currentUser.uid).catch(() => {});
+            saveResearcherSettings(targetUid).catch(() => {});
         }
     }
     window.addNewResearcher = addNewResearcher;

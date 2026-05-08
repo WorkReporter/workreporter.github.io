@@ -1110,6 +1110,50 @@
             color: #92400e;
             border-color: #fbbf24;
         }
+        /* ---- Managed Mode Banner ---- */
+        .managed-mode-banner {
+            position: sticky;
+            top: 0;
+            z-index: 1500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-bottom: 2px solid #f59e0b;
+            color: #92400e;
+            font-weight: 600;
+            font-size: 14px;
+            flex-wrap: wrap;
+        }
+        .managed-mode-banner.hidden { display: none; }
+        .managed-mode-banner .material-symbols-outlined {
+            color: #d97706;
+            font-size: 22px;
+        }
+        .managed-mode-exit-btn {
+            background: #92400e;
+            color: #fff;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            margin-right: 6px;
+            transition: background 0.15s;
+        }
+        .managed-mode-exit-btn:hover { background: #78350f; }
+        .managed-half-year-badge {
+            font-size: 12px;
+            background: #fbbf24;
+            color: #78350f;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
 
         .researcher-settings-modal {
             position: fixed;
@@ -1742,6 +1786,27 @@
         </div>
     </div>
 
+    <!-- Immediately hide login screen if entering managed mode (prevents login flash) -->
+    <script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('mode') === 'managedResearchers' && params.get('uid')) {
+            // Hide login screen instantly via CSS (before DOM is ready)
+            var style = document.createElement('style');
+            style.id = 'managed-mode-hide-login';
+            style.textContent = '#login-screen { display: none !important; } .navigation { display: none !important; } .header { display: none !important; }';
+            document.head.appendChild(style);
+            // Once DOM is ready, also set loading message
+            document.addEventListener('DOMContentLoaded', function() {
+                var loading = document.getElementById('loading-screen');
+                var msg = document.getElementById('loading-message');
+                if (loading) loading.classList.remove('hidden');
+                if (msg) msg.textContent = 'מייבא נתוני עובד...';
+            });
+        }
+    })();
+    </script>
+
     <div class="header">
         <div class="user-area" onclick="showScreen('user-profile')" role="button" aria-label="פתח פרופיל משתמש">
             <div class="user-icon"><span class="material-symbols-outlined" aria-hidden="true">account_circle</span></div>
@@ -1852,6 +1917,14 @@
         </div>
     </div>
 </div>
+
+    <!-- Managed-Mode Banner (visible only when manager edits for employee) -->
+    <div id="managed-mode-banner" class="managed-mode-banner hidden">
+        <span class="material-symbols-outlined">supervised_user_circle</span>
+        <span>מצב ניהול: עריכת חוקרים עבור <strong id="managed-user-name"></strong></span>
+        <span class="managed-half-year-badge" id="managed-half-year-label"></span>
+        <button onclick="exitManagedMode()" class="managed-mode-exit-btn">חזרה לדשבורד</button>
+    </div>
 
     <div id="main-screen" class="container hidden">
         <!-- הודעה זמנית על אפשרות דיווח בדיעבד -->

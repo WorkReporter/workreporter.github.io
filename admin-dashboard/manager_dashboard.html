@@ -1708,6 +1708,99 @@
             margin: 1rem 0 0.5rem 0;
             padding-top: 0.5rem;
         }
+
+        /* ---- Employee Action Modal ---- */
+        .employee-action-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(3px);
+        }
+        .employee-action-overlay.open {
+            display: flex;
+        }
+        .employee-action-dialog {
+            background: #fff;
+            border-radius: 18px;
+            padding: 2rem 2rem 1.5rem;
+            width: min(420px, 92vw);
+            box-shadow: 0 24px 60px rgba(15,23,42,0.22);
+            text-align: center;
+            animation: scaleIn 0.22s cubic-bezier(.34,1.4,.64,1) both;
+        }
+        @keyframes scaleIn {
+            from { transform: scale(0.85); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+        .employee-action-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin-bottom: 0.35rem;
+        }
+        .employee-action-subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 1.5rem;
+        }
+        .employee-action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .employee-action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 1.2rem 1.4rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            min-width: 130px;
+            font-family: inherit;
+        }
+        .employee-action-btn:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59,130,246,0.15);
+        }
+        .employee-action-btn .action-icon {
+            font-size: 2.2rem;
+        }
+        .employee-action-btn .action-label {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #1e293b;
+            line-height: 1.3;
+        }
+        .employee-action-btn .action-desc {
+            font-size: 0.75rem;
+            color: #64748b;
+            line-height: 1.3;
+        }
+        .employee-action-cancel {
+            display: block;
+            margin: 1.2rem auto 0;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: inherit;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: color 0.15s;
+        }
+        .employee-action-cancel:hover { color: #475569; }
     </style>
 </head>
 <body>
@@ -1960,6 +2053,29 @@
         </div>
     </div>
 
+    <!-- Employee Action Modal -->
+    <div id="employee-action-overlay" class="employee-action-overlay" onclick="closeEmployeeActionModal()">
+        <div class="employee-action-dialog" onclick="event.stopPropagation()">
+            <div class="employee-action-name" id="employee-action-name"></div>
+            <div class="employee-action-subtitle">בחר/י פעולה לביצוע</div>
+            <div class="employee-action-buttons">
+                <button type="button" class="employee-action-btn" onclick="selectEmployeeCalendar()" id="action-btn-calendar">
+                    <span class="action-icon">📅</span>
+                    <span class="action-label">לוח שנה</span>
+                    <span class="action-desc">בחירת תאריכים<br>והפקת דו"ח</span>
+                </button>
+                <button type="button" class="employee-action-btn" onclick="selectEmployeeResearchers()" id="action-btn-researchers">
+                    <span class="action-icon">👥</span>
+                    <span class="action-label">חוקרים פעילים</span>
+                    <span class="action-desc">עריכת אחוזים<br>וימי עבודה</span>
+                </button>
+            </div>
+            <button type="button" class="employee-action-cancel" onclick="closeEmployeeActionModal()">&#x2715; ביטול</button>
+        </div>
+    </div>
+
+
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script>
         const AppState = {
@@ -1968,6 +2084,7 @@
             managerName: '',
             employees: [],
             selectedEmployee: null,
+            pendingEmployee: null,
             selectedStartDate: null,
             selectedEndDate: null,
             currentMonth: new Date().getMonth(),
@@ -2515,6 +2632,40 @@
             showScreen('final-screen');
         }
 
+        // ---- Employee Action Modal ----
+        function showEmployeeActionModal(emp) {
+            AppState.pendingEmployee = emp;
+            const nameEl = document.getElementById('employee-action-name');
+            if (nameEl) nameEl.textContent = `${emp.firstName} ${emp.lastName}`;
+            const overlay = document.getElementById('employee-action-overlay');
+            if (overlay) overlay.classList.add('open');
+        }
+        window.showEmployeeActionModal = showEmployeeActionModal;
+
+        function closeEmployeeActionModal() {
+            const overlay = document.getElementById('employee-action-overlay');
+            if (overlay) overlay.classList.remove('open');
+        }
+        window.closeEmployeeActionModal = closeEmployeeActionModal;
+
+        function selectEmployeeCalendar() {
+            closeEmployeeActionModal();
+            if (AppState.pendingEmployee) {
+                showCalendarScreen(AppState.pendingEmployee);
+            }
+        }
+        window.selectEmployeeCalendar = selectEmployeeCalendar;
+
+        function selectEmployeeResearchers() {
+            closeEmployeeActionModal();
+            const emp = AppState.pendingEmployee;
+            if (!emp || !emp.id) return;
+            const name = encodeURIComponent(`${emp.firstName} ${emp.lastName}`);
+            const date = new Date().toISOString().slice(0, 10);
+            window.location.href = `../homepage.html?mode=managedResearchers&uid=${encodeURIComponent(emp.id)}&name=${name}&date=${date}`;
+        }
+        window.selectEmployeeResearchers = selectEmployeeResearchers;
+
         async function renderEmployeesList() {
             const container = document.getElementById('employees-list');
             if (!AppState.isManager) {
@@ -2528,10 +2679,17 @@
                     container.innerHTML = '<div class="empty-state">לא נמצאו עובדים המשויכים אליך</div>';
                     return;
                 }
-                container.innerHTML = employees.map(emp => `
-                    <button class="employee-button" onclick='showCalendarScreen(${JSON.stringify(emp).replace(/"/g, "&quot;")})'>
+                container.innerHTML = employees.map((emp, idx) => `
+                    <button type="button" class="employee-button" data-emp-index="${idx}">
                         ${emp.firstName} ${emp.lastName}
                     </button>`).join('');
+                container.querySelectorAll('.employee-button').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const index = parseInt(btn.dataset.empIndex);
+                        showEmployeeActionModal(employees[index]);
+                    });
+                });
             } catch (error) {
                 console.error('Error rendering employees:', error);
                 container.innerHTML = '<div class="empty-state">שגיאה בטעינת רשימת העובדים</div>';
@@ -3456,6 +3614,15 @@
 
 
         document.addEventListener('DOMContentLoaded', () => {
+            // ---- Instant UI restore from cache (eliminates re-auth flash) ----
+            const cachedManagerName = sessionStorage.getItem('mgr_dashboard_name');
+            if (cachedManagerName) {
+                AppState.managerName = cachedManagerName;
+                AppState.isManager = true;
+                document.getElementById('header-name').textContent = ` ${cachedManagerName} `;
+                showScreen('employees-screen');
+            }
+
             window.firebaseApp.auth.onAuthStateChanged(async (user) => {
                 AppState.currentUser = user;
                 if (user) {
@@ -3467,14 +3634,17 @@
                             const userData = userSnapshot.val();
                             AppState.managerName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim();
                         }
-                        AppState.isManager = true; // Simplified for this context
+                        AppState.isManager = true;
                         document.getElementById('header-name').textContent = ` ${AppState.managerName} `;
+                        sessionStorage.setItem('mgr_dashboard_name', AppState.managerName);
                         renderEmployeesList();
                     } catch (error) {
                         console.error('Auth error:', error);
+                        sessionStorage.removeItem('mgr_dashboard_name');
                         document.getElementById('employees-list').innerHTML = '<div class="empty-state">שגיאה בבדיקת הרשאות</div>';
                     }
                 } else {
+                    sessionStorage.removeItem('mgr_dashboard_name');
                     document.getElementById('header-name').textContent = ' מערכת דיווח פעילות';
                     document.getElementById('employees-list').innerHTML = '<div class="empty-state">יש להתחבר כדי לגשת למערכת</div>';
                 }
