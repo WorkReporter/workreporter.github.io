@@ -11,6 +11,8 @@ window.APP_CONFIG = {
         databaseURL: "https://work-report-volcani-default-rtdb.firebaseio.com/"
     },
     hoursPerDay: 8,
+    totalWorkDaysPerHalfYear: 110,
+    totalWorkDaysPerYear: 110,
     // Default global researchers list (seed)
     defaultResearchers: [
         "אביטל בכר",

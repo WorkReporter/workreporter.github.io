@@ -101,7 +101,7 @@
         }
 
         .calendar-day.has-report {
-            /* animation removed for professional look */
+            transition: background 0.25s ease, transform 0.2s ease;
         }
 
         .btn:hover {
@@ -1066,6 +1066,219 @@
             cursor: pointer;
         }
 
+        .researcher-setting-badge {
+            margin-right: auto;
+            margin-left: 0;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 1px solid #93c5fd;
+        }
+
+        .researcher-setting-badge.no-setting {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+            border-color: #fbbf24;
+        }
+
+        .researcher-setting-btn {
+            margin-right: auto;
+            margin-left: 0;
+            border: 1px solid #93c5fd;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .researcher-setting-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(59, 130, 246, 0.25);
+        }
+
+        .researcher-setting-btn.no-setting {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+            border-color: #fbbf24;
+        }
+        /* ---- Managed Mode Banner ---- */
+        .managed-mode-banner {
+            position: sticky;
+            top: 0;
+            z-index: 1500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-bottom: 2px solid #f59e0b;
+            color: #92400e;
+            font-weight: 600;
+            font-size: 14px;
+            flex-wrap: wrap;
+        }
+        .managed-mode-banner.hidden { display: none; }
+        .managed-mode-banner .material-symbols-outlined {
+            color: #d97706;
+            font-size: 22px;
+        }
+        .managed-mode-exit-btn {
+            background: #92400e;
+            color: #fff;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            margin-right: 6px;
+            transition: background 0.15s;
+        }
+        .managed-mode-exit-btn:hover { background: #78350f; }
+        .managed-half-year-badge {
+            font-size: 12px;
+            background: #fbbf24;
+            color: #78350f;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .researcher-settings-modal {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(4px);
+            z-index: 30000;
+            padding: 16px;
+        }
+
+        .researcher-settings-dialog {
+            width: min(92vw, 460px);
+            background: #ffffff;
+            border-radius: 14px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.25);
+            padding: 18px;
+        }
+
+        .researcher-settings-modal.hidden {
+            display: none !important;
+        }
+
+        .researcher-settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .researcher-settings-close {
+            border: none;
+            background: transparent;
+            color: #6b7280;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+
+        .researcher-settings-close:hover {
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        .researcher-settings-title {
+            margin-bottom: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            text-align: center;
+            flex: 1;
+        }
+
+        .researcher-settings-name {
+            margin-bottom: 14px;
+            text-align: center;
+            color: #4b5563;
+            font-weight: 600;
+        }
+
+        .researcher-settings-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .researcher-settings-actions .btn {
+            flex: 1;
+            margin-top: 0;
+        }
+
+        /* Progress bar styles for reports */
+        .report-progress-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .report-progress-bar {
+            flex: 1;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .report-progress-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.6s ease;
+            background: linear-gradient(90deg, #3b82f6 0%, #1e40af 100%);
+        }
+
+        .report-progress-fill.overflow {
+            background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .report-progress-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            min-width: 45px;
+            text-align: left;
+        }
+
+        .report-overflow-warning {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #111827;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 4px;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+            border-radius: 8px;
+            border: 1px solid #fdba74;
+        }
+
         .calendar-legend {
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             padding: 20px;
@@ -1125,11 +1338,21 @@
         /* === Add New Researcher Styles === */
         .add-new-researcher-container {
             margin-bottom: 20px;
-            padding: 15px;
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            border: 2px solid #bbf7d0;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(22, 101, 52, 0.1);
+            padding: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid #dbeafe;
+            border-radius: 14px;
+            box-shadow: 0 6px 18px rgba(2, 24, 43, 0.08);
+        }
+
+        .add-new-researcher-container.existing-researcher-card {
+            border-color: #bfdbfe;
+            background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+        }
+
+        .add-new-researcher-container.new-researcher-card {
+            border-color: #c7d2fe;
+            background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
         }
 
         .add-new-btn {
@@ -1173,10 +1396,16 @@
         }
 
         .add-researcher-title {
-            font-size: 14px;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 6px;
+        }
+
+        .add-researcher-subtitle {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 12px;
         }
 
         .add-researcher-row {
@@ -1185,10 +1414,14 @@
             align-items: center;
         }
 
+        .add-researcher-row + .add-researcher-row {
+            margin-top: 8px;
+        }
+
         .add-researcher-form input {
             flex: 1;
             padding: 10px 12px;
-            border: 2px solid #d1d5db;
+            border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 14px;
             direction: rtl;
@@ -1198,18 +1431,31 @@
 
         .add-researcher-form input:focus {
             outline: none;
-            border-color: #10b981;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+        }
+
+        #all-researchers {
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 10px !important;
+            background: #ffffff;
+            min-height: 42px;
+        }
+
+        #all-researchers:focus {
+            outline: none;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
         }
 
         .add-researcher-form .btn-add {
             padding: 10px 16px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(180deg, #1e6fca 0%, #165ea8 100%);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 10px;
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
@@ -1219,7 +1465,7 @@
         }
 
         .add-researcher-form .btn-add:hover {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            background: linear-gradient(180deg, #165ea8 0%, #0b3b76 100%);
             transform: translateY(-1px);
         }
 
@@ -1540,6 +1786,27 @@
         </div>
     </div>
 
+    <!-- Immediately hide login screen if entering managed mode (prevents login flash) -->
+    <script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('mode') === 'managedResearchers' && params.get('uid')) {
+            // Hide login screen instantly via CSS (before DOM is ready)
+            var style = document.createElement('style');
+            style.id = 'managed-mode-hide-login';
+            style.textContent = '#login-screen { display: none !important; } .navigation { display: none !important; } .header { display: none !important; }';
+            document.head.appendChild(style);
+            // Once DOM is ready, also set loading message
+            document.addEventListener('DOMContentLoaded', function() {
+                var loading = document.getElementById('loading-screen');
+                var msg = document.getElementById('loading-message');
+                if (loading) loading.classList.remove('hidden');
+                if (msg) msg.textContent = 'מייבא נתוני עובד...';
+            });
+        }
+    })();
+    </script>
+
     <div class="header">
         <div class="user-area" onclick="showScreen('user-profile')" role="button" aria-label="פתח פרופיל משתמש">
             <div class="user-icon"><span class="material-symbols-outlined" aria-hidden="true">account_circle</span></div>
@@ -1651,6 +1918,14 @@
     </div>
 </div>
 
+    <!-- Managed-Mode Banner (visible only when manager edits for employee) -->
+    <div id="managed-mode-banner" class="managed-mode-banner hidden">
+        <span class="material-symbols-outlined">supervised_user_circle</span>
+        <span>מצב ניהול: עריכת חוקרים עבור <strong id="managed-user-name"></strong></span>
+        <span class="managed-half-year-badge" id="managed-half-year-label"></span>
+        <button onclick="exitManagedMode()" class="managed-mode-exit-btn">חזרה לדשבורד</button>
+    </div>
+
     <div id="main-screen" class="container hidden">
         <!-- הודעה זמנית על אפשרות דיווח בדיעבד -->
       <!--  <div class="info-message" style="margin-bottom: 20px; display: flex; align-items: start; gap: 10px;">
@@ -1700,16 +1975,59 @@
 
         <div class="researchers-list" id="researchers-list"></div>
 
-        <!-- Add New Researcher Section - moved to bottom -->
-        <div class="add-new-researcher-container">
-            <div class="add-researcher-title">הוספת חוקר.ת חדש.ה</div>
-
-            <div id="add-researcher-form" class="add-researcher-form">
+        <!-- Add Existing Researcher from Global List -->
+        <div class="add-new-researcher-container existing-researcher-card" style="margin-top: 14px; margin-bottom: 24px;">
+            <div class="add-researcher-title">בחירה או עדכון חוקר.ת מהרשימה</div>
+            <div class="add-researcher-subtitle">בחירה או עדכון מהרשימה ושיוך מיידי לרשימת החוקרים הפעילים שלך</div>
+            <div class="add-researcher-form">
                 <div class="add-researcher-row">
-                    <input type="text" id="new-researcher-name" placeholder="יש להזין את שם החוקר.ת החדש.ה ..." maxlength="50">
-                    <button class="btn-add" onclick="addNewResearcher()">
+                    <select id="all-researchers" class="researcher-select" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px;">
+                        <option value="">טוען חוקרים...</option>
+                    </select>
+                </div>
+                <div class="add-researcher-row" style="margin-top: 8px;">
+                    <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                        <label style="font-size:13px; font-weight:500; color:#374151;">% פעילות:</label>
+                        <input type="number" id="existing-researcher-percent" placeholder="למשל: 10" min="0" max="100" step="0.1" oninput="onExistingResearcherPercentInput(this)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+                    </div>
+                    <div style="display:flex; align-items:flex-end; padding-bottom:10px; font-weight:600; color:#6b7280;">או</div>
+                    <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                        <label style="font-size:13px; font-weight:500; color:#374151;">ימי עבודה (מתוך 110 ימים לחצי שנה):</label>
+                        <input type="number" id="existing-researcher-days" placeholder="למשל: 11" min="0" max="110" step="0.1" oninput="onExistingResearcherDaysInput(this)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+                    </div>
+                </div>
+                <div class="add-researcher-row" style="margin-top: 8px;">
+                    <button class="btn-add" onclick="addSelectedResearcher()" style="width:100%;">
                         <span class="material-symbols-outlined">add</span>
-                        הוספה
+                        עידכון
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add New Researcher Section - popup style form -->
+        <div class="add-new-researcher-container new-researcher-card">
+            <div class="add-researcher-title">הוספת חוקר.ת חדש.ה שאיננו.ה ברשימה</div>
+            <div class="add-researcher-subtitle">החוקר יתווסף לרשימת החוקרים הפעילים שלך בלבד</div>
+            <div class="add-researcher-form" id="add-researcher-form">
+                <div class="add-researcher-row">
+                    <input type="text" id="new-researcher-name" placeholder="שם החוקר.ת החדש.ה ..." maxlength="50" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+                </div>
+                <div class="add-researcher-row" style="margin-top: 8px;">
+                    <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                        <label style="font-size:13px; font-weight:500; color:#374151;">% פעילות:</label>
+                        <input type="number" id="new-researcher-percent" placeholder="למשל: 10" min="0" max="100" step="0.1" oninput="onResearcherPercentInput(this)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+                    </div>
+                    <div style="display:flex; align-items:flex-end; padding-bottom:10px; font-weight:600; color:#6b7280;">או</div>
+                    <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                        <label style="font-size:13px; font-weight:500; color:#374151;">ימי עבודה (מתוך 110 ימים לחצי שנה):</label>
+                        <input type="number" id="new-researcher-days" placeholder="למשל: 11" min="0" max="110" step="0.1" oninput="onResearcherDaysInput(this)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+                    </div>
+                </div>
+                <div class="add-researcher-row" style="margin-top: 8px;">
+                    <button class="btn-add" onclick="addNewResearcher()" style="width:100%;">
+                        <span class="material-symbols-outlined">add</span>
+                      עידכון
                     </button>
                 </div>
             </div>
@@ -1717,6 +2035,81 @@
 
         <button class="btn" onclick="saveResearchers()">שמירה</button>
     </div>
+
+    <div id="researcher-settings-modal" class="researcher-settings-modal hidden" onclick="closeResearcherSettingsPopup(event)">
+        <div class="researcher-settings-dialog" onclick="event.stopPropagation()">
+            <div class="researcher-settings-header">
+                <button type="button" class="researcher-settings-close" aria-label="סגור" onclick="closeResearcherSettingsPopup()">×</button>
+                <div class="researcher-settings-title">עדכון אחוז/ימים</div>
+                <span style="width:30px;"></span>
+            </div>
+            <div id="researcher-settings-name" class="researcher-settings-name"></div>
+
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label style="font-size:13px; font-weight:500; color:#374151;">% פעילות:</label>
+                <input type="number" id="popup-researcher-percent" placeholder="למשל: 10" min="0" max="100" step="0.1" oninput="onPopupResearcherPercentInput(this)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size:13px; font-weight:500; color:#374151;">ימי עבודה (מתוך 110 ימים לחצי שנה):</label>
+                <input type="number" id="popup-researcher-days" placeholder="למשל: 11" min="0" max="110" step="0.1" oninput="onPopupResearcherDaysInput(this)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 14px; width: 100%;">
+            </div>
+
+            <div class="researcher-settings-actions">
+                <button class="btn secondary" onclick="closeResearcherSettingsPopup()">ביטול</button>
+                <button class="btn" onclick="saveResearcherSettingsFromPopup()">שמירה</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Auto-calculation between percent and days (110 days per half-year base)
+    function onResearcherPercentInput(el) {
+        const val = parseFloat(el.value);
+        const daysInput = document.getElementById('new-researcher-days');
+        if (!daysInput) return;
+        if (!isNaN(val) && val >= 0) {
+            const totalDays = window.APP_CONFIG?.totalWorkDaysPerHalfYear || window.APP_CONFIG?.totalWorkDaysPerYear || 110;
+            daysInput.value = Math.round((val / 100) * totalDays * 10) / 10;
+        } else {
+            daysInput.value = '';
+        }
+    }
+    function onResearcherDaysInput(el) {
+        const val = parseFloat(el.value);
+        const pctInput = document.getElementById('new-researcher-percent');
+        if (!pctInput) return;
+        if (!isNaN(val) && val >= 0) {
+            const totalDays = window.APP_CONFIG?.totalWorkDaysPerHalfYear || window.APP_CONFIG?.totalWorkDaysPerYear || 110;
+            pctInput.value = Math.round((val / totalDays) * 100 * 10) / 10;
+        } else {
+            pctInput.value = '';
+        }
+    }
+    
+    function onExistingResearcherPercentInput(el) {
+        const val = parseFloat(el.value);
+        const daysInput = document.getElementById('existing-researcher-days');
+        if (!daysInput) return;
+        if (!isNaN(val) && val >= 0) {
+            const totalDays = window.APP_CONFIG?.totalWorkDaysPerHalfYear || window.APP_CONFIG?.totalWorkDaysPerYear || 110;
+            daysInput.value = Math.round((val / 100) * totalDays * 10) / 10;
+        } else {
+            daysInput.value = '';
+        }
+    }
+    function onExistingResearcherDaysInput(el) {
+        const val = parseFloat(el.value);
+        const pctInput = document.getElementById('existing-researcher-percent');
+        if (!pctInput) return;
+        if (!isNaN(val) && val >= 0) {
+            const totalDays = window.APP_CONFIG?.totalWorkDaysPerHalfYear || window.APP_CONFIG?.totalWorkDaysPerYear || 110;
+            pctInput.value = Math.round((val / totalDays) * 100 * 10) / 10;
+        } else {
+            pctInput.value = '';
+        }
+    }
+    </script>
 
     <div id="about-screen" class="container hidden">
         <h2 style="text-align: center; margin-bottom: 30px;">אודות המערכת</h2>
@@ -1818,39 +2211,8 @@
     <div id="reports-screen" class="container hidden">
         <h2 style="text-align: center; margin-bottom: 30px;">דוחות</h2>
 
-        <!-- Toggle between single month and period -->
-        <div class="toggle-btn" id="report-period-toggle" style="margin-bottom: 20px;">
-            <div class="toggle-option active" data-mode="single">חודש בודד</div>
-            <div class="toggle-option" data-mode="period">סיכום תקופה</div>
-        </div>
-
-        <!-- Single month selection -->
-        <div id="single-month-selection">
-            <div class="form-group">
-                <label>חודש:</label>
-                <select id="report-month">
-                    <option value="1">ינואר</option>
-                    <option value="2">פברואר</option>
-                    <option value="3">מרץ</option>
-                    <option value="4">אפריל</option>
-                    <option value="5">מאי</option>
-                    <option value="6">יוני</option>
-                    <option value="7">יולי</option>
-                    <option value="8">אוגוסט</option>
-                    <option value="9">ספטמבר</option>
-                    <option value="10">אוקטובר</option>
-                    <option value="11">נובמבר</option>
-                    <option value="12">דצמבר</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>שנה:</label>
-                <select id="report-year"></select>
-            </div>
-        </div>
-
-        <!-- Period selection (multiple months) -->
-        <div id="period-selection" class="hidden">
+        <!-- Period selection (from-to) - always visible -->
+        <div id="period-selection">
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 200px;">
                     <p style="font-weight: 600; margin-bottom: 10px; color: #374151;"><span class="material-symbols-outlined" style="vertical-align: middle; margin-left: 4px; color: #2563eb;">event</span>מתאריך:</p>
@@ -1994,10 +2356,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-auth-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/assets/js/config.js"></script>
-    <script src="/admin-dashboard/managers_admin.js"></script>
-    <script src="/assets/js/app.js"></script>
-    <script src="/assets/js/admin.js"></script>
+    <script src="/assets/js/config.js?v=20260414-1"></script>
+    <script src="/admin-dashboard/managers_admin.js?v=20260414-1"></script>
+    <script src="/assets/js/app.js?v=20260414-1"></script>
+    <script src="/assets/js/admin.js?v=20260414-1"></script>
     <!-- Guided tour overlay injector (opens guided_tour.html inside the app window) -->
 <script>
     // **QA FIX:** Streamlined, robust, and safe injection logic for the guided tour.
