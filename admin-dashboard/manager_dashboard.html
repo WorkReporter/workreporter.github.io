@@ -12,6 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <link rel="icon" type="image/png" href="/institute_icon.png">
     <link rel="shortcut icon" type="image/png" href="/institute_icon.png">
     <link rel="apple-touch-icon" href="/institute_icon.png">
@@ -1950,6 +1951,15 @@
         .employee-action-btn .action-icon {
             font-size: 2.2rem;
         }
+        .material-symbols-outlined.modal-icon {
+            font-variation-settings: 'FILL' 0;
+            color: #0f172a;
+            font-size: 2.2rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         .employee-action-btn .action-label {
             font-size: 0.88rem;
@@ -2255,13 +2265,13 @@
             <div class="employee-action-buttons">
                 <button type="button" class="employee-action-btn" onclick="selectEmployeeCalendar()"
                     id="action-btn-calendar">
-                    <span class="action-icon">📅</span>
+                    <span class="material-symbols-outlined action-icon modal-icon" aria-hidden="true">calendar_month</span>
                     <span class="action-label">לוח שנה</span>
                     <span class="action-desc">בחירת תאריכים<br>והפקת דו"ח</span>
                 </button>
                 <button type="button" class="employee-action-btn" onclick="selectEmployeeResearchers()"
                     id="action-btn-researchers">
-                    <span class="action-icon">👥</span>
+                    <span class="material-symbols-outlined action-icon modal-icon" aria-hidden="true">people</span>
                     <span class="action-label">חוקרים פעילים</span>
                     <span class="action-desc">עריכת אחוזים<br>וימי עבודה</span>
                 </button>
