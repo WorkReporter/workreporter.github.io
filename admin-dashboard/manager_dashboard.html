@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -11,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/png" href="/institute_icon.png">
+    <link rel="icon" type="image/png" href="/institute_icon.png">
     <link rel="shortcut icon" type="image/png" href="/institute_icon.png">
     <link rel="apple-touch-icon" href="/institute_icon.png">
     <style>
@@ -33,7 +34,7 @@
             background: white;
             padding: 1rem 2rem;
             border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -50,9 +51,20 @@
             align-items: center;
             gap: 0.75rem;
         }
+
         /* Make header icon + title link to the main page */
-        .home-link { display:flex; align-items:center; gap:0.75rem; color: inherit; text-decoration: none; }
-        .home-link:focus-visible { outline: 3px solid rgba(59,130,246,0.25); border-radius:8px; }
+        .home-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .home-link:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.25);
+            border-radius: 8px;
+        }
 
         .header-icon {
             background: #3b82f6;
@@ -100,8 +112,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .screen-title {
@@ -147,7 +166,7 @@
             background: white;
             border-radius: 16px;
             padding: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             max-width: 500px;
             margin: 0 auto;
         }
@@ -258,17 +277,20 @@
         .calendar-day.weekly-day {
             position: relative;
         }
+
         .calendar-day.weekly-day::after {
             content: '';
             position: absolute;
             top: 4px;
             left: 6px;
             right: 6px;
-            border-top: 2px dashed rgba(255,255,255,0.9);
+            border-top: 2px dashed rgba(255, 255, 255, 0.9);
         }
+
         .calendar-day.other-month.weekly-day::after {
-            border-top-color: rgba(31,41,55,0.4);
+            border-top-color: rgba(31, 41, 55, 0.4);
         }
+
         .calendar-day.weekly-start::before,
         .calendar-day.weekly-end::before {
             content: '';
@@ -276,14 +298,21 @@
             top: 1px;
             width: 6px;
             height: 6px;
-            border: 2px dashed rgba(255,255,255,0.9);
+            border: 2px dashed rgba(255, 255, 255, 0.9);
             border-radius: 50%;
         }
-        .calendar-day.weekly-start::before { left: 2px; }
-        .calendar-day.weekly-end::before { right: 2px; }
+
+        .calendar-day.weekly-start::before {
+            left: 2px;
+        }
+
+        .calendar-day.weekly-end::before {
+            right: 2px;
+        }
+
         .calendar-day.other-month.weekly-start::before,
         .calendar-day.other-month.weekly-end::before {
-            border-color: rgba(31,41,55,0.4);
+            border-color: rgba(31, 41, 55, 0.4);
         }
 
         .date-selection-info {
@@ -384,7 +413,7 @@
             border-radius: 12px;
             padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .section-title {
@@ -726,20 +755,92 @@
         }
 
         /* Show-calculation panel styles */
-        .calc-actions { margin: 12px 0 0; text-align: left; }
-        .calc-btn { background:#0ea5e9; color:#fff; border:none; border-radius:8px; padding:8px 12px; font-weight:600; cursor:pointer; }
-        .calc-btn:hover { background:#0284c7; }
-        .calc-panel { margin-top:12px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; }
-        .calc-section { margin-bottom:16px; }
-        .calc-title { font-weight:700; color:#1e293b; margin-bottom:8px; }
-        .calc-grid { display:grid; grid-template-columns:1fr; gap:8px; }
-        .calc-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px; }
-        .calc-subtitle { color:#0f766e; font-weight:700; margin-bottom:6px; }
-        .equation { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; direction:ltr; color:#334155; }
-        .eq-line { margin:2px 0; }
-        .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
-        .chip { background:#e2e8f0; color:#0f172a; border-radius:999px; padding:2px 8px; font-size:12px; }
-        .note { color:#64748b; font-size:12px; margin-top:6px; }
+        .calc-actions {
+            margin: 12px 0 0;
+            text-align: left;
+        }
+
+        .calc-btn {
+            background: #0ea5e9;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .calc-btn:hover {
+            background: #0284c7;
+        }
+
+        .calc-panel {
+            margin-top: 12px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .calc-section {
+            margin-bottom: 16px;
+        }
+
+        .calc-title {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .calc-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .calc-subtitle {
+            color: #0f766e;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .equation {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            direction: ltr;
+            color: #334155;
+        }
+
+        .eq-line {
+            margin: 2px 0;
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .chip {
+            background: #e2e8f0;
+            color: #0f172a;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 12px;
+        }
+
+        .note {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 6px;
+        }
 
         .loading {
             text-align: center;
@@ -760,8 +861,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .empty-state {
@@ -780,7 +886,7 @@
         }
 
 
-      .action-btn {
+        .action-btn {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -801,13 +907,14 @@
 
         .action-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
 
         .action-btn.csv {
             background: #3b82f6;
             color: white;
         }
+
         .action-btn.csv:hover {
             background: #2563eb;
         }
@@ -816,6 +923,7 @@
             background: #dc2626;
             color: white;
         }
+
         .action-btn.pdf:hover {
             background: #b91c1c;
         }
@@ -824,6 +932,7 @@
             background: #059669;
             color: white;
         }
+
         .action-btn.database:hover {
             background: #047857;
         }
@@ -833,6 +942,7 @@
             color: #475569;
             border: 2px solid #e2e8f0;
         }
+
         .action-btn.back:hover {
             background: #e2e8f0;
             border-color: #cbd5e1;
@@ -996,7 +1106,7 @@
                 width: 100%;
             }
 
-            .comparison-table-wrap .stats-table tbody > tr:not(.row-detail) {
+            .comparison-table-wrap .stats-table tbody>tr:not(.row-detail) {
                 border: 1px solid #e2e8f0;
                 border-radius: 10px;
                 background: #ffffff;
@@ -1004,7 +1114,7 @@
                 padding: 0.25rem 0.65rem;
             }
 
-            .comparison-table-wrap .stats-table tbody > tr > td {
+            .comparison-table-wrap .stats-table tbody>tr>td {
                 border: none;
                 padding: 0.4rem 0;
                 display: flex;
@@ -1015,7 +1125,7 @@
                 text-align: left !important;
             }
 
-            .comparison-table-wrap .stats-table tbody > tr > td::before {
+            .comparison-table-wrap .stats-table tbody>tr>td::before {
                 content: attr(data-label);
                 font-weight: 700;
                 color: #334155;
@@ -1023,7 +1133,7 @@
                 flex: 0 0 44%;
             }
 
-            .comparison-table-wrap .stats-table tbody > tr.row-detail {
+            .comparison-table-wrap .stats-table tbody>tr.row-detail {
                 display: none;
                 border: 1px solid #e2e8f0;
                 border-top: none;
@@ -1034,25 +1144,25 @@
                 padding: 0.1rem 0.65rem 0.45rem;
             }
 
-            .comparison-table-wrap .stats-table tbody > tr.row-detail {
+            .comparison-table-wrap .stats-table tbody>tr.row-detail {
                 padding-top: 0;
             }
 
-            .comparison-table-wrap .stats-table tbody > tr.row-detail.open {
+            .comparison-table-wrap .stats-table tbody>tr.row-detail.open {
                 display: block;
             }
 
-            .comparison-table-wrap .stats-table tbody > tr.row-main.detail-open {
+            .comparison-table-wrap .stats-table tbody>tr.row-main.detail-open {
                 border-radius: 10px 10px 0 0;
                 margin-bottom: 0;
             }
 
-            .comparison-table-wrap .stats-table tbody > tr.row-detail td {
+            .comparison-table-wrap .stats-table tbody>tr.row-detail td {
                 display: block;
                 padding: 0.45rem 0;
             }
 
-            .comparison-table-wrap .stats-table tbody > tr.row-detail td::before {
+            .comparison-table-wrap .stats-table tbody>tr.row-detail td::before {
                 content: none;
             }
 
@@ -1083,7 +1193,7 @@
                 text-align: right;
             }
 
-            .row-detail-content > div {
+            .row-detail-content>div {
                 display: flex;
                 justify-content: space-between;
                 gap: 0.75rem;
@@ -1091,7 +1201,7 @@
                 flex-wrap: wrap;
             }
 
-            .row-detail-content > div strong {
+            .row-detail-content>div strong {
                 white-space: nowrap;
             }
 
@@ -1127,7 +1237,10 @@
             font-weight: 600;
             font-family: inherit;
         }
-        .logout-btn:hover { background: #dc2626; }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
 
         /* Calendar legend (מקרא) */
         .legend {
@@ -1145,18 +1258,60 @@
             color: #475569;
         }
 
-        .legend-item { display:flex; align-items:center; gap:0.5rem; }
-        .legend-swatch {
-            width:18px; height:18px; border-radius:6px; display:inline-block; flex:0 0 18px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.03);
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .legend-swatch.report { background:#22c55e; }
-        .legend-swatch.weekly { background: transparent; border-radius:4px; border: 1px solid rgba(34,197,94,0.15); position: relative; }
-        .legend-swatch.weekly::after { content:''; position:absolute; left:2px; right:2px; top:4px; height:0; border-top:2px dashed #22c55e; }
-        .legend-swatch.selected { background:#1e40af; }
-        .legend-swatch.in-range { background:#dbeafe; border:1px solid #bfdbfe; }
-        .legend-swatch.other-month { background:#cbd5e0; }
+
+        .legend-swatch {
+            width: 18px;
+            height: 18px;
+            border-radius: 6px;
+            display: inline-block;
+            flex: 0 0 18px;
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+        }
+
+        .legend-swatch.report {
+            background: #22c55e;
+        }
+
+        .legend-swatch.weekly {
+            background: transparent;
+            border-radius: 4px;
+            border: 1px solid rgba(34, 197, 94, 0.15);
+            position: relative;
+        }
+
+        .legend-swatch.weekly::after {
+            content: '';
+            position: absolute;
+            left: 2px;
+            right: 2px;
+            top: 4px;
+            height: 0;
+            border-top: 2px dashed #22c55e;
+        }
+
+        .legend-swatch.selected {
+            background: #1e40af;
+        }
+
+        .legend-swatch.in-range {
+            background: #dbeafe;
+            border: 1px solid #bfdbfe;
+        }
+
+        .legend-swatch.other-month {
+            background: #cbd5e0;
+        }
+
         @media (max-width:600px) {
-            .legend { font-size:0.85rem; gap:0.5rem; }
+            .legend {
+                font-size: 0.85rem;
+                gap: 0.5rem;
+            }
         }
 
         .action-btn.primary {
@@ -1164,6 +1319,7 @@
             color: white;
             font-weight: 600;
         }
+
         .action-btn.primary:hover {
             background: #2563eb;
         }
@@ -1174,6 +1330,7 @@
             border: 2px solid #e2e8f0;
             font-weight: 600;
         }
+
         .action-btn.secondary:hover {
             background: #f1f5f9;
             border-color: #cbd5e1;
@@ -1216,6 +1373,7 @@
                 opacity: 0;
                 transform: translateY(30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -1451,7 +1609,7 @@
                 gap: 0.75rem;
             }
 
-            .backdate-toggle > label:first-child {
+            .backdate-toggle>label:first-child {
                 flex: 0 0 auto;
                 width: calc(100% - 60px);
             }
@@ -1512,7 +1670,7 @@
             border: 1px solid #e2e8f0;
         }
 
-        .backdate-toggle > label:first-child {
+        .backdate-toggle>label:first-child {
             flex: 1;
             font-weight: 500;
             color: #334155;
@@ -1555,14 +1713,14 @@
             background-color: white;
             transition: 0.3s;
             border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        .toggle-switch input:checked + .toggle-slider {
+        .toggle-switch input:checked+.toggle-slider {
             background-color: #10b981;
         }
 
-        .toggle-switch input:checked + .toggle-slider:before {
+        .toggle-switch input:checked+.toggle-slider:before {
             transform: translateX(-24px);
         }
 
@@ -1720,39 +1878,53 @@
             justify-content: center;
             backdrop-filter: blur(3px);
         }
+
         .employee-action-overlay.open {
             display: flex;
         }
+
         .employee-action-dialog {
             background: #fff;
             border-radius: 18px;
             padding: 2rem 2rem 1.5rem;
             width: min(420px, 92vw);
-            box-shadow: 0 24px 60px rgba(15,23,42,0.22);
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
             text-align: center;
-            animation: scaleIn 0.22s cubic-bezier(.34,1.4,.64,1) both;
+            animation: scaleIn 0.22s cubic-bezier(.34, 1.4, .64, 1) both;
         }
+
         @keyframes scaleIn {
-            from { transform: scale(0.85); opacity: 0; }
-            to   { transform: scale(1);    opacity: 1; }
+            from {
+                transform: scale(0.85);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
+
         .employee-action-name {
             font-size: 1.25rem;
             font-weight: 700;
             color: #1e3a5f;
             margin-bottom: 0.35rem;
         }
+
         .employee-action-subtitle {
             font-size: 0.85rem;
             color: #64748b;
             margin-bottom: 1.5rem;
         }
+
         .employee-action-buttons {
             display: flex;
             gap: 1rem;
             justify-content: center;
             flex-wrap: wrap;
         }
+
         .employee-action-btn {
             display: flex;
             flex-direction: column;
@@ -1767,26 +1939,31 @@
             min-width: 130px;
             font-family: inherit;
         }
+
         .employee-action-btn:hover {
             border-color: #3b82f6;
             background: #eff6ff;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59,130,246,0.15);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15);
         }
+
         .employee-action-btn .action-icon {
             font-size: 2.2rem;
         }
+
         .employee-action-btn .action-label {
             font-size: 0.88rem;
             font-weight: 600;
             color: #1e293b;
             line-height: 1.3;
         }
+
         .employee-action-btn .action-desc {
             font-size: 0.75rem;
             color: #64748b;
             line-height: 1.3;
         }
+
         .employee-action-cancel {
             display: block;
             margin: 1.2rem auto 0;
@@ -1800,9 +1977,13 @@
             border-radius: 6px;
             transition: color 0.15s;
         }
-        .employee-action-cancel:hover { color: #475569; }
+
+        .employee-action-cancel:hover {
+            color: #475569;
+        }
     </style>
 </head>
+
 <body>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
@@ -1831,11 +2012,13 @@
 
     <div class="header">
         <div class="header-title">
-            <a href="#" class="home-link" id="home-link" title="עמוד ראשי" aria-label="עמוד ראשי" onclick="showEmployeesScreen(); return false;">
+            <a href="#" class="home-link" id="home-link" title="עמוד ראשי" aria-label="עמוד ראשי"
+                onclick="showEmployeesScreen(); return false;">
                 <div class="header-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                        <polyline points="9,22 9,12 15,12 15,22"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9,22 9,12 15,12 15,22" />
                     </svg>
                 </div>
                 <span id="header-name">טוען את שם המנהל/ת...</span>
@@ -1856,8 +2039,9 @@
             <div style="text-align: center;">
                 <button class="settings-btn" onclick="openBackdateSettingsModal()">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                     </svg>
                     הגדרות דיווח בדיעבד
                 </button>
@@ -1892,23 +2076,27 @@
                     <tbody id="calendar-body"></tbody>
                 </table>
 
-                <button class="generate-report-btn" id="generate-report" disabled onclick="generateIntermediateReport()">
+                <button class="generate-report-btn" id="generate-report" disabled
+                    onclick="generateIntermediateReport()">
                     הפקת דו"ח שעות
                 </button>
 
                 <button class="back-btn" onclick="showEmployeesScreen()">חזרה</button>
 
                 <div class="legend" aria-hidden="false">
-                    <div class="legend-item"><span class="legend-swatch report" aria-hidden="true"></span><span>קיים דיווח יומי</span></div>
-                    <div class="legend-item"><span class="legend-swatch weekly" aria-hidden="true"></span><span>קיים דיווח שבועי</span></div>
+                    <div class="legend-item"><span class="legend-swatch report" aria-hidden="true"></span><span>קיים
+                            דיווח יומי</span></div>
+                    <div class="legend-item"><span class="legend-swatch weekly" aria-hidden="true"></span><span>קיים
+                            דיווח שבועי</span></div>
                 </div>
-             </div>
-         </div>
+            </div>
+        </div>
 
         <div id="intermediate-screen" class="screen">
             <div class="report-container">
                 <h1 class="screen-title" id="intermediate-title">עובד - הפקת דו"ח פעילות - מסך ביניים</h1>
-                <p style="text-align: center; color: #64748b; margin-bottom: 2rem;" id="intermediate-subtitle">לתקופה</p>
+                <p style="text-align: center; color: #64748b; margin-bottom: 2rem;" id="intermediate-subtitle">לתקופה
+                </p>
 
                 <div id="intermediate-content">
                     <div class="loading">מעבד נתוני דיווח...</div>
@@ -1975,7 +2163,8 @@
                 <div class="add-researcher-section">
                     <div class="add-researcher-title">הוספת חוקר/ת חדש/ה</div>
                     <div class="add-researcher-row">
-                        <input type="text" id="modal-new-researcher-name" class="add-researcher-input" placeholder="יש להזין את שם החוקר/ת החדש/ה..." maxlength="50">
+                        <input type="text" id="modal-new-researcher-name" class="add-researcher-input"
+                            placeholder="יש להזין את שם החוקר/ת החדש/ה..." maxlength="50">
                         <button class="btn-add-researcher" onclick="addNewResearcherFromModal()">הוספה</button>
                     </div>
                 </div>
@@ -1996,7 +2185,7 @@
             </div>
             <div class="modal-body">
                 <div class="backdate-info">
-                    
+
                     <strong>הערה:</strong> הרשאה זו מתווספת להרשאות הרגילות ולא מבטלת אותן
                 </div>
 
@@ -2005,7 +2194,8 @@
                 </div>
 
                 <div class="backdate-form">
-                    <div class="backdate-toggle" onclick="document.getElementById('backdate-enabled').click();" style="cursor: pointer;">
+                    <div class="backdate-toggle" onclick="document.getElementById('backdate-enabled').click();"
+                        style="cursor: pointer;">
                         <label for="backdate-enabled" style="cursor: pointer;">אפשר דיווח בדיעבד</label>
                         <label class="toggle-switch" onclick="event.stopPropagation();">
                             <input type="checkbox" id="backdate-enabled" onchange="toggleBackdateDates()">
@@ -2016,21 +2206,25 @@
                     <div class="backdate-dates" id="backdate-dates-section">
                         <div class="backdate-field">
                             <label for="backdate-min-date">מתאריך (התחלה)</label>
-                            <input type="date" id="backdate-min-date" onchange="updateDatePreview('backdate-min-date', 'min-date-preview')">
+                            <input type="date" id="backdate-min-date"
+                                onchange="updateDatePreview('backdate-min-date', 'min-date-preview')">
                             <small id="min-date-preview" style="color: #3b82f6; font-size: 0.8rem;"></small>
                         </div>
                         <div class="backdate-field">
                             <label for="backdate-max-date">עד תאריך (סיום טווח)</label>
-                            <input type="date" id="backdate-max-date" onchange="updateDatePreview('backdate-max-date', 'max-date-preview')">
+                            <input type="date" id="backdate-max-date"
+                                onchange="updateDatePreview('backdate-max-date', 'max-date-preview')">
                             <small id="max-date-preview" style="color: #3b82f6; font-size: 0.8rem;"></small>
                         </div>
                     </div>
 
                     <div class="backdate-field" id="backdate-permission-section" style="margin-top: 0.75rem;">
                         <label for="backdate-permission-end-date">תאריך סיום ההרשאה (אופציונלי)</label>
-                        <input type="date" id="backdate-permission-end-date" onchange="updateDatePreview('backdate-permission-end-date', 'permission-date-preview')">
+                        <input type="date" id="backdate-permission-end-date"
+                            onchange="updateDatePreview('backdate-permission-end-date', 'permission-date-preview')">
                         <small id="permission-date-preview" style="color: #3b82f6; font-size: 0.8rem;"></small>
-                        <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 0.25rem;">לאחר תאריך זה ההרשאה תיסגר אוטומטית</small>
+                        <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 0.25rem;">לאחר
+                            תאריך זה ההרשאה תיסגר אוטומטית</small>
                     </div>
 
                     <div class="backdate-section-divider"></div>
@@ -2059,18 +2253,21 @@
             <div class="employee-action-name" id="employee-action-name"></div>
             <div class="employee-action-subtitle">בחר/י פעולה לביצוע</div>
             <div class="employee-action-buttons">
-                <button type="button" class="employee-action-btn" onclick="selectEmployeeCalendar()" id="action-btn-calendar">
+                <button type="button" class="employee-action-btn" onclick="selectEmployeeCalendar()"
+                    id="action-btn-calendar">
                     <span class="action-icon">📅</span>
                     <span class="action-label">לוח שנה</span>
                     <span class="action-desc">בחירת תאריכים<br>והפקת דו"ח</span>
                 </button>
-                <button type="button" class="employee-action-btn" onclick="selectEmployeeResearchers()" id="action-btn-researchers">
+                <button type="button" class="employee-action-btn" onclick="selectEmployeeResearchers()"
+                    id="action-btn-researchers">
                     <span class="action-icon">👥</span>
                     <span class="action-label">חוקרים פעילים</span>
                     <span class="action-desc">עריכת אחוזים<br>וימי עבודה</span>
                 </button>
             </div>
-            <button type="button" class="employee-action-cancel" onclick="closeEmployeeActionModal()">&#x2715; ביטול</button>
+            <button type="button" class="employee-action-cancel" onclick="closeEmployeeActionModal()">&#x2715;
+                ביטול</button>
         </div>
     </div>
 
@@ -2216,8 +2413,54 @@
             return normalized;
         }
 
+        function getSelectedEmployeeCoveredHalfYearKeys() {
+            if (!AppState.selectedStartDate || !AppState.selectedEndDate) {
+                return [getHalfYearKey(AppState.selectedStartDate || new Date())];
+            }
+            return getHalfYearsInPeriod(AppState.selectedStartDate, AppState.selectedEndDate);
+        }
+
         function getSelectedEmployeeSettingsMap() {
-            return normalizeResearcherSettingsMap(AppState.selectedEmployee?.researcherSettings || {});
+            const employee = AppState.selectedEmployee;
+            if (!employee) return {};
+
+            const settingsByHalfYear = employee.researcherSettingsByHalfYear;
+            if (settingsByHalfYear && typeof settingsByHalfYear === 'object' && !Array.isArray(settingsByHalfYear)) {
+                const coveredHalfYears = getSelectedEmployeeCoveredHalfYearKeys();
+                const aggregated = {};
+
+                coveredHalfYears.forEach(halfYearKey => {
+                    const normalizedMap = normalizeResearcherSettingsMap(settingsByHalfYear[halfYearKey] || {});
+                    Object.entries(normalizedMap).forEach(([name, setting]) => {
+                        if (!aggregated[name]) {
+                            aggregated[name] = {
+                                workDays: 0,
+                                activityPercent: 0,
+                                count: 0
+                            };
+                        }
+
+                        aggregated[name].workDays += Number(setting.workDays || 0);
+                        aggregated[name].activityPercent += Number(setting.activityPercent || 0);
+                        aggregated[name].count += 1;
+                    });
+                });
+
+                const result = {};
+                Object.entries(aggregated).forEach(([name, acc]) => {
+                    if (!acc.count) return;
+                    result[name] = {
+                        workDays: roundToSingleDecimal(acc.workDays),
+                        activityPercent: roundToSingleDecimal(acc.activityPercent / acc.count)
+                    };
+                });
+
+                if (Object.keys(result).length > 0) {
+                    return result;
+                }
+            }
+
+            return normalizeResearcherSettingsMap(employee.researcherSettings || {});
         }
 
         function calculatePlannedVsActualRows(actualHoursMap, settingsMap, halfYearsCount) {
@@ -2230,9 +2473,14 @@
                 const setting = normalizeResearcherSetting(settingsMap?.[name]);
                 const actualHours = Number(actualHoursMap?.get(name) || 0);
                 const actualDays = roundToSingleDecimal(actualHours / HOURS_PER_DAY);
-                const plannedPerHalf = setting?.workDays ?? null;
+
+                // workDays from settingsMap is already the TOTAL for the period (sum across half-years)
+                const plannedForPeriod = setting?.workDays ?? null;
                 const plannedPercent = setting?.activityPercent ?? null;
-                const plannedForPeriod = plannedPerHalf != null ? roundToSingleDecimal(plannedPerHalf * halfYearsCount) : null;
+                // For display: average per half-year
+                const plannedPerHalf = plannedForPeriod != null && halfYearsCount > 0
+                    ? roundToSingleDecimal(plannedForPeriod / halfYearsCount)
+                    : null;
                 const diffDays = plannedForPeriod != null ? roundToSingleDecimal(actualDays - plannedForPeriod) : null;
 
                 let status = 'N/A';
@@ -2309,7 +2557,7 @@
             };
         }
 
-        window.toggleComparisonSection = function(sectionId) {
+        window.toggleComparisonSection = function (sectionId) {
             const body = document.getElementById(`${sectionId}-body`);
             const btn = document.getElementById(`${sectionId}-toggle-btn`);
             if (!body || !btn) return;
@@ -2317,7 +2565,7 @@
             btn.textContent = isHidden ? 'הצגה' : 'הסתרה';
         };
 
-        window.toggleComparisonRow = function(sectionId, rowIndex) {
+        window.toggleComparisonRow = function (sectionId, rowIndex) {
             const detail = document.getElementById(`${sectionId}-row-${rowIndex}-detail`);
             const btn = document.getElementById(`${sectionId}-row-${rowIndex}-btn`);
             const mainRow = document.getElementById(`${sectionId}-row-${rowIndex}-main`);
@@ -2422,7 +2670,7 @@
             const parts = dateStr.split('-');
             if (parts.length !== 3) return dateStr;
             const [y, m, d] = parts;
-            return `${d.padStart(2,'0')}-${m.padStart(2,'0')}-${y}`;
+            return `${d.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
         }
 
         function getCacheKey() {
@@ -2549,7 +2797,7 @@
                 if (include) {
                     reports.push({
                         id: reportId,
-                        date: `${reportDateOnly.getFullYear()}-${String(reportDateOnly.getMonth()+1).padStart(2,'0')}-${String(reportDateOnly.getDate()).padStart(2,'0')}`,
+                        date: `${reportDateOnly.getFullYear()}-${String(reportDateOnly.getMonth() + 1).padStart(2, '0')}-${String(reportDateOnly.getDate()).padStart(2, '0')}`,
                         type: reportData.type,
                         entries: normalizeEntries(reportData.entries),
                         workStatus: reportData.workStatus
@@ -2697,7 +2945,7 @@
         }
 
         async function generateCalendar() {
-            const monthNames = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+            const monthNames = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
             document.getElementById('month-year').textContent = `${monthNames[AppState.currentMonth]} ${AppState.currentYear}`;
             const firstDay = new Date(AppState.currentYear, AppState.currentMonth, 1).getDay();
             const calendarBody = document.getElementById('calendar-body');
@@ -2736,7 +2984,7 @@
                     startDate.setDate(startDate.getDate() + 1);
                 }
                 calendarBody.appendChild(row);
-                 if (startDate > new Date(AppState.currentYear, AppState.currentMonth + 1, 0) && week > 3) break;
+                if (startDate > new Date(AppState.currentYear, AppState.currentMonth + 1, 0) && week > 3) break;
             }
             updateCalendarSelection();
         }
@@ -2783,8 +3031,8 @@
             } else {
                 container.className = 'date-selection-info';
                 container.innerHTML = `<div class="instruction-main">יש לבחור תאריך התחלה וסיום להפקת דו"ח</div><div class="instruction-sub">(תאריכים מחודשים אחרים מוצגים באפור)</div>`;
-             }
-         }
+            }
+        }
 
         function updateGenerateButton() {
             document.getElementById('generate-report').disabled = !(AppState.selectedStartDate && AppState.selectedEndDate);
@@ -2883,12 +3131,12 @@
         }
 
         // Grouping Helper Functions attached to window
-        window.toggleGrouping = function() {
+        window.toggleGrouping = function () {
             AppState.isGrouped = !AppState.isGrouped;
             renderIntermediateReport(AppState.reportData);
         };
 
-        window.selectGroupCategorization = function(idsString, type) {
+        window.selectGroupCategorization = function (idsString, type) {
             const ids = idsString.split(',');
             ids.forEach(id => {
                 AppState.categorizations.delete(`${id}_custom`);
@@ -2899,7 +3147,7 @@
             renderIntermediateReport(AppState.reportData);
         };
 
-        window.updateGroupCustomText = function(idsString, value) {
+        window.updateGroupCustomText = function (idsString, value) {
             const ids = idsString.split(',');
             ids.forEach(id => {
                 AppState.categorizations.set(`${id}_custom`, value);
@@ -2907,7 +3155,7 @@
             saveCategorizationsToCache();
         };
 
-        window.updateGroupActiveResearcher = function(idsString, value) {
+        window.updateGroupActiveResearcher = function (idsString, value) {
             const ids = idsString.split(',');
             ids.forEach(id => {
                 AppState.categorizations.set(`${id}_activeResearcher`, value);
@@ -2916,7 +3164,7 @@
         };
 
         // Handle active researcher selection change
-        window.handleActiveResearcherChange = function(taskId, value, isGroup) {
+        window.handleActiveResearcherChange = function (taskId, value, isGroup) {
             if (value === '__other__') {
                 // Open the modal to manage researchers
                 openResearcherModal();
@@ -3053,7 +3301,7 @@
                         date: g.date
                     }));
                 } else {
-                    tasksToRender = data.otherTasks.map(t => ({...t, isGroup: false, count: 1, originalIds: [t.id]}));
+                    tasksToRender = data.otherTasks.map(t => ({ ...t, isGroup: false, count: 1, originalIds: [t.id] }));
                 }
 
                 tasksToRender.forEach(task => {
@@ -3065,7 +3313,7 @@
             if (data.seminars.length > 0) {
                 html += `<div class="report-section"><h3 class="section-title">מכון - סמינר/קורס/הכשרה:</h3>`;
                 data.seminars.forEach(task => {
-                    html += renderTaskItem({...task, isGroup: false, originalIds: [task.id]}, true);
+                    html += renderTaskItem({ ...task, isGroup: false, originalIds: [task.id] }, true);
                 });
                 html += '</div>';
             }
@@ -3099,217 +3347,217 @@
         }
 
         function processFinalReport(data, categorizations) {
-    // ==========================================
-    // אזור הגדרות - שינוי קל של לוגיקת החלוקה
-    // ==========================================
-    const DISTRIBUTION_CONFIG = {
-        // האם קטגוריית "מכון - סמינר/קורס/הכשרה" (הכללית) תיחשב כבסיס לחלוקה יחסית?
-        // false = הסמינר הכללי לא יקבל תוספת שעות מהמשימ��ת האחרות (ברירת מחדל).
-        // true = הסמינר הכללי ייחשב כמו חוקר ויקבל חלק יחסי מהמשימות האחרות.
-        includeSeminarInRelative: false,
+            // ==========================================
+            // אזור הגדרות - שינוי קל של לוגיקת החלוקה
+            // ==========================================
+            const DISTRIBUTION_CONFIG = {
+                // האם קטגוריית "מכון - סמינר/קורס/הכשרה" (הכללית) תיחשב כבסיס לחלוקה יחסית?
+                // false = הסמינר הכללי לא יקבל תוספת שעות מהמשימ��ת האחרות (ברירת מחדל).
+                // true = הסמינר הכללי ייחשב כמו חוקר ויקבל חלק יחסי מהמשימות האחרות.
+                includeSeminarInRelative: false,
 
-        // האם קטגוריית "חיוב חדש" (Custom) תיחשב כבסיס לחלוקה יחסית?
-        includeCustomChargeInRelative: false
-    };
-    // ==========================================
+                // האם קטגוריית "חיוב חדש" (Custom) תיחשב כבסיס לחלוקה יחסית?
+                includeCustomChargeInRelative: false
+            };
+            // ==========================================
 
-    const finalData = {
-        categories: new Map(),
-        totalHours: data.totalHours,
-        totalDays: roundToSingleDecimal((Number(data.totalHours) || 0) / HOURS_PER_DAY),
-        categorizedTasks: [],
-        missingDays: data.missingDays,
-        calculation: { relative: [] },
-        coveredHalfYearsCount: getCoveredHalfYearsCount(),
-        plannedComparisonRaw: [],
-        plannedComparisonMapped: []
-    };
+            const finalData = {
+                categories: new Map(),
+                totalHours: data.totalHours,
+                totalDays: roundToSingleDecimal((Number(data.totalHours) || 0) / HOURS_PER_DAY),
+                categorizedTasks: [],
+                missingDays: data.missingDays,
+                calculation: { relative: [] },
+                coveredHalfYearsCount: getCoveredHalfYearsCount(),
+                plannedComparisonRaw: [],
+                plannedComparisonMapped: []
+            };
 
-    const rawHoursByResearcher = new Map();
+            const rawHoursByResearcher = new Map();
 
-    // אתחול הקטגוריות עם הנתונים הגולמיים
-    data.researchers.forEach((hours, researcher) => {
-        const numericHours = Number(hours) || 0;
-        finalData.categories.set(researcher, numericHours);
-        rawHoursByResearcher.set(researcher, numericHours);
-    });
+            // אתחול הקטגוריות עם הנתונים הגולמיים
+            data.researchers.forEach((hours, researcher) => {
+                const numericHours = Number(hours) || 0;
+                finalData.categories.set(researcher, numericHours);
+                rawHoursByResearcher.set(researcher, numericHours);
+            });
 
-    const fixedTasks = [];
-    const relativeTasks = [];
+            const fixedTasks = [];
+            const relativeTasks = [];
 
-    // מיון המשימות
-    const classifyTask = (task, isOtherTask) => {
-        const key = task.id;
-        const defaultCategorization = isOtherTask ? null : 'seminar';
-        const categorization = categorizations.get(key) || defaultCategorization;
+            // מיון המשימות
+            const classifyTask = (task, isOtherTask) => {
+                const key = task.id;
+                const defaultCategorization = isOtherTask ? null : 'seminar';
+                const categorization = categorizations.get(key) || defaultCategorization;
 
-        if (categorization === 'relative' || categorization === 'equal') {
-            relativeTasks.push({ task, categorization, key });
-        } else {
-            fixedTasks.push({ task, categorization, key });
-        }
-    };
-
-    data.otherTasks.forEach(t => classifyTask(t, true));
-    data.seminars.forEach(t => classifyTask(t, false));
-
-    // פונקציית עזר קריטית: מי זכאי להשתתף בחלוקה היחסית?
-    const isEligibleForDistribution = (name) => {
-        if (!name) return false;
-
-        // משימות מערכת שאף פעם לא משתתפות (כי הן המקור לחלוקה או שגיאות)
-        if (name === 'משימות אחרות') return false;
-        if (name === 'לא מקוטלג') return false;
-        if (name.includes('חלוקה יחסית')) return false;
-        if (name.includes('חלוקה שווה')) return false;
-
-        // בדיקה לפי הקונפיגורציה שהגדרנו למעלה
-        if (name === 'מכון - סמינר/קורס/הכשרה') {
-            return DISTRIBUTION_CONFIG.includeSeminarInRelative;
-        }
-
-        if (name.startsWith('חיוב חדש')) {
-            return DISTRIBUTION_CONFIG.includeCustomChargeInRelative;
-        }
-
-        // כל שם אחר (חוקר קיים, חוקר חדש שהוסף ידנית, חוקר שנבחר מתוך סמינר) - זכאי!
-        return true;
-    };
-
-    const processSingleTask = (item) => {
-        const { task, categorization, key } = item;
-        const customText = categorizations.get(`${key}_custom`);
-        const chosenActive = categorizations.get(`${key}_activeResearcher`);
-        let displayName = 'לא מקוטלג';
-
-        switch (categorization) {
-            case 'active':
-                // כאן נכנס המקרה שציינת: אם מנהלת שייכה סמינר לחוקר X -> הוא יקבל את השעות
-                // ומכיוון ששמו הוא "ישראל ישראלי" (ולא "סמינר"), הוא אוטומטית ייכנס לחלוקה היחסית.
-                if (chosenActive) {
-                    const prev = finalData.categories.get(chosenActive) || 0;
-                    finalData.categories.set(chosenActive, prev + task.hours);
-                    displayName = `חוקר פעיל: ${chosenActive}`;
+                if (categorization === 'relative' || categorization === 'equal') {
+                    relativeTasks.push({ task, categorization, key });
                 } else {
-                    displayName = 'חוקר פעיל (לא נבחר)';
-                    const prev = finalData.categories.get(displayName) || 0;
-                    finalData.categories.set(displayName, prev + task.hours);
+                    fixedTasks.push({ task, categorization, key });
                 }
-                break;
+            };
 
-            case 'equal':
-                // מסננים רק את מי שזכאי לפי ההגדרות
-                const researchersForEqual = Array.from(finalData.categories.keys())
-                    .filter(r => (finalData.categories.get(r) || 0) > 0 && isEligibleForDistribution(r));
+            data.otherTasks.forEach(t => classifyTask(t, true));
+            data.seminars.forEach(t => classifyTask(t, false));
 
-                if (researchersForEqual.length > 0) {
-                    const portion = task.hours / researchersForEqual.length;
-                    let remaining = task.hours;
-                    researchersForEqual.forEach((r, idx) => {
-                        const toAdd = (idx === researchersForEqual.length - 1) ? remaining : portion;
-                        remaining -= toAdd;
-                        const prev = finalData.categories.get(r) || 0;
-                        finalData.categories.set(r, prev + toAdd);
-                    });
-                    displayName = `חלוקה שווה (${researchersForEqual.length} זכאים)`;
-                } else {
-                    displayName = 'חלוקה שווה (אין זכאים לחלוקה)';
-                    const prev = finalData.categories.get(displayName) || 0;
-                    finalData.categories.set(displayName, prev + task.hours);
+            // פונקציית עזר קריטית: מי זכאי להשתתף בחלוקה היחסית?
+            const isEligibleForDistribution = (name) => {
+                if (!name) return false;
+
+                // משימות מערכת שאף פעם לא משתתפות (כי הן המקור לחלוקה או שגיאות)
+                if (name === 'משימות אחרות') return false;
+                if (name === 'לא מקוטלג') return false;
+                if (name.includes('חלוקה יחסית')) return false;
+                if (name.includes('חלוקה שווה')) return false;
+
+                // בדיקה לפי הקונפיגורציה שהגדרנו למעלה
+                if (name === 'מכון - סמינר/קורס/הכשרה') {
+                    return DISTRIBUTION_CONFIG.includeSeminarInRelative;
                 }
-                break;
 
-            case 'relative':
-                // מסננים רק את מי שזכאי לפי ההגדרות
-                const currentResearchers = Array.from(finalData.categories.keys())
-                    .filter(r => isEligibleForDistribution(r));
+                if (name.startsWith('חיוב חדש')) {
+                    return DISTRIBUTION_CONFIG.includeCustomChargeInRelative;
+                }
 
-                if (currentResearchers.length > 0) {
-                    const weights = currentResearchers.map(r => ({ name: r, base: finalData.categories.get(r) || 0 }));
-                    const totalBase = weights.reduce((s, w) => s + w.base, 0);
+                // כל שם אחר (חוקר קיים, חוקר חדש שהוסף ידנית, חוקר שנבחר מתוך סמינר) - זכאי!
+                return true;
+            };
 
-                    if (totalBase > 0) {
-                        const detail = {
-                            type: 'relative',
-                            method: 'proportional',
-                            taskName: task.name,
-                            taskHours: task.hours,
-                            totalBase: totalBase,
-                            items: [],
-                            note: 'חלוקה יחסית לפי בסיס מעודכן'
-                        };
+            const processSingleTask = (item) => {
+                const { task, categorization, key } = item;
+                const customText = categorizations.get(`${key}_custom`);
+                const chosenActive = categorizations.get(`${key}_activeResearcher`);
+                let displayName = 'לא מקוטלג';
 
-                        let remaining = task.hours;
-                        weights.forEach((w, idx) => {
-                            const raw = task.hours * (w.base / totalBase);
-                            const add = (idx === weights.length - 1) ? remaining : raw;
-                            remaining -= add;
+                switch (categorization) {
+                    case 'active':
+                        // כאן נכנס המקרה שציינת: אם מנהלת שייכה סמינר לחוקר X -> הוא יקבל את השעות
+                        // ומכיוון ששמו הוא "ישראל ישראלי" (ולא "סמינר"), הוא אוטומטית ייכנס לחלוקה היחסית.
+                        if (chosenActive) {
+                            const prev = finalData.categories.get(chosenActive) || 0;
+                            finalData.categories.set(chosenActive, prev + task.hours);
+                            displayName = `חוקר פעיל: ${chosenActive}`;
+                        } else {
+                            displayName = 'חוקר פעיל (לא נבחר)';
+                            const prev = finalData.categories.get(displayName) || 0;
+                            finalData.categories.set(displayName, prev + task.hours);
+                        }
+                        break;
 
-                            const prev = finalData.categories.get(w.name) || 0;
-                            finalData.categories.set(w.name, prev + add);
+                    case 'equal':
+                        // מסננים רק את מי שזכאי לפי ההגדרות
+                        const researchersForEqual = Array.from(finalData.categories.keys())
+                            .filter(r => (finalData.categories.get(r) || 0) > 0 && isEligibleForDistribution(r));
 
-                            if (add > 0) {
-                                detail.items.push({
-                                    researcher: w.name,
-                                    baseHours: w.base,
-                                    weight: (w.base/totalBase),
-                                    allocated: add
+                        if (researchersForEqual.length > 0) {
+                            const portion = task.hours / researchersForEqual.length;
+                            let remaining = task.hours;
+                            researchersForEqual.forEach((r, idx) => {
+                                const toAdd = (idx === researchersForEqual.length - 1) ? remaining : portion;
+                                remaining -= toAdd;
+                                const prev = finalData.categories.get(r) || 0;
+                                finalData.categories.set(r, prev + toAdd);
+                            });
+                            displayName = `חלוקה שווה (${researchersForEqual.length} זכאים)`;
+                        } else {
+                            displayName = 'חלוקה שווה (אין זכאים לחלוקה)';
+                            const prev = finalData.categories.get(displayName) || 0;
+                            finalData.categories.set(displayName, prev + task.hours);
+                        }
+                        break;
+
+                    case 'relative':
+                        // מסננים רק את מי שזכאי לפי ההגדרות
+                        const currentResearchers = Array.from(finalData.categories.keys())
+                            .filter(r => isEligibleForDistribution(r));
+
+                        if (currentResearchers.length > 0) {
+                            const weights = currentResearchers.map(r => ({ name: r, base: finalData.categories.get(r) || 0 }));
+                            const totalBase = weights.reduce((s, w) => s + w.base, 0);
+
+                            if (totalBase > 0) {
+                                const detail = {
+                                    type: 'relative',
+                                    method: 'proportional',
+                                    taskName: task.name,
+                                    taskHours: task.hours,
+                                    totalBase: totalBase,
+                                    items: [],
+                                    note: 'חלוקה יחסית לפי בסיס מעודכן'
+                                };
+
+                                let remaining = task.hours;
+                                weights.forEach((w, idx) => {
+                                    const raw = task.hours * (w.base / totalBase);
+                                    const add = (idx === weights.length - 1) ? remaining : raw;
+                                    remaining -= add;
+
+                                    const prev = finalData.categories.get(w.name) || 0;
+                                    finalData.categories.set(w.name, prev + add);
+
+                                    if (add > 0) {
+                                        detail.items.push({
+                                            researcher: w.name,
+                                            baseHours: w.base,
+                                            weight: (w.base / totalBase),
+                                            allocated: add
+                                        });
+                                    }
                                 });
+                                finalData.calculation.relative.push(detail);
+                                displayName = `חלוקה יחסית (${weights.filter(w => w.base > 0).length} זכאים בבסיס)`;
+                            } else {
+                                // אם אין בסיס (כל הזכאים על 0), מבצעים חלוקה שווה
+                                const portion = task.hours / currentResearchers.length;
+                                const detail = { type: 'relative', method: 'equal', taskName: task.name, taskHours: task.hours, totalBase: 0, items: [], note: 'חלוקה יחסית (אין בסיס - בוצעה חלוקה שווה)' };
+                                let remaining = task.hours;
+                                currentResearchers.forEach((r, idx) => {
+                                    const add = (idx === currentResearchers.length - 1) ? remaining : portion;
+                                    remaining -= add;
+                                    const prev = finalData.categories.get(r) || 0;
+                                    finalData.categories.set(r, prev + add);
+                                    detail.items.push({ researcher: r, baseHours: 0, weight: (1 / currentResearchers.length), allocated: add });
+                                });
+                                finalData.calculation.relative.push(detail);
+                                displayName = 'חלוקה יחסית (שווה בהעדר בסיס)';
                             }
-                        });
-                        finalData.calculation.relative.push(detail);
-                        displayName = `חלוקה יחסית (${weights.filter(w=>w.base>0).length} זכאים בבסיס)`;
-                    } else {
-                        // אם אין בסיס (כל הזכאים על 0), מבצעים חלוקה שווה
-                        const portion = task.hours / currentResearchers.length;
-                        const detail = { type:'relative', method:'equal', taskName: task.name, taskHours: task.hours, totalBase: 0, items: [], note: 'חלוקה יחסית (אין בסיס - בוצעה חלוקה שווה)' };
-                        let remaining = task.hours;
-                        currentResearchers.forEach((r, idx) => {
-                            const add = (idx === currentResearchers.length - 1) ? remaining : portion;
-                            remaining -= add;
-                            const prev = finalData.categories.get(r) || 0;
-                            finalData.categories.set(r, prev + add);
-                            detail.items.push({ researcher: r, baseHours: 0, weight: (1/currentResearchers.length), allocated: add });
-                        });
-                        finalData.calculation.relative.push(detail);
-                        displayName = 'חלוקה יחסית (שווה בהעדר בסיס)';
-                    }
-                } else {
-                    displayName = 'חלוקה יחסית (ללא זכאים)';
-                    const prev = finalData.categories.get(displayName) || 0;
-                    finalData.categories.set(displayName, prev + task.hours);
+                        } else {
+                            displayName = 'חלוקה יחסית (ללא זכאים)';
+                            const prev = finalData.categories.get(displayName) || 0;
+                            finalData.categories.set(displayName, prev + task.hours);
+                        }
+                        break;
+
+                    case 'seminar':
+                        displayName = 'מכון - סמינר/קורס/הכשרה';
+                        const prevSem = finalData.categories.get(displayName) || 0;
+                        finalData.categories.set(displayName, prevSem + task.hours);
+                        break;
+
+                    case 'custom':
+                        displayName = customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
+                        const prevCustom = finalData.categories.get(displayName) || 0;
+                        finalData.categories.set(displayName, prevCustom + task.hours);
+                        break;
+
+                    default:
+                        displayName = 'לא מקוטלג';
+                        const prevUn = finalData.categories.get(displayName) || 0;
+                        finalData.categories.set(displayName, prevUn + task.hours);
                 }
-                break;
+                finalData.categorizedTasks.push({ name: task.name, category: displayName, hours: task.hours });
+            };
 
-            case 'seminar':
-                displayName = 'מכון - סמינר/קורס/הכשרה';
-                const prevSem = finalData.categories.get(displayName) || 0;
-                finalData.categories.set(displayName, prevSem + task.hours);
-                break;
+            fixedTasks.forEach(processSingleTask);
+            relativeTasks.forEach(processSingleTask);
 
-            case 'custom':
-                displayName = customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
-                const prevCustom = finalData.categories.get(displayName) || 0;
-                finalData.categories.set(displayName, prevCustom + task.hours);
-                break;
+            const settingsMap = getSelectedEmployeeSettingsMap();
+            finalData.plannedComparisonRaw = calculatePlannedVsActualRows(rawHoursByResearcher, settingsMap, finalData.coveredHalfYearsCount);
+            finalData.plannedComparisonMapped = calculatePlannedVsActualRows(finalData.categories, settingsMap, finalData.coveredHalfYearsCount);
 
-            default:
-                displayName = 'לא מקוטלג';
-                const prevUn = finalData.categories.get(displayName) || 0;
-                finalData.categories.set(displayName, prevUn + task.hours);
+            return finalData;
         }
-        finalData.categorizedTasks.push({ name: task.name, category: displayName, hours: task.hours });
-    };
-
-    fixedTasks.forEach(processSingleTask);
-    relativeTasks.forEach(processSingleTask);
-
-    const settingsMap = getSelectedEmployeeSettingsMap();
-    finalData.plannedComparisonRaw = calculatePlannedVsActualRows(rawHoursByResearcher, settingsMap, finalData.coveredHalfYearsCount);
-    finalData.plannedComparisonMapped = calculatePlannedVsActualRows(finalData.categories, settingsMap, finalData.coveredHalfYearsCount);
-
-    return finalData;
-}
 
 
         function renderFinalReport(data) {
@@ -3339,7 +3587,7 @@
             html += renderComparisonTable('מתוכנן מול בפועל - אחרי מיפוי/קטלוג מנהל/ת', data.plannedComparisonMapped, data.coveredHalfYearsCount, 'comparison-mapped');
 
             if (data.categorizedTasks.length > 0) {
-                 html += `<div class="report-section"><h3 class="section-title">פירוט משימות וסמינרים:</h3>
+                html += `<div class="report-section"><h3 class="section-title">פירוט משימות וסמינרים:</h3>
                     ${data.categorizedTasks.map(task => `<div class="hours-item other-task"><span class="hours-label">${task.name} <strong>→ ${task.category}</strong></span><span class="hours-value">${formatHours(task.hours)}</span></div>`).join('')}
                  </div>`;
             }
@@ -3361,7 +3609,7 @@
             const ctx = document.getElementById('hoursChart').getContext('2d');
             if (window.hoursChartInstance) window.hoursChartInstance.destroy();
             const labels = [], chartData = [];
-            const colors = ['#3b82f6','#dc2626','#059669','#f59e0b','#8b5cf6','#06b6d4','#84cc16','#f97316','#ec4899','#6366f1','#10b981','#ef4444'];
+            const colors = ['#3b82f6', '#dc2626', '#059669', '#f59e0b', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1', '#10b981', '#ef4444'];
             data.categories.forEach((hours, category) => {
                 if (hours > 0) { labels.push(category); chartData.push(hours); }
             });
@@ -3369,7 +3617,7 @@
             function getContrastColor(hex) {
                 if (!hex) return '#fff';
                 const h = hex.replace('#', '');
-                const bigint = parseInt(h.length === 3 ? h.split('').map(c => c+c).join('') : h, 16);
+                const bigint = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
                 const rgb = { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
                 const lum = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
                 return lum > 0.5 ? '#0f172a' : '#ffffff';
@@ -3382,7 +3630,7 @@
                     responsive: true, maintainAspectRatio: false,
                     plugins: {
                         legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, font: { family: 'Heebo' } } },
-                        tooltip: { callbacks: { label: c => `${c.label}: ${formatHours(c.parsed)} שעות (${Math.round((c.parsed / c.dataset.data.reduce((a,b)=>a+b,0)) * 100)}%)` } }
+                        tooltip: { callbacks: { label: c => `${c.label}: ${formatHours(c.parsed)} שעות (${Math.round((c.parsed / c.dataset.data.reduce((a, b) => a + b, 0)) * 100)}%)` } }
                     }
                 },
                 plugins: [{
@@ -3498,7 +3746,7 @@
             download(filename, csvContent);
         }
 
-        window.openPdfReport = function() {
+        window.openPdfReport = function () {
             if (!AppState.finalReport || !AppState.selectedEmployee || !AppState.selectedStartDate || !AppState.selectedEndDate) {
                 alert('שגיאה: נתוני הדו"ח אינם זמינים.');
                 return;
@@ -3536,7 +3784,7 @@
             window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
         };
 
-        window.openDbReport = function() {
+        window.openDbReport = function () {
             if (!AppState.selectedEmployee || !AppState.selectedStartDate || !AppState.selectedEndDate) {
                 alert('שגיאה: פרטי העובד או התאריכים אינם זמינים.');
                 return;
@@ -3549,7 +3797,7 @@
             window.open(url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
         };
 
-        function toLocalDateStr(dt) { return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; }
+        function toLocalDateStr(dt) { return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`; }
 
         function getSundayOfWeek(date) {
             const d = new Date(date);
@@ -3559,7 +3807,7 @@
         }
 
         // Show-calculation logic
-        window.toggleCalculation = function() {
+        window.toggleCalculation = function () {
             const panel = document.getElementById('calc-panel');
             if (!panel) return;
             if (panel.style.display === 'none') {
@@ -3726,7 +3974,7 @@
             });
         }
 
-        window.toggleResearcherSelection = function(name, isChecked) {
+        window.toggleResearcherSelection = function (name, isChecked) {
             if (isChecked) {
                 if (!modalTempActiveResearchers.includes(name)) {
                     modalTempActiveResearchers.push(name);
@@ -3737,7 +3985,7 @@
         };
 
         // Function to select researcher directly to the active field without saving
-        window.selectResearcherDirectly = function(researcherName) {
+        window.selectResearcherDirectly = function (researcherName) {
             if (!AppState.currentActiveResearcherInput) {
                 alert('אנא לחץ על שדה "החוקר/ת הפעיל/ה" כדי לבחור חוקר');
                 return;
@@ -3783,7 +4031,7 @@
             showToast(`החוקר/ת "${researcherName}" נבחר/ה בהצלחה`);
         };
 
-        window.addNewResearcherFromModal = function() {
+        window.addNewResearcherFromModal = function () {
             const input = document.getElementById('modal-new-researcher-name');
             if (!input) return;
 
@@ -3833,7 +4081,7 @@
             }, 2000);
         }
 
-        window.saveResearchersFromModal = async function() {
+        window.saveResearchersFromModal = async function () {
             if (!AppState.selectedEmployee) {
                 alert('שגיאה: לא נבחר עובד');
                 return;
@@ -3869,7 +4117,7 @@
             }
         };
 
-        window.closeResearcherModal = function() {
+        window.closeResearcherModal = function () {
             document.getElementById('researcher-modal').classList.remove('active');
             // Clear input
             const input = document.getElementById('modal-new-researcher-name');
@@ -3968,7 +4216,7 @@
         }
 
         // Function to show date in Israeli format as preview
-        window.updateDatePreview = function(inputId, previewId) {
+        window.updateDatePreview = function (inputId, previewId) {
             const input = document.getElementById(inputId);
             const preview = document.getElementById(previewId);
             if (!input || !preview) return;
@@ -4015,7 +4263,7 @@
             }).join('');
         }
 
-        window.toggleBackdateEmployee = function(empId, isChecked) {
+        window.toggleBackdateEmployee = function (empId, isChecked) {
             if (isChecked) {
                 if (!backdateSelectedEmployees.includes(empId)) {
                     backdateSelectedEmployees.push(empId);
@@ -4026,7 +4274,7 @@
             updateSelectAllButtonText();
         };
 
-        window.toggleAllEmployeesSelection = function() {
+        window.toggleAllEmployeesSelection = function () {
             const allEmployeeIds = (AppState.employees || []).map(emp => emp.id);
             const allChecked = backdateSelectedEmployees.length === allEmployeeIds.length;
 
@@ -4052,7 +4300,7 @@
             btn.textContent = allChecked ? 'בטל הכל' : 'בחר/י הכל';
         }
 
-        window.openBackdateSettingsModal = async function() {
+        window.openBackdateSettingsModal = async function () {
             // Load current settings from Firebase
             const settings = await loadBackdateSettings();
 
@@ -4081,11 +4329,11 @@
             document.getElementById('backdate-settings-modal').classList.add('active');
         };
 
-        window.closeBackdateSettingsModal = function() {
+        window.closeBackdateSettingsModal = function () {
             document.getElementById('backdate-settings-modal').classList.remove('active');
         };
 
-        window.saveBackdateSettings = async function() {
+        window.saveBackdateSettings = async function () {
             const enabled = document.getElementById('backdate-enabled').checked;
             const minDate = document.getElementById('backdate-min-date').value || null;
             const maxDate = document.getElementById('backdate-max-date').value || null;
@@ -4136,7 +4384,7 @@
         };
 
         // Close modal when clicking outside
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             const researcherModal = document.getElementById('researcher-modal');
             if (researcherModal && e.target === researcherModal) {
                 closeResearcherModal();
@@ -4148,7 +4396,7 @@
         });
 
         // Track which active researcher dropdown was clicked - for "בחר/י" button functionality
-        document.addEventListener('focus', function(e) {
+        document.addEventListener('focus', function (e) {
             // Check if the focused element is an active researcher select dropdown
             if (e.target && e.target.classList && e.target.classList.contains('active-select')) {
                 AppState.currentActiveResearcherInput = e.target;
@@ -4157,7 +4405,5 @@
         }, true); // Use capture phase to catch the event early
     </script>
 </body>
+
 </html>
-
-
-
