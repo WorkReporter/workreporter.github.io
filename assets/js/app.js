@@ -127,7 +127,7 @@
         managedMode = null;
         currentResearcherSettingsDate = null;
         // Navigate back to manager dashboard
-        window.location.href = '/admin-dashboard/manager_dashboard.html';
+        window.location.href = '/admin-dashboard/manager_dashboard.html?v=20260513-3';
     }
     window.exitManagedMode = exitManagedMode;
 
@@ -190,7 +190,7 @@
                     if (isAdmin && managedParams?.uid) {
                         await enterManagedResearchersMode(managedParams.uid, managedParams.name, managedParams.date);
                     } else if (isAdmin) {
-                        window.location.href = '/admin-dashboard/manager_dashboard.html';
+                        window.location.href = '/admin-dashboard/manager_dashboard.html?v=20260513-3';
                     } else {
                         showScreen('main');
                     }
@@ -207,7 +207,7 @@
                     if (isAdmin && managedParams?.uid) {
                         await enterManagedResearchersMode(managedParams.uid, managedParams.name, managedParams.date);
                     } else if (isAdmin) {
-                        window.location.href = '/admin-dashboard/manager_dashboard.html';
+                        window.location.href = '/admin-dashboard/manager_dashboard.html?v=20260513-3';
                     } else {
                         showScreen('main');
                     }
@@ -871,6 +871,37 @@
         // Only allow editing reports from current week
         if (isInCurrentWeek(date)) {
             return { allowed: true, message: '' };
+        }
+
+        const dateOnly = new Date(date);
+        dateOnly.setHours(0, 0, 0, 0);
+
+        // Backdate override: allow editing within the permitted window
+        const overrideCfg = getBackdateOverrideSettings();
+        if (overrideCfg.enabled && currentUser && isUserAllowedForBackdate(currentUser.uid)) {
+            if (overrideCfg.minDate) {
+                const min = new Date(overrideCfg.minDate);
+                min.setHours(0, 0, 0, 0);
+                if (dateOnly < min) {
+                    return {
+                        allowed: false,
+                        message: 'התאריך מוקדם מהתאריך המותר לדיווח בדיעבד'
+                    };
+                }
+            }
+
+            if (overrideCfg.maxDate) {
+                const max = new Date(overrideCfg.maxDate);
+                max.setHours(23, 59, 59, 999);
+                if (dateOnly > max) {
+                    return {
+                        allowed: false,
+                        message: 'התאריך מאוחר מהתאריך המותר לדיווח בדיעבד'
+                    };
+                }
+            }
+
+            return { allowed: true, message: 'עריכה בדיעבד' };
         }
 
         // בדיקה מיוחדת: אם יש דיווח שבועי לתאריך הזה, אז זה אסור לעריכה
@@ -1691,6 +1722,9 @@
                 showError(editValidation.message);
                 return;
             }
+            if (editValidation.message) {
+                showPopup(editValidation.message, 'info');
+            }
             showScreen('daily-report');
             populateReportForm(existingReport);
         } else {
@@ -2159,6 +2193,9 @@
             if (!editValidation.allowed) {
                 showError(editValidation.message);
                 return;
+            }
+            if (editValidation.message) {
+                showPopup(editValidation.message, 'info');
             }
         } else {
             // אין דיווח - בודק אם ניתן ליצור חדש

@@ -426,6 +426,46 @@
             border-bottom: 2px solid #f1f5f9;
         }
 
+        .section-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-title-row .section-title {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .toggle-details-btn {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #475569;
+            border-radius: 999px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-details-btn:hover {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .toggle-details-btn:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.3);
+            outline-offset: 2px;
+        }
+
+        .task-details-body.hidden {
+            display: none;
+        }
+
         .hours-item {
             display: flex;
             justify-content: space-between;
@@ -952,6 +992,7 @@
         .action-btn-icon {
             font-size: 1.25rem;
             opacity: 0.9;
+            font-variation-settings: 'FILL' 0, 'wght' 500;
         }
 
         @media (max-width: 768px) {
@@ -2053,7 +2094,7 @@
                         <path
                             d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                     </svg>
-                    הגדרות דיווח בדיעבד
+                 הגדרות דיווח ועריכה בדיעבד
                 </button>
             </div>
         </div>
@@ -2126,34 +2167,38 @@
                 <h1 class="screen-title" id="final-title">עובד - דו"ח</h1>
                 <p style="text-align: center; color: #64748b; margin-bottom: 2rem;" id="final-subtitle">לתקופה</p>
 
+                <div class="action-buttons" id="final-actions" style="display: none; margin-bottom: 2rem;">
+                    <button class="action-btn csv" onclick="exportFinalReport()">
+                        <span class="material-symbols-outlined action-btn-icon">download</span>
+                        <span>הפקת דו"ח CSV מעובד</span>
+                    </button>
+                    <button class="action-btn pdf" onclick="openPdfReport()">
+                        <span class="material-symbols-outlined action-btn-icon">picture_as_pdf</span>
+                        <span>הפקת דו"ח PDF</span>
+                    </button>
+                    <button class="action-btn database" onclick="openDbReport()">
+                        <span class="material-symbols-outlined action-btn-icon">storage</span>
+                        <span>דו"ח נתונים גולמיים</span>
+                    </button>
+                    <button class="action-btn back" onclick="showIntermediateScreen()">
+                        <span class="material-symbols-outlined action-btn-icon">arrow_back</span>
+                        <span>חזרה</span>
+                    </button>
+                </div>
+
                 <div id="final-content">
                     <div class="loading">מכין דו"ח סופי...</div>
                 </div>
 
-                <div class="report-section" id="chart-section" style="display: none;">
-                    <h3 class="section-title">התפלגות שעות</h3>
-                    <div style="max-width: 600px; margin: 0 auto; position: relative; height: 400px;">
-                        <canvas id="hoursChart"></canvas>
+                <div class="report-section" id="task-details-section" style="display: none;">
+                    <div class="section-title-row">
+                        <h3 class="section-title">פירוט משימות וסמינרים:</h3>
+                        <button type="button" class="toggle-details-btn" id="task-details-toggle"
+                            onclick="toggleTaskDetails()" aria-expanded="true" aria-controls="task-details-body">
+                            הסתר פירוט
+                        </button>
                     </div>
-                </div>
-
-                <div class="action-buttons" id="final-actions" style="display: none;">
-                    <button class="action-btn csv" onclick="exportFinalReport()">
-                        <span class="action-btn-icon">📊</span>
-                        <span>הפקת דו"ח CSV מעובד</span>
-                    </button>
-                    <button class="action-btn pdf" onclick="openPdfReport()">
-                        <span class="action-btn-icon">📄</span>
-                        <span>הפקת דו"ח PDF</span>
-                    </button>
-                    <button class="action-btn database" onclick="openDbReport()">
-                        <span class="action-btn-icon">🗄️</span>
-                        <span>דו"ח נתונים גולמיים</span>
-                    </button>
-                    <button class="action-btn back" onclick="showIntermediateScreen()">
-                        <span class="action-btn-icon">↩️</span>
-                        <span>חזרה</span>
-                    </button>
+                    <div id="task-details-body" class="task-details-body"></div>
                 </div>
             </div>
         </div>
@@ -2190,13 +2235,15 @@
     <div class="modal-overlay" id="backdate-settings-modal">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h2 class="modal-title">הגדרות דיווח בדיעבד</h2>
+                <h2 class="modal-title">הגדרות דיווח ועריכה בדיעבד</h2>
                 <button class="modal-close" onclick="closeBackdateSettingsModal()" aria-label="סגור">×</button>
             </div>
             <div class="modal-body">
                 <div class="backdate-info">
 
                     <strong>הערה:</strong> הרשאה זו מתווספת להרשאות הרגילות ולא מבטלת אותן
+                    <br>
+                    <strong>הערה נוספת:</strong> בטווח שנפתח, יתאפשר גם לערוך דיווחים קיימים (כולל דיווחים שבועיים)
                 </div>
 
                 <div id="backdate-current-status" class="backdate-status inactive">
@@ -2206,7 +2253,7 @@
                 <div class="backdate-form">
                     <div class="backdate-toggle" onclick="document.getElementById('backdate-enabled').click();"
                         style="cursor: pointer;">
-                        <label for="backdate-enabled" style="cursor: pointer;">אפשר דיווח בדיעבד</label>
+                        <label for="backdate-enabled" style="cursor: pointer;">אפשר דיווח ועריכה בדיעבד</label>
                         <label class="toggle-switch" onclick="event.stopPropagation();">
                             <input type="checkbox" id="backdate-enabled" onchange="toggleBackdateDates()">
                             <span class="toggle-slider"></span>
@@ -2585,6 +2632,15 @@
                 mainRow.classList.toggle('detail-open', isOpen);
             }
             btn.textContent = isOpen ? 'סגור' : 'פרטים';
+        };
+
+        window.toggleTaskDetails = function () {
+            const body = document.getElementById('task-details-body');
+            const toggle = document.getElementById('task-details-toggle');
+            if (!body || !toggle) return;
+            const isHidden = body.classList.toggle('hidden');
+            toggle.textContent = isHidden ? 'הצג פירוט' : 'הסתר פירוט';
+            toggle.setAttribute('aria-expanded', String(!isHidden));
         };
 
         function renderComparisonTable(title, rows, halfYearsCount, sectionId) {
@@ -3599,11 +3655,13 @@
             html += renderComparisonTable('מתוכנן מול בפועל - דיווח גולמי לפי חוקרים', data.plannedComparisonRaw, data.coveredHalfYearsCount, 'comparison-raw');
             html += renderComparisonTable('מתוכנן מול בפועל - אחרי מיפוי/קטלוג מנהל/ת', data.plannedComparisonMapped, data.coveredHalfYearsCount, 'comparison-mapped');
 
-            if (data.categorizedTasks.length > 0) {
-                html += `<div class="report-section"><h3 class="section-title">פירוט משימות וסמינרים:</h3>
-                    ${data.categorizedTasks.map(task => `<div class="hours-item other-task"><span class="hours-label">${task.name} <strong>→ ${task.category}</strong></span><span class="hours-value">${formatHours(task.hours)}</span></div>`).join('')}
-                 </div>`;
-            }
+            html += `
+                <div class="report-section" id="chart-section" style="display: none;">
+                    <h3 class="section-title">התפלגות שעות</h3>
+                    <div style="max-width: 600px; margin: 0 auto; position: relative; height: 400px;">
+                        <canvas id="hoursChart"></canvas>
+                    </div>
+                </div>`;
 
             html += `<div class="report-section">
                     <h3 class="section-title">ימים ללא דיווח: <span style="color: #3b82f6;">${data.missingDays.length} סה"כ ימים</span></h3>
@@ -3613,6 +3671,28 @@
                 </div>`;
 
             document.getElementById('final-content').innerHTML = html;
+
+            const taskSection = document.getElementById('task-details-section');
+            const taskBody = document.getElementById('task-details-body');
+            const taskToggle = document.getElementById('task-details-toggle');
+            if (taskSection && taskBody) {
+                if (data.categorizedTasks.length > 0) {
+                    taskBody.innerHTML = data.categorizedTasks.map(task =>
+                        `<div class="hours-item other-task"><span class="hours-label">${task.name} <strong>→ ${task.category}</strong></span><span class="hours-value">${formatHours(task.hours)}</span></div>`
+                    ).join('');
+                    taskBody.classList.remove('hidden');
+                    taskSection.style.display = 'block';
+                    if (taskToggle) {
+                        taskToggle.textContent = 'הסתר פירוט';
+                        taskToggle.setAttribute('aria-expanded', 'true');
+                    }
+                } else {
+                    taskBody.innerHTML = '';
+                    taskBody.classList.remove('hidden');
+                    taskSection.style.display = 'none';
+                }
+            }
+
             document.getElementById('chart-section').style.display = 'block';
             document.getElementById('final-actions').style.display = 'flex';
             createPieChart(data);
@@ -4186,7 +4266,7 @@
             }
 
             if (settings.enabled && !isExpired) {
-                let statusText = ' דיווח בדיעבד פתוח';
+                let statusText = ' דיווח ועריכה בדיעבד פתוח';
                 if (settings.minDate) {
                     statusText += ` מתאריך ${formatDisplayDate(settings.minDate)}`;
                 }
@@ -4208,7 +4288,7 @@
                 statusDiv.textContent = '⚠️ ההרשאה לדיווח בדיעבד פגה - יש לעדכן את התאריכים או לכבות';
                 statusDiv.className = 'backdate-status inactive';
             } else {
-                statusDiv.textContent = ' דיווח בדיעבד סגור - עובדים יכולים לדווח רק על השבוע הנוכחי והקודם';
+                statusDiv.textContent = ' דיווח ועריכה בדיעבד סגור - עובדים יכולים לדווח רק על השבוע הנוכחי והקודם';
                 statusDiv.className = 'backdate-status inactive';
             }
         }
