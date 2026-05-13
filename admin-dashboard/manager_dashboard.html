@@ -2143,8 +2143,8 @@
 
         .researcher-date-form .date-field input[type="date"]:focus {
             outline: none;
-            border-color: #8b5cf6;
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
         }
 
         /* ---- Researchers Search ---- */
@@ -2240,7 +2240,7 @@
 
         .half-year-note {
             font-size: 0.75rem;
-            color: #8b5cf6;
+            color: #3b82f6;
             font-weight: 600;
         }
 
@@ -2258,7 +2258,7 @@
         .researcher-checkbox-label input[type="checkbox"] {
             width: 18px;
             height: 18px;
-            accent-color: #8b5cf6;
+            accent-color: #3b82f6;
             cursor: pointer;
             flex-shrink: 0;
         }
@@ -2333,8 +2333,8 @@
 
         .categorized-badge {
             font-size: 0.75rem;
-            background: #ede9fe;
-            color: #7c3aed;
+            background: #dbeafe;
+            color: #2563eb;
             border-radius: 6px;
             padding: 2px 8px;
             font-weight: 600;
@@ -2409,14 +2409,14 @@
                         <span class="material-symbols-outlined" style="font-size:2rem;">groups</span>
                     </div>
                     <div class="hub-card-title">עובדות ועובדים פעילים</div>
-                    <div class="hub-card-desc">הפקת דו"ח שעות ופעילות<br>עבור עובדת או עובד ספציפי/ת</div>
+                    <div class="hub-card-desc">הפקת דו"ח שעות ופעילות<br>עבור עובד/ת ספציפי/ת</div>
                 </button>
                 <button type="button" class="hub-card" onclick="showResearchersListScreen()">
                     <div class="hub-card-icon researchers">
                         <span class="material-symbols-outlined" style="font-size:2rem;">school</span>
                     </div>
                     <div class="hub-card-title">חוקרות וחוקרים פעילים</div>
-                    <div class="hub-card-desc">צפייה בנתונים פר חוקרת או חוקר<br>שעות ואחוזים לפי עובדות ועובדים</div>
+                    <div class="hub-card-desc">צפייה בנתונים פר חוקרת או חוקר<br>שעות ואחוזים לפי עובדים/עובדות</div>
                 </button>
             </div>
         </div>
@@ -4710,7 +4710,7 @@
             </div>`;
 
             if (halfYearLabel) {
-                html += `<div style="text-align:center; margin-bottom:1rem; color:#8b5cf6; font-weight:600; font-size:0.9rem;">מחציות מכוסות: ${halfYearLabel}</div>`;
+                html += `<div style="text-align:center; margin-bottom:1rem; color:#3b82f6; font-weight:600; font-size:0.9rem;">מחציות מכוסות: ${halfYearLabel}</div>`;
             }
 
             const pctHeader = isSeminarMode ? '' : `<th style="text-align:center">אחוז משרה <span class="half-year-note">(${halfYearLabel || 'פר מחצית'})</span></th>`;
