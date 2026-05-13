@@ -4706,7 +4706,6 @@
                 <div class="summary-card"><div class="sc-label">עובדים שדיווחו</div><div class="sc-value">${results.length}</div></div>
                 <div class="summary-card"><div class="sc-label">סה"כ ימים בפועל</div><div class="sc-value">${totalActualDays.toFixed(1)}</div></div>
                 <div class="summary-card"><div class="sc-label">סה"כ יעד</div><div class="sc-value">${totalTargetDays > 0 ? totalTargetDays.toFixed(1) : 'N/A'}</div></div>
-                ${!isSeminarMode ? `<div class="summary-card"><div class="sc-label">סמינר/קורס/הכשרה</div><div class="sc-value">${totalSeminarDays.toFixed(1)} ימים</div></div>` : ''}
             </div>`;
 
             if (halfYearLabel) {
@@ -4818,15 +4817,13 @@
                 name: r.empName,
                 actualDays: r.actualDays.toFixed(1),
                 targetDays: r.targetDays != null ? r.targetDays.toFixed(1) : 'N/A',
-                pct: r.activityPercent != null ? r.activityPercent.toFixed(1) + '%' : 'N/A',
-                seminarDays: r.seminarDays.toFixed(1)
+                pct: r.activityPercent != null ? r.activityPercent.toFixed(1) + '%' : 'N/A'
             }));
             const cols = [
                 { key: 'name', header: 'עובד/ת' },
                 { key: 'actualDays', header: 'ימים בפועל' },
                 { key: 'targetDays', header: 'יעד לתקופה' },
-                { key: 'pct', header: 'אחוז משרה (פר מחצית)' },
-                { key: 'seminarDays', header: 'סמינר/קורס/הכשרה (ימים)' }
+                { key: 'pct', header: 'אחוז משרה (פר מחצית)' }
             ];
             csv += toCsv(rows, cols);
             const dateForFile = new Date().toISOString().slice(0, 10);
