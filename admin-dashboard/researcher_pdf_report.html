@@ -183,6 +183,10 @@
         <div id="loading">טוען דו"ח...</div>
 
         <div id="report-page" style="display:none;">
+            <div class="action-bar">
+                <button class="btn-primary" onclick="generatePDF()">הורדת PDF</button>
+            </div>
+
             <div class="page-header">
                 <div class="page-title" id="report-title"></div>
                 <div class="page-subtitle" id="report-subtitle"></div>
@@ -193,10 +197,6 @@
             <div id="report-content"></div>
 
             <div class="footer">דו"ח זה הופק בתאריך <span id="generation-date"></span>.</div>
-        </div>
-
-        <div class="action-bar">
-            <button class="btn-primary" onclick="generatePDF()">הורדת PDF</button>
         </div>
         <div id="generated-info"></div>
     </div>
