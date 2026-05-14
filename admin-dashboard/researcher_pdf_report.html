@@ -274,7 +274,7 @@
                             <th>ימים בפועל</th>
                             <th>יעד לתקופה</th>
                             <th>אחוז משרה מיועד</th>
-                            <th>אחוז בפועל</th>
+                            <th>אחוז משרה בפועל</th>
                             <th>סטטוס</th>
                         </tr>
                     </thead>
@@ -282,8 +282,8 @@
                         ${results.map(row => {
                             const targetLabel = row.targetDays != null ? row.targetDays.toFixed(1) : 'N/A';
                             const plannedPct = row.activityPercent != null ? `${row.activityPercent.toFixed(1)}%` : 'N/A';
-                            const actualPct = row.targetDays != null && row.targetDays > 0
-                                ? `${roundToSingleDecimal((row.actualDays / row.targetDays) * 100).toFixed(1)}%`
+                            const actualPct = row.targetDays != null && row.targetDays > 0 && row.activityPercent != null
+                                ? `${roundToSingleDecimal((row.actualDays * row.activityPercent) / row.targetDays).toFixed(1)}%`
                                 : 'N/A';
                             const status = isSeminarMode
                                 ? buildStatus(row.actualDays, row.targetDays, `${formatHours(row.researcherHours)} שעות`)
@@ -302,24 +302,7 @@
                 </table>
             </div>`;
 
-            if (reportData.includeRelative && Array.isArray(reportData.relativeCalculations) && reportData.relativeCalculations.length > 0) {
-                html += `<div class="section"><div class="section-title">חישובי חלוקה יחסית</div>`;
-                reportData.relativeCalculations.forEach(employeeBlock => {
-                    html += `<div style="margin-bottom:14px; border:1px solid var(--border); border-radius:12px; padding:12px;">
-                        <div style="font-weight:700; margin-bottom:8px;">${escapeHtml(employeeBlock.empName)}</div>
-                        ${(employeeBlock.details || []).map((item, index) => {
-                            const mode = item.method === 'proportional' ? 'חלוקה יחסית' : item.method === 'equal' ? 'חלוקה שווה' : 'ללא זכאים';
-                            return `<div style="padding:8px 0; border-top:${index === 0 ? 'none' : '1px solid var(--border)'}; font-size:0.9rem; color:var(--text);">
-                                <div style="font-weight:600;">${index + 1}. ${escapeHtml(item.taskName || 'משימה')} • ${mode}</div>
-                                <div style="color:var(--muted);">${escapeHtml(item.note || '')}</div>
-                                <div>שעות משימה: ${formatHours(item.taskHours)} | בסיס: ${formatHours(item.totalBase)}</div>
-                                <div>${(item.items || []).map(it => `${escapeHtml(it.researcher)}: בסיס ${formatHours(it.baseHours)}${item.method === 'proportional' ? `, משקל ${formatHours(it.weight)}` : ''}, הוקצו ${formatHours(it.allocated)} שעות`).join(' • ')}</div>
-                            </div>`;
-                        }).join('')}
-                    </div>`;
-                });
-                html += `</div>`;
-            }
+
 
             document.getElementById('report-content').innerHTML = html;
         }
@@ -357,7 +340,7 @@
                             <th>ימים בפועל</th>
                             <th>יעד לתקופה</th>
                             <th>אחוז משרה מיועד</th>
-                            <th>אחוז בפועל</th>
+                            <th>אחוז משרה בפועל</th>
                             <th>סטטוס</th>
                         </tr>
                     </thead>
@@ -396,7 +379,7 @@
                                 <th>ימים בפועל</th>
                                 <th>יעד לתקופה</th>
                                 <th>אחוז משרה מיועד</th>
-                                <th>אחוז בפועל</th>
+                                <th>אחוז משרה בפועל</th>
                                 <th>סטטוס</th>
                             </tr>
                         </thead>
@@ -425,24 +408,7 @@
                 </div>`;
             });
 
-            if (Array.isArray(reportData.relativeCalculations) && reportData.relativeCalculations.length > 0) {
-                html += `<div class="section"><div class="section-title">חישובי חלוקה יחסית</div>`;
-                reportData.relativeCalculations.forEach(employeeBlock => {
-                    html += `<div style="margin-bottom:14px; border:1px solid var(--border); border-radius:12px; padding:12px;">
-                        <div style="font-weight:700; margin-bottom:8px;">${escapeHtml(employeeBlock.empName)}</div>
-                        ${(employeeBlock.details || []).map((item, index) => {
-                            const mode = item.method === 'proportional' ? 'חלוקה יחסית' : item.method === 'equal' ? 'חלוקה שווה' : 'ללא זכאים';
-                            return `<div style="padding:8px 0; border-top:${index === 0 ? 'none' : '1px solid var(--border)'}; font-size:0.9rem; color:var(--text);">
-                                <div style="font-weight:600;">${index + 1}. ${escapeHtml(item.taskName || 'משימה')} • ${mode}</div>
-                                <div style="color:var(--muted);">${escapeHtml(item.note || '')}</div>
-                                <div>שעות משימה: ${formatHours(item.taskHours)} | בסיס: ${formatHours(item.totalBase)}</div>
-                                <div>${(item.items || []).map(it => `${escapeHtml(it.researcher)}: בסיס ${formatHours(it.baseHours)}${item.method === 'proportional' ? `, משקל ${formatHours(it.weight)}` : ''}, הוקצו ${formatHours(it.allocated)} שעות`).join(' • ')}</div>
-                            </div>`;
-                        }).join('')}
-                    </div>`;
-                });
-                html += `</div>`;
-            }
+
 
             document.getElementById('report-content').innerHTML = html;
         }
@@ -466,7 +432,7 @@
             const endDate = new Date(payload.endDate);
             const flags = [];
             if (payload.reportData?.includeCategorized) flags.push('כולל קיטלוגים');
-            if (payload.reportData?.includeRelative) flags.push('כולל חלוקה יחסית');
+
             const flagsText = flags.length ? ` • ${flags.join(' • ')}` : '';
             document.getElementById('report-subtitle').textContent = `לתקופה ${startDate.toLocaleDateString('he-IL')} - ${endDate.toLocaleDateString('he-IL')}${flagsText}`;
             document.getElementById('generation-date').textContent = new Date().toLocaleDateString('he-IL');

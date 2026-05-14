@@ -1979,6 +1979,7 @@
             cursor: pointer;
             transition: all 0.18s ease;
             min-width: 130px;
+            flex: 1;
             font-family: inherit;
         }
 
@@ -3108,7 +3109,7 @@
             const includePercentColumns = options.includePercentColumns === true;
             const includeAllInTotals = options.includeAllInTotals === true;
             const totals = calculateComparisonTotals(rows, { includeAllInTotals });
-            const columnCount = includePercentColumns ? 7 : 5;
+            const columnCount = includePercentColumns ? 6 : 4;
             const rowsHtml = (rows || []).map((row, idx) => {
                 const progress = getProgressForRow(row);
                 const plannedLabel = row.plannedForPeriod != null
@@ -3117,8 +3118,8 @@
                 const plannedPercentLabel = row.plannedPercent != null
                     ? `${row.plannedPercent.toFixed(1)}%`
                     : 'N/A';
-                const actualPercentLabel = row.plannedForPeriod != null && row.plannedForPeriod > 0
-                    ? `${roundToSingleDecimal((row.actualDays / row.plannedForPeriod) * 100).toFixed(1)}%`
+                const actualPercentLabel = row.plannedForPeriod != null && row.plannedForPeriod > 0 && row.plannedPercent != null
+                    ? `${roundToSingleDecimal((row.actualDays * row.plannedPercent) / row.plannedForPeriod).toFixed(1)}%`
                     : 'N/A';
 
                 const detailPlannedHalf = row.plannedPerHalf != null
@@ -3142,9 +3143,8 @@
                         <td data-label="חוקר/קטגוריה" style="font-weight:600;">${row.name}</td>
                         <td data-label="בפועל (ימים)" style="text-align:center;">${row.actualDays.toFixed(1)} ימים</td>
                         <td data-label="יעד לתקופה" style="text-align:center;">${plannedLabel}</td>
-                        <td data-label="סטטוס" class="col-status" style="text-align:center;"><span class="status-chip ${row.statusClass}">${row.status}</span></td>
                         ${includePercentColumns ? `<td data-label="אחוז משרה מיועד" style="text-align:center;">${plannedPercentLabel}</td>` : ''}
-                        ${includePercentColumns ? `<td data-label="אחוז בפועל" style="text-align:center;">${actualPercentLabel}</td>` : ''}
+                        ${includePercentColumns ? `<td data-label="אחוז משרה בפועל" style="text-align:center;">${actualPercentLabel}</td>` : ''}
                         <td data-label="פעולות" class="col-action" style="text-align:center;"><button id="${sectionId}-row-${idx}-btn" class="row-toggle-btn" onclick="toggleComparisonRow('${sectionId}', ${idx})">פרטים</button></td>
                     </tr>
                     <tr id="${sectionId}-row-${idx}-detail" class="row-detail">
@@ -3180,9 +3180,8 @@
                                     <th>חוקר/קטגוריה</th>
                                     <th>בפועל (ימים)</th>
                                     <th>יעד לתקופה</th>
-                                    <th class="col-status">סטטוס</th>
                                     ${includePercentColumns ? '<th>אחוז משרה מיועד</th>' : ''}
-                                    ${includePercentColumns ? '<th>אחוז בפועל</th>' : ''}
+                                    ${includePercentColumns ? '<th>אחוז משרה בפועל</th>' : ''}
                                     <th class="col-action">פעולות</th>
                                 </tr>
                             </thead>
@@ -3194,9 +3193,8 @@
                                     <td data-label="סיכום" style="font-weight:700;">${includeAllInTotals ? 'סה"כ' : 'סה"כ*'}</td>
                                     <td data-label="בפועל (ימים)" style="text-align:center; font-weight:700;">${totals.actualDaysTotal.toFixed(1)}</td>
                                     <td data-label="יעד לתקופה" style="text-align:center; font-weight:700;">${totals.plannedDaysComparable.toFixed(1)}</td>
-                                    <td data-label="פער" class="col-status" style="text-align:center; font-weight:700;">${totals.diffTotal > 0 ? `נוצל ${totals.diffTotal.toFixed(1)} ימים מעל המכסה` : totals.diffTotal < 0 ? `נותר ${Math.abs(totals.diffTotal).toFixed(1)} ימים למכסה` : '0 ימים'}</td>
                                     ${includePercentColumns ? '<td data-label="אחוז משרה מיועד" style="text-align:center;">—</td>' : ''}
-                                    ${includePercentColumns ? '<td data-label="אחוז בפועל" style="text-align:center;">—</td>' : ''}
+                                    ${includePercentColumns ? '<td data-label="אחוז משרה בפועל" style="text-align:center;">—</td>' : ''}
                                     <td data-label="הערה" class="col-action" style="text-align:center;">—</td>
                                 </tr>
                             </tfoot>
@@ -5110,7 +5108,7 @@
             </div>`;
 
             const pctHeader = isSeminarMode ? '' : `<th style="text-align:center">אחוז משרה מיועד</th>`;
-            const actualPctHeader = isSeminarMode ? '' : `<th style="text-align:center">אחוז בפועל</th>`;
+            const actualPctHeader = isSeminarMode ? '' : `<th style="text-align:center">אחוז משרה בפועל</th>`;
             const targetHeader = isSeminarMode ? '' : `<th style="text-align:center">יעד לתקופה</th>`;
 
             html += `<div class="report-section"><h3 class="section-title">פירוט לפי עובדים</h3>
@@ -5127,8 +5125,8 @@
             results.forEach(r => {
                 const targetLabel = r.targetDays != null ? `${r.targetDays.toFixed(1)} ימים` : 'N/A';
                 const pctLabel = r.activityPercent != null ? `${r.activityPercent.toFixed(1)}%` : 'N/A';
-                const actualPctLabel = r.targetDays != null && r.targetDays > 0
-                    ? `${roundToSingleDecimal((r.actualDays / r.targetDays) * 100).toFixed(1)}%`
+                const actualPctLabel = r.targetDays != null && r.targetDays > 0 && r.activityPercent != null
+                    ? `${roundToSingleDecimal((r.actualDays * r.activityPercent) / r.targetDays).toFixed(1)}%`
                     : 'N/A';
                 let status = 'N/A', statusClass = 'na';
                 if (!isSeminarMode && r.targetDays != null) {
@@ -5143,7 +5141,7 @@
                 html += `<tr>
                     <td data-label="עובד/ת" style="font-weight:600">${r.empName}</td>
                     <td data-label="ימים בפועל" style="text-align:center">${r.actualDays.toFixed(1)}</td>
-                    ${!isSeminarMode ? `<td data-label="אחוז בפועל" style="text-align:center">${actualPctLabel}</td>` : ''}
+                    ${!isSeminarMode ? `<td data-label="אחוז משרה בפועל" style="text-align:center">${actualPctLabel}</td>` : ''}
                     ${!isSeminarMode ? `<td data-label="יעד לתקופה" style="text-align:center">${targetLabel}</td>` : ''}
                     ${!isSeminarMode ? `<td data-label="אחוז משרה מיועד" style="text-align:center">${pctLabel}</td>` : ''}
                     <td data-label="סטטוס" class="col-status" style="text-align:center"><span class="status-chip ${statusClass}">${status}</span></td>
@@ -5347,8 +5345,8 @@
                         const settings = targetMap.get(name) || {};
                         const targetDays = settings.targetDays ?? null;
                         const activityPercent = settings.activityPercent ?? null;
-                        const actualPercent = targetDays != null && targetDays > 0
-                            ? roundToSingleDecimal((actualDays / targetDays) * 100)
+                        const actualPercent = targetDays != null && targetDays > 0 && activityPercent != null
+                            ? roundToSingleDecimal((actualDays * activityPercent) / targetDays)
                             : null;
                         const isSeminar = name === SEMINAR_ENTRY;
 
@@ -5391,8 +5389,8 @@
                     const plannedPercent = item.plannedPercentWeight > 0
                         ? roundToSingleDecimal(item.plannedPercentSum / item.plannedPercentWeight)
                         : null;
-                    const actualPercent = item.totalTargetDays > 0
-                        ? roundToSingleDecimal((totalDays / item.totalTargetDays) * 100)
+                    const actualPercent = item.totalTargetDays > 0 && plannedPercent != null
+                        ? roundToSingleDecimal((totalDays * plannedPercent) / item.totalTargetDays)
                         : null;
 
                     item.employees.sort((a, b) => b.actualHours - a.actualHours);
@@ -5459,7 +5457,7 @@
                 <thead><tr>
                     <th>חוקר/ת</th>
                     <th style="text-align:center">ימים בפועל</th>
-                    <th style="text-align:center">אחוז בפועל</th>
+                    <th style="text-align:center">אחוז משרה בפועל</th>
                     <th style="text-align:center">יעד לתקופה</th>
                     <th style="text-align:center">אחוז משרה מיועד</th>
                     <th class="col-status" style="text-align:center">סטטוס</th>
@@ -5493,7 +5491,7 @@
                     <tr id="all-researchers-row-${idx}-main" class="row-main">
                         <td data-label="חוקר/ת" style="font-weight:600">${row.name}</td>
                         <td data-label="ימים בפועל" style="text-align:center">${row.totalDays.toFixed(1)}</td>
-                        <td data-label="אחוז בפועל" style="text-align:center">${row.isSeminar ? 'N/A' : actualPctLabel}</td>
+                        <td data-label="אחוז משרה בפועל" style="text-align:center">${row.isSeminar ? 'N/A' : actualPctLabel}</td>
                         <td data-label="יעד לתקופה" style="text-align:center">${targetLabel}</td>
                         <td data-label="אחוז משרה מיועד" style="text-align:center">${row.isSeminar ? 'N/A' : plannedPctLabel}</td>
                         <td data-label="סטטוס" class="col-status" style="text-align:center"><span class="status-chip ${statusClass}">${status}</span></td>
@@ -5507,7 +5505,7 @@
                                         <tr>
                                             <th>עובד/ת</th>
                                             <th style="text-align:center">ימים בפועל</th>
-                                            <th style="text-align:center">אחוז בפועל</th>
+                                            <th style="text-align:center">אחוז משרה בפועל</th>
                                             <th style="text-align:center">יעד לתקופה</th>
                                             <th style="text-align:center">אחוז משרה מיועד</th>
                                             <th class="col-status" style="text-align:center">סטטוס</th>
@@ -5541,7 +5539,7 @@
                                                 <tr>
                                                     <td data-label="עובד/ת" style="font-weight:600">${emp.empName}</td>
                                                     <td data-label="ימים בפועל" style="text-align:center">${emp.actualDays.toFixed(1)}</td>
-                                                    <td data-label="אחוז בפועל" style="text-align:center">${emp.isSeminar ? 'N/A' : empActualPct}</td>
+                                                    <td data-label="אחוז משרה בפועל" style="text-align:center">${emp.isSeminar ? 'N/A' : empActualPct}</td>
                                                     <td data-label="יעד לתקופה" style="text-align:center">${empTarget}</td>
                                                     <td data-label="אחוז משרה מיועד" style="text-align:center">${emp.isSeminar ? 'N/A' : empPlannedPct}</td>
                                                     <td data-label="סטטוס" class="col-status" style="text-align:center"><span class="status-chip ${empStatusClass}">${empStatus}</span></td>
@@ -5627,8 +5625,8 @@
                 actualDays: r.actualDays.toFixed(1),
                 targetDays: r.targetDays != null ? r.targetDays.toFixed(1) : 'N/A',
                 plannedPct: r.activityPercent != null ? r.activityPercent.toFixed(1) + '%' : 'N/A',
-                actualPct: r.targetDays != null && r.targetDays > 0
-                    ? roundToSingleDecimal((r.actualDays / r.targetDays) * 100).toFixed(1) + '%'
+                actualPct: r.targetDays != null && r.targetDays > 0 && r.activityPercent != null
+                    ? roundToSingleDecimal((r.actualDays * r.activityPercent) / r.targetDays).toFixed(1) + '%'
                     : 'N/A'
             }));
             const cols = [
@@ -5636,7 +5634,7 @@
                 { key: 'actualDays', header: 'ימים בפועל' },
                 { key: 'targetDays', header: 'יעד לתקופה' },
                 { key: 'plannedPct', header: 'אחוז משרה מיועד' },
-                { key: 'actualPct', header: 'אחוז בפועל' }
+                { key: 'actualPct', header: 'אחוז משרה בפועל' }
             ];
             csv += toCsv(rows, cols);
             const dateForFile = new Date().toISOString().slice(0, 10);
@@ -5663,7 +5661,7 @@
                 { key: 'actualDays', header: 'ימים בפועל' },
                 { key: 'targetDays', header: 'יעד לתקופה' },
                 { key: 'plannedPct', header: 'אחוז משרה מיועד' },
-                { key: 'actualPct', header: 'אחוז בפועל' }
+                { key: 'actualPct', header: 'אחוז משרה בפועל' }
             ];
 
             csv += 'סיכום לפי חוקרים\n';
@@ -5674,7 +5672,7 @@
                 { key: 'actualDays', header: 'ימים בפועל' },
                 { key: 'targetDays', header: 'יעד לתקופה' },
                 { key: 'plannedPct', header: 'אחוז משרה מיועד' },
-                { key: 'actualPct', header: 'אחוז בפועל' }
+                { key: 'actualPct', header: 'אחוז משרה בפועל' }
             ];
 
             data.summaryRows.forEach(row => {
