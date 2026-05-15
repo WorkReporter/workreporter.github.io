@@ -2789,7 +2789,7 @@
                 <div class="backdate-form">
                     <div class="backdate-toggle" onclick="document.getElementById('backdate-enabled').click();"
                         style="cursor: pointer;">
-                        <label for="backdate-enabled" style="cursor: pointer;">אפשר דיווח ועריכה בדיעבד</label>
+                        <label for="backdate-enabled" style="cursor: pointer;">לאפשר דיווח ועריכה בדיעבד</label>
                         <label class="toggle-switch" onclick="event.stopPropagation();">
                             <input type="checkbox" id="backdate-enabled" onchange="toggleBackdateDates()">
                             <span class="toggle-slider"></span>
@@ -6279,7 +6279,7 @@
                 statusDiv.textContent = statusText;
                 statusDiv.className = 'backdate-status active';
             } else if (isExpired) {
-                statusDiv.textContent = '⚠️ ההרשאה לדיווח בדיעבד פגה - יש לעדכן את התאריכים או לכבות';
+                statusDiv.textContent = 'ההרשאה לדיווח ועריכה בדיעבד פגה ';
                 statusDiv.className = 'backdate-status inactive';
             } else {
                 statusDiv.textContent = ' דיווח ועריכה בדיעבד סגור - עובדים יכולים לדווח רק על השבוע הנוכחי והקודם';
