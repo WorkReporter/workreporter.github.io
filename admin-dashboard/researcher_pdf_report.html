@@ -240,7 +240,7 @@
         }
 
         function renderSingleReport(payload) {
-            const { reportData } = payload;
+            const { reportData, globalCalcMethod } = payload;
             const results = reportData.results || [];
             const totalActualHours = Number(reportData.totalActualHours || 0);
             const totalTargetDays = Number(reportData.totalTargetDays || 0);
@@ -282,9 +282,16 @@
                         ${results.map(row => {
                             const targetLabel = row.targetDays != null ? row.targetDays.toFixed(1) : 'N/A';
                             const plannedPct = row.activityPercent != null ? `${row.activityPercent.toFixed(1)}%` : 'N/A';
-                            const actualPct = row.targetDays != null && row.targetDays > 0 && row.activityPercent != null
-                                ? `${roundToSingleDecimal((row.actualDays * row.activityPercent) / row.targetDays).toFixed(1)}%`
-                                : 'N/A';
+                            
+                            // חישוב אחוז משרה בפועל לפי השיטה הנבחרת
+                            let calcPercent = null;
+                            if (globalCalcMethod === 'actual_time') {
+                                calcPercent = row.empTotalDaysAll > 0 ? (row.actualDays / row.empTotalDaysAll) * 100 : null;
+                            } else {
+                                calcPercent = (row.targetDays > 0 && row.activityPercent != null) ? (row.actualDays * row.activityPercent) / row.targetDays : null;
+                            }
+                            const actualPct = calcPercent != null ? `${roundToSingleDecimal(calcPercent).toFixed(1)}%` : 'N/A';
+                            
                             const status = isSeminarMode
                                 ? buildStatus(row.actualDays, row.targetDays, `${formatHours(row.researcherHours)} שעות`)
                                 : buildStatus(row.actualDays, row.targetDays, null);
@@ -302,13 +309,11 @@
                 </table>
             </div>`;
 
-
-
             document.getElementById('report-content').innerHTML = html;
         }
 
         function renderAllReport(payload) {
-            const { reportData } = payload;
+            const { reportData, globalCalcMethod } = payload;
             const summaryRows = reportData.summaryRows || [];
             const totalActualHours = Number(reportData.totalActualHours || 0);
             const totalTargetDays = Number(reportData.totalTargetDays || 0);
@@ -350,7 +355,19 @@
                                 ? row.totalTargetDays.toFixed(1)
                                 : 'N/A';
                             const plannedPct = row.plannedPercent != null ? `${row.plannedPercent.toFixed(1)}%` : 'N/A';
-                            const actualPct = row.actualPercent != null ? `${row.actualPercent.toFixed(1)}%` : 'N/A';
+                            
+                            // חישוב אחוז משרה בפועל לפי השיטה הנבחרת (טבלה ראשית)
+                            let rowCalcPercent = null;
+                            if (globalCalcMethod === 'actual_time') {
+                                const rowTotalDaysAll = row.employees.reduce((sum, emp) => sum + emp.empTotalDaysAll, 0);
+                                rowCalcPercent = rowTotalDaysAll > 0 ? (row.totalDays / rowTotalDaysAll) * 100 : null;
+                            } else {
+                                rowCalcPercent = row.totalTargetDays > 0 && row.plannedPercent != null
+                                    ? (row.totalDays * row.plannedPercent) / row.totalTargetDays
+                                    : null;
+                            }
+                            const actualPct = rowCalcPercent != null ? `${roundToSingleDecimal(rowCalcPercent).toFixed(1)}%` : 'N/A';
+                            
                             const status = row.isSeminar
                                 ? buildStatus(row.totalDays, row.totalTargetDays, `${formatHours(row.totalHours)} שעות`)
                                 : buildStatus(row.totalDays, row.totalTargetDays, null);
@@ -389,7 +406,16 @@
                                     ? emp.targetDays.toFixed(1)
                                     : 'N/A';
                                 const plannedPct = emp.activityPercent != null ? `${emp.activityPercent.toFixed(1)}%` : 'N/A';
-                                const actualPct = emp.actualPercent != null ? `${emp.actualPercent.toFixed(1)}%` : 'N/A';
+                                
+                                // חישוב אחוז משרה בפועל לפי השיטה הנבחרת (detail rows)
+                                let empCalcPercent = null;
+                                if (globalCalcMethod === 'actual_time') {
+                                    empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                                } else {
+                                    empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null) ? (emp.actualDays * emp.activityPercent) / emp.targetDays : null;
+                                }
+                                const actualPct = empCalcPercent != null ? `${roundToSingleDecimal(empCalcPercent).toFixed(1)}%` : 'N/A';
+                                
                                 const status = emp.isSeminar
                                     ? buildStatus(emp.actualDays, emp.targetDays, `${formatHours(emp.actualHours)} שעות`)
                                     : buildStatus(emp.actualDays, emp.targetDays, null);
@@ -407,8 +433,6 @@
                     </table>
                 </div>`;
             });
-
-
 
             document.getElementById('report-content').innerHTML = html;
         }

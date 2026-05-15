@@ -2440,6 +2440,24 @@
             border-color: #1e293b transparent transparent transparent;
         }
 
+        /* כפתור הגדרות בכותרת הטבלה */
+        .header-settings-btn {
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            display: inline-flex;
+            vertical-align: middle;
+            margin-inline-start: 4px;
+            padding: 2px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .header-settings-btn:hover {
+            background-color: #e2e8f0;
+            color: #1e3a8a;
+        }
+
         /* פתרון לחיתוך ה-Tooltip בתוך הטבלה */
         @media (min-width: 768px) {
             .comparison-table-wrap {
@@ -2846,6 +2864,43 @@
         </div>
     </div>
 
+    <!-- Calculation Method Settings Modal -->
+    <div class="modal-overlay" id="calc-method-modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2 class="modal-title">הגדרות חישוב אחוז משרה</h2>
+                <button class="modal-close" onclick="closeCalcMethodModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="backdate-form">
+                    <div class="backdate-field">
+                        <label style="font-weight: 700; margin-bottom: 15px; display: block;">בחר/י את נוסחת החישוב עבור "אחוז משרה בפועל":</label>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                                <input type="radio" name="calc-method-radio" value="budget" style="margin-top: 5px;">
+                                <span>
+                                    <strong>לפי ניצול תקציב (יעד)</strong><br>
+                                    <small style="color: #64748b;">(ימים בפועל × אחוז מיועד) ÷ יעד ימים</small>
+                                </span>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                                <input type="radio" name="calc-method-radio" value="actual_time" style="margin-top: 5px;">
+                                <span>
+                                    <strong>לפי זמן עבודה בפועל</strong><br>
+                                    <small style="color: #64748b;">ימים בפועל לחוקר ÷ סך ימי עבודה של העובד</small>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn primary" onclick="saveCalcMethod()">שמירה ורענון</button>
+                <button class="modal-btn secondary" onclick="closeCalcMethodModal()">ביטול</button>
+            </div>
+        </div>
+    </div>
+
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -2878,18 +2933,62 @@
         const CACHE_PREFIX = 'reportCategorizationCache_';
         const CATEGORIZATIONS_DB_PATH = 'managerSelectionPreferences';
 
-        const ACTUAL_PCT_HEADER_HTML = `אחוז משרה בפועל
-        <span class="help-tooltip">?
-            <div class="tooltip-content">
-                <strong style="color:#93c5fd;">נוסחה:</strong><br>
-                אחוז משרה בפועל = <br>
-                (ימים בפועל לחוקר × אחוז משרה מיועד) ÷ יעד ימים לחוקר<br><br>
-                <strong style="color:#93c5fd;">דוגמה:</strong><br>
-                אם יהודה הוגדר אצל יעל 50% משרה, היעד לחצי שנה הוא 55 ימים מתוך 110.<br>
-                אם בפועל דווחו 30 ימים:<br>
-                (30 × 50) ÷ 55 = 27.3%
-            </div>
-        </span>`;
+        // משתנה גלובלי לשיטת החישוב
+        window.globalCalcMethod = 'budget';
+
+        // פונקציה להחזרת כותרת עם גלגל שיניים
+        window.getActualPctHeaderHtml = function() {
+            return `אחוז משרה בפועל 
+            <button type="button" class="header-settings-btn" onclick="openCalcMethodModal()" title="הגדרות חישוב">
+                <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+            </button>`;
+        };
+
+        // פונקציות למודל
+        window.openCalcMethodModal = function() {
+            const radio = document.querySelector(`input[name="calc-method-radio"][value="${window.globalCalcMethod}"]`);
+            if (radio) radio.checked = true;
+            document.getElementById('calc-method-modal').classList.add('active');
+        };
+
+        window.closeCalcMethodModal = function() {
+            document.getElementById('calc-method-modal').classList.remove('active');
+        };
+
+        window.saveCalcMethod = async function() {
+            const selected = document.querySelector('input[name="calc-method-radio"]:checked').value;
+            
+            try {
+                const { db, ref, get, set } = window.firebaseApp;
+                const path = 'global/backdateOverride';
+                
+                // 1. שליפת הנתונים הקיימים קודם
+                const snap = await get(ref(db, path));
+                const currentSettings = snap.exists() ? snap.val() : {};
+                
+                // 2. עדכון רק של שדה שיטת החישוב ושמירה מחדש
+                const updatedSettings = {
+                    ...currentSettings,
+                    calcMethod: selected
+                };
+                
+                await set(ref(db, path), updatedSettings);
+                window.globalCalcMethod = selected; // עדכון הסטייט המקומי
+                
+                showToast('ההגדרה נשמרה ומחשבת נתונים מחדש...');
+                closeCalcMethodModal();
+                
+                // 3. רענון מיידי של הדוחות
+                if (AppState.reportData) generateFinalReport();
+                if (AppState.selectedResearcher || AppState.researcherReportMode === 'all') generateResearcherReportAction();
+                
+            } catch (e) {
+                console.error(e);
+                showToast('שגיאה בשמירת ההגדרה', 'error');
+            }
+        };
+
+        const ACTUAL_PCT_HEADER_HTML = window.getActualPctHeaderHtml();
 
         // Toast notification function
         function showToast(message, type = 'success') {
@@ -3196,9 +3295,19 @@
                 const plannedPercentLabel = row.plannedPercent != null
                     ? `${row.plannedPercent.toFixed(1)}%`
                     : 'N/A';
-                const actualPercentLabel = row.plannedForPeriod != null && row.plannedForPeriod > 0 && row.plannedPercent != null
-                    ? `${roundToSingleDecimal((row.actualDays * row.plannedPercent) / row.plannedForPeriod).toFixed(1)}%`
-                    : 'N/A';
+                
+                // חישוב אחוז משרה בפועל לפי השיטה הנבחרת
+                let calcPercent = null;
+                if (window.globalCalcMethod === 'actual_time') {
+                    // נוסחה: ימים בפועל לחוקר ÷ סך כל הימים שבוצעו (כולל סמינרים/אחרות)
+                    calcPercent = totals.actualDaysAll > 0 ? (row.actualDays / totals.actualDaysAll) * 100 : null;
+                } else {
+                    // נוסחה: (ימים בפועל × אחוז מיועד) ÷ יעד ימים
+                    calcPercent = (row.plannedForPeriod > 0 && row.plannedPercent != null) 
+                        ? (row.actualDays * row.plannedPercent) / row.plannedForPeriod 
+                        : null;
+                }
+                const actualPercentLabel = calcPercent != null ? `${roundToSingleDecimal(calcPercent).toFixed(1)}%` : 'N/A';
 
                 const detailPlannedHalf = row.plannedPerHalf != null
                     ? `${row.plannedPerHalf.toFixed(1)} ימים (${row.plannedPercent != null ? row.plannedPercent.toFixed(1) : '—'}%)`
@@ -4599,7 +4708,8 @@
                 reportMode: mode,
                 reportData: mode === 'all' ? AppState.allResearchersReportData : AppState.researcherReportData,
                 startDate: startDate.toISOString(),
-                endDate: endDate.toISOString()
+                endDate: endDate.toISOString(),
+                globalCalcMethod: window.globalCalcMethod
             };
 
             sessionStorage.setItem('researcherPdfReportData', JSON.stringify(payload));
@@ -5116,6 +5226,10 @@
                     if (targetDays != null) totalTargetDays += targetDays;
                     totalSeminarHours += seminarHours;
 
+                    // חישוב סך הימים של העובד לשימוש בנוסחה actual_time
+                    const empTotalHoursAll = allEntries.reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
+                    const empTotalDaysAll = roundToSingleDecimal(empTotalHoursAll / HOURS_PER_DAY);
+                    
                     results.push({
                         empName: `${emp.firstName} ${emp.lastName}`,
                         researcherHours: displayHours,
@@ -5128,7 +5242,8 @@
                         targetDays,
                         activityPercent,
                         seminarHours,
-                        seminarDays: roundToSingleDecimal(seminarHours / HOURS_PER_DAY)
+                        seminarDays: roundToSingleDecimal(seminarHours / HOURS_PER_DAY),
+                        empTotalDaysAll: empTotalDaysAll
                     });
 
                     if (includeRelative && relativeDetails.length > 0) {
@@ -5203,9 +5318,15 @@
             results.forEach(r => {
                 const targetLabel = r.targetDays != null ? `${r.targetDays.toFixed(1)} ימים` : 'N/A';
                 const pctLabel = r.activityPercent != null ? `${r.activityPercent.toFixed(1)}%` : 'N/A';
-                const actualPctLabel = r.targetDays != null && r.targetDays > 0 && r.activityPercent != null
-                    ? `${roundToSingleDecimal((r.actualDays * r.activityPercent) / r.targetDays).toFixed(1)}%`
-                    : 'N/A';
+                
+                // חישוב אחוז משרה בפועל לפי השיטה הנבחרת
+                let calcPercent = null;
+                if (window.globalCalcMethod === 'actual_time') {
+                    calcPercent = r.empTotalDaysAll > 0 ? (r.actualDays / r.empTotalDaysAll) * 100 : null;
+                } else {
+                    calcPercent = (r.targetDays > 0 && r.activityPercent != null) ? (r.actualDays * r.activityPercent) / r.targetDays : null;
+                }
+                const actualPctLabel = calcPercent != null ? `${roundToSingleDecimal(calcPercent).toFixed(1)}%` : 'N/A';
                 let status = 'N/A', statusClass = 'na';
                 if (!isSeminarMode && r.targetDays != null) {
                     const diff = roundToSingleDecimal(r.actualDays - r.targetDays);
@@ -5364,6 +5485,10 @@
                     const allEntries = collectReportEntries(reports);
                     if (allEntries.length === 0) continue;
 
+                    // חישוב סך השעות של העובד לשימוש בנוסחה actual_time
+                    const empTotalHoursAll = allEntries.reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
+                    const empTotalDaysAll = roundToSingleDecimal(empTotalHoursAll / HOURS_PER_DAY);
+
                     const entriesIndex = buildEntriesIndex(allEntries);
                     let empCatMap = new Map();
                     if ((includeCategorized || includeRelative) && AppState.currentUser) {
@@ -5457,7 +5582,8 @@
                             targetDays,
                             activityPercent,
                             actualPercent,
-                            isSeminar
+                            isSeminar,
+                            empTotalDaysAll: empTotalDaysAll
                         });
                     });
                 }
@@ -5549,9 +5675,19 @@
                 const plannedPctLabel = row.plannedPercent != null
                     ? `${row.plannedPercent.toFixed(1)}%`
                     : 'N/A';
-                const actualPctLabel = row.actualPercent != null
-                    ? `${row.actualPercent.toFixed(1)}%`
-                    : 'N/A';
+                
+                // חישוב אחוז משרה בפועל לפי השיטה הנבחרת (עבור טבלה ראשית)
+                let rowCalcPercent = null;
+                if (window.globalCalcMethod === 'actual_time') {
+                    // סך כל הימים של כל העובדים בחוקר זה
+                    const rowTotalDaysAll = row.employees.reduce((sum, emp) => sum + emp.empTotalDaysAll, 0);
+                    rowCalcPercent = rowTotalDaysAll > 0 ? (row.totalDays / rowTotalDaysAll) * 100 : null;
+                } else {
+                    rowCalcPercent = row.totalTargetDays > 0 && row.plannedPercent != null
+                        ? (row.totalDays * row.plannedPercent) / row.totalTargetDays
+                        : null;
+                }
+                const actualPctLabel = rowCalcPercent != null ? `${roundToSingleDecimal(rowCalcPercent).toFixed(1)}%` : 'N/A';
 
                 let status = 'N/A';
                 let statusClass = 'na';
@@ -5597,9 +5733,15 @@
                                             const empPlannedPct = emp.activityPercent != null
                                                 ? `${emp.activityPercent.toFixed(1)}%`
                                                 : 'N/A';
-                                            const empActualPct = emp.actualPercent != null
-                                                ? `${emp.actualPercent.toFixed(1)}%`
-                                                : 'N/A';
+                                            
+                                            // חישוב אחוז משרה בפועל לפי השיטה הנבחרת
+                                            let empCalcPercent = null;
+                                            if (window.globalCalcMethod === 'actual_time') {
+                                                empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                                            } else {
+                                                empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null) ? (emp.actualDays * emp.activityPercent) / emp.targetDays : null;
+                                            }
+                                            const empActualPct = empCalcPercent != null ? `${roundToSingleDecimal(empCalcPercent).toFixed(1)}%` : 'N/A';
 
                                             let empStatus = 'N/A';
                                             let empStatusClass = 'na';
@@ -5726,13 +5868,25 @@
             const endDisplay = AppState.researcherEndDate.toLocaleDateString('he-IL');
             let csv = `דו"ח לכל החוקרים\nתקופה: ${startDisplay} - ${endDisplay}\n\n`;
 
-            const summaryRows = data.summaryRows.map(row => ({
-                name: row.name,
-                actualDays: row.totalDays.toFixed(1),
-                targetDays: row.totalTargetDays != null && row.totalTargetDays > 0 ? row.totalTargetDays.toFixed(1) : 'N/A',
-                plannedPct: row.plannedPercent != null ? row.plannedPercent.toFixed(1) + '%' : 'N/A',
-                actualPct: row.actualPercent != null ? row.actualPercent.toFixed(1) + '%' : 'N/A'
-            }));
+            const summaryRows = data.summaryRows.map(row => {
+                // חישוב אחוז משרה בפועל לפי השיטה הנבחרת (עבור CSV)
+                let rowCalcPercent = null;
+                if (window.globalCalcMethod === 'actual_time') {
+                    const rowTotalDaysAll = row.employees.reduce((sum, emp) => sum + emp.empTotalDaysAll, 0);
+                    rowCalcPercent = rowTotalDaysAll > 0 ? (row.totalDays / rowTotalDaysAll) * 100 : null;
+                } else {
+                    rowCalcPercent = row.totalTargetDays > 0 && row.plannedPercent != null
+                        ? (row.totalDays * row.plannedPercent) / row.totalTargetDays
+                        : null;
+                }
+                return {
+                    name: row.name,
+                    actualDays: row.totalDays.toFixed(1),
+                    targetDays: row.totalTargetDays != null && row.totalTargetDays > 0 ? row.totalTargetDays.toFixed(1) : 'N/A',
+                    plannedPct: row.plannedPercent != null ? row.plannedPercent.toFixed(1) + '%' : 'N/A',
+                    actualPct: rowCalcPercent != null ? roundToSingleDecimal(rowCalcPercent).toFixed(1) + '%' : 'N/A'
+                };
+            });
 
             const summaryCols = [
                 { key: 'name', header: 'חוקר/ת' },
@@ -5754,13 +5908,22 @@
             ];
 
             data.summaryRows.forEach(row => {
-                const detailRows = (row.employees || []).map(emp => ({
-                    name: emp.empName,
-                    actualDays: emp.actualDays.toFixed(1),
-                    targetDays: emp.targetDays != null && emp.targetDays > 0 ? emp.targetDays.toFixed(1) : 'N/A',
-                    plannedPct: emp.activityPercent != null ? emp.activityPercent.toFixed(1) + '%' : 'N/A',
-                    actualPct: emp.actualPercent != null ? emp.actualPercent.toFixed(1) + '%' : 'N/A'
-                }));
+                const detailRows = (row.employees || []).map(emp => {
+                    // חישוב אחוז משרה בפועל לפי השיטה הנבחרת (עבור detail rows ב-CSV)
+                    let empCalcPercent = null;
+                    if (window.globalCalcMethod === 'actual_time') {
+                        empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                    } else {
+                        empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null) ? (emp.actualDays * emp.activityPercent) / emp.targetDays : null;
+                    }
+                    return {
+                        name: emp.empName,
+                        actualDays: emp.actualDays.toFixed(1),
+                        targetDays: emp.targetDays != null && emp.targetDays > 0 ? emp.targetDays.toFixed(1) : 'N/A',
+                        plannedPct: emp.activityPercent != null ? emp.activityPercent.toFixed(1) + '%' : 'N/A',
+                        actualPct: empCalcPercent != null ? roundToSingleDecimal(empCalcPercent).toFixed(1) + '%' : 'N/A'
+                    };
+                });
 
                 csv += `\n${row.name}\n`;
                 csv += toCsv(detailRows, detailCols);
@@ -5795,6 +5958,20 @@
                         AppState.isManager = true;
                         document.getElementById('header-name').textContent = ` ${AppState.managerName} `;
                         sessionStorage.setItem('mgr_dashboard_name', AppState.managerName);
+                        
+                        // --- טעינת הגדרת שיטת החישוב מה-DB ---
+                        try {
+                            const settingsRef = ref(db, 'global/backdateOverride');
+                            const settingsSnap = await get(settingsRef);
+                            if (settingsSnap.exists() && settingsSnap.val().calcMethod) {
+                                window.globalCalcMethod = settingsSnap.val().calcMethod;
+                                console.log('Calculation method loaded:', window.globalCalcMethod);
+                            }
+                        } catch (e) {
+                            console.warn('Could not load calc method:', e);
+                        }
+                        // --------------------------------
+                        
                         renderEmployeesList();
                     } catch (error) {
                         console.error('Auth error:', error);
