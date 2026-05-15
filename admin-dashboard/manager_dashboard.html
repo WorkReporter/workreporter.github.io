@@ -2381,6 +2381,71 @@
                 grid-template-columns: 1fr 1fr;
             }
         }
+
+        /* Tooltip עבור אחוז משרה בפועל */
+        .help-tooltip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: #cbd5e1;
+            color: #1e293b;
+            border-radius: 50%;
+            font-size: 13px;
+            font-weight: bold;
+            margin-inline-start: 6px;
+            cursor: help;
+            position: relative;
+            vertical-align: middle;
+        }
+        .help-tooltip:hover {
+            background: #3b82f6;
+            color: white;
+        }
+        .help-tooltip .tooltip-content {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 130%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            width: max-content;
+            max-width: 280px;
+            font-size: 0.85rem;
+            text-align: right;
+            font-weight: normal;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            transition: opacity 0.2s ease;
+            z-index: 9999;
+            line-height: 1.5;
+            pointer-events: none;
+        }
+        .help-tooltip:hover .tooltip-content {
+            visibility: visible;
+            opacity: 1;
+        }
+        .help-tooltip .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 6px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+        }
+
+        /* פתרון לחיתוך ה-Tooltip בתוך הטבלה */
+        @media (min-width: 768px) {
+            .comparison-table-wrap {
+                overflow: visible !important;
+            }
+        }
     </style>
 </head>
 
@@ -2813,6 +2878,19 @@
         const CACHE_PREFIX = 'reportCategorizationCache_';
         const CATEGORIZATIONS_DB_PATH = 'managerSelectionPreferences';
 
+        const ACTUAL_PCT_HEADER_HTML = `אחוז משרה בפועל
+        <span class="help-tooltip">?
+            <div class="tooltip-content">
+                <strong style="color:#93c5fd;">נוסחה:</strong><br>
+                אחוז משרה בפועל = <br>
+                (ימים בפועל לחוקר × אחוז משרה מיועד) ÷ יעד ימים לחוקר<br><br>
+                <strong style="color:#93c5fd;">דוגמה:</strong><br>
+                אם יהודה הוגדר אצל יעל זלצר 50% משרה, היעד לחצי שנה הוא 55 ימים מתוך 110.<br>
+                אם בפועל דווחו 30 ימים:<br>
+                (30 × 50) ÷ 55 = 27.3%
+            </div>
+        </span>`;
+
         // Toast notification function
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
@@ -3181,7 +3259,7 @@
                                     <th>בפועל (ימים)</th>
                                     <th>יעד לתקופה</th>
                                     ${includePercentColumns ? '<th>אחוז משרה מיועד</th>' : ''}
-                                    ${includePercentColumns ? '<th>אחוז משרה בפועל</th>' : ''}
+                                    ${includePercentColumns ? `<th>${ACTUAL_PCT_HEADER_HTML}</th>` : ''}
                                     <th class="col-action">פעולות</th>
                                 </tr>
                             </thead>
@@ -5108,7 +5186,7 @@
             </div>`;
 
             const pctHeader = isSeminarMode ? '' : `<th style="text-align:center">אחוז משרה מיועד</th>`;
-            const actualPctHeader = isSeminarMode ? '' : `<th style="text-align:center">אחוז משרה בפועל</th>`;
+            const actualPctHeader = isSeminarMode ? '' : `<th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>`;
             const targetHeader = isSeminarMode ? '' : `<th style="text-align:center">יעד לתקופה</th>`;
 
             html += `<div class="report-section"><h3 class="section-title">פירוט לפי עובדים</h3>
@@ -5457,7 +5535,7 @@
                 <thead><tr>
                     <th>חוקר/ת</th>
                     <th style="text-align:center">ימים בפועל</th>
-                    <th style="text-align:center">אחוז משרה בפועל</th>
+                    <th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>
                     <th style="text-align:center">יעד לתקופה</th>
                     <th style="text-align:center">אחוז משרה מיועד</th>
                     <th class="col-status" style="text-align:center">סטטוס</th>
@@ -5505,7 +5583,7 @@
                                         <tr>
                                             <th>עובד/ת</th>
                                             <th style="text-align:center">ימים בפועל</th>
-                                            <th style="text-align:center">אחוז משרה בפועל</th>
+                                            <th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>
                                             <th style="text-align:center">יעד לתקופה</th>
                                             <th style="text-align:center">אחוז משרה מיועד</th>
                                             <th class="col-status" style="text-align:center">סטטוס</th>
