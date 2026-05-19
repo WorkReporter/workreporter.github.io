@@ -234,8 +234,8 @@
                 return { text: hoursLabel || 'N/A', className: hoursLabel ? '' : 'na' };
             }
             const diff = roundToSingleDecimal(actualDays - targetDays);
-            if (diff > 0) return { text: `חריגה של ${diff.toFixed(1)} ימים`, className: 'good' };
-            if (diff < 0) return { text: `נותרו ${Math.abs(diff).toFixed(1)} ימים`, className: 'warn' };
+            if (diff > 0) return { text: `חריגה של ${diff.toFixed(1)} ימים`, className: 'warn' };
+            if (diff < 0) return { text: `נותרו ${Math.abs(diff).toFixed(1)} ימים`, className: 'good' };
             return { text: 'בדיוק על היעד', className: 'exact' };
         }
 

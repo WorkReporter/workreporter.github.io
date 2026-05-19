@@ -843,21 +843,20 @@
         }
 
         .status-chip.good {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .status-chip.exact {
             background: #dcfce7;
             color: #166534;
         }
 
         .status-chip.warn {
-            background: transparent;
-            color: #475569;
-            border: 1px solid #cbd5e1;
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fbbf24;
         }
 
+        .status-chip.exact {
+            background: #dbeafe;
+            color: #1e40af;
+        }
         .status-chip.na {
             background: #e2e8f0;
             color: #475569;
@@ -3260,9 +3259,9 @@
                 if (plannedForPeriod != null) {
                     status = `ניצל ${actualDays.toFixed(1)} ימים מתוך ${plannedForPeriod.toFixed(1)}`;
                     if (diffDays > 0) {
-                        statusClass = 'good';
+                        statusClass = 'warn'; // חריגה - כתום
                     } else if (diffDays < 0) {
-                        statusClass = 'warn';
+                        statusClass = 'good'; // יתרה - ירוק
                     } else {
                         statusClass = 'exact';
                     }
@@ -4833,7 +4832,7 @@
             };
 
             sessionStorage.setItem('researcherPdfReportData', JSON.stringify(payload));
-            const url = `researcher_pdf_report.html?v=20260519-5`;
+            const url = `researcher_pdf_report.html?v=20260519-6`;
             window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
         };
 
@@ -5450,8 +5449,8 @@
                 let status = 'N/A', statusClass = 'na';
                 if (!isSeminarMode && r.targetDays != null) {
                     const diff = roundToSingleDecimal(r.actualDays - r.targetDays);
-                    if (diff > 0) { status = `חריגה של ${diff.toFixed(1)} ימים`; statusClass = 'good'; }
-                    else if (diff < 0) { status = `נותרו ${Math.abs(diff).toFixed(1)} ימים`; statusClass = 'warn'; }
+                    if (diff > 0) { status = `חריגה של ${diff.toFixed(1)} ימים`; statusClass = 'warn'; }
+                    else if (diff < 0) { status = `נותרו ${Math.abs(diff).toFixed(1)} ימים`; statusClass = 'good'; }
                     else { status = 'בדיוק על היעד'; statusClass = 'exact'; }
                 } else if (isSeminarMode) {
                     status = `${formatHours(r.researcherHours)} שעות`;
@@ -5597,13 +5596,36 @@
                 const halfYearsInPeriod = getHalfYearsInPeriod(startDate, endDate);
                 const halfYearsCount = Math.max(halfYearsInPeriod.length, 1);
                 const summaryMap = new Map();
+
+                // חדש: אתחול כל החוקרים הפעילים כדי שיופיעו גם אם אין להם פעילות בטווח
+                const activeResearchers = await loadAllResearchers();
+
+                activeResearchers.forEach(name => {
+                    if (!summaryMap.has(name)) {
+                        summaryMap.set(name, {
+                            name,
+                            totalHours: 0,
+                            totalDays: 0,
+                            totalTargetDays: 0,
+                            plannedPercentSum: 0,
+                            plannedPercentWeight: 0,
+                            employees: [],
+                            isSeminar: false
+                        });
+                    }
+                });
+
                 const relativeCalculations = [];
+
                 const SEMINAR_ENTRY = 'מכון - סמינר/קורס/הכשרה';
 
                 for (const emp of AppState.employees) {
                     const reports = await loadEmployeeReports(emp.id, startDate, endDate);
                     const allEntries = collectReportEntries(reports);
-                    if (allEntries.length === 0) continue;
+                    const targetMap = buildEmployeeTargetMap(emp, halfYearsInPeriod, halfYearsCount);
+
+                    // אם אין גם דיווחים וגם אין יעדים - אין מה להציג עבור העובד הזה
+                    if (allEntries.length === 0 && targetMap.size === 0) continue;
 
                     // חישוב סך השעות של העובד לשימוש בנוסחה actual_time
                     const empTotalHoursAll = allEntries.reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
@@ -5660,13 +5682,22 @@
                         }
                     }
 
-                    const targetMap = buildEmployeeTargetMap(emp, halfYearsInPeriod, halfYearsCount);
+                    // חדש: מוסיף גם חוקרים שיש להם יעד אצל העובד,
+                    // גם אם אין להם שעות בפועל בטווח הנבחר
+                    targetMap.forEach((settings, name) => {
+                        if (!hoursByResearcher.has(name)) {
+                            hoursByResearcher.set(name, 0);
+                        }
+                    });
 
                     hoursByResearcher.forEach((actualHours, name) => {
-                        if (!actualHours || actualHours <= 0) return;
-                        const actualDays = roundToSingleDecimal(actualHours / HOURS_PER_DAY);
                         const settings = targetMap.get(name) || {};
                         const targetDays = settings.targetDays ?? null;
+
+                        // מדלגים רק אם גם אין שעות וגם אין יעד לאותו חוקר אצל העובד
+                        if ((!actualHours || actualHours <= 0) && targetDays == null) return;
+
+                        const actualDays = roundToSingleDecimal((actualHours || 0) / HOURS_PER_DAY);
                         const activityPercent = settings.activityPercent ?? null;
                         const actualPercent = targetDays != null && targetDays > 0 && activityPercent != null
                             ? roundToSingleDecimal((actualDays * activityPercent) / targetDays)
@@ -5888,8 +5919,8 @@
                                             let empStatusClass = 'na';
                                             if (!emp.isSeminar && emp.targetDays != null) {
                                                 const diff = roundToSingleDecimal(emp.actualDays - emp.targetDays);
-                                                if (diff > 0) { empStatus = `חריגה של ${diff.toFixed(1)} ימים`; empStatusClass = 'good'; }
-                                                else if (diff < 0) { empStatus = `נותרו ${Math.abs(diff).toFixed(1)} ימים`; empStatusClass = 'warn'; }
+                                                if (diff > 0) { empStatus = `חריגה של ${diff.toFixed(1)} ימים`; empStatusClass = 'warn'; }
+                                                else if (diff < 0) { empStatus = `נותרו ${Math.abs(diff).toFixed(1)} ימים`; empStatusClass = 'good'; }
                                                 else { empStatus = 'בדיוק על היעד'; empStatusClass = 'exact'; }
                                             } else if (emp.isSeminar) {
                                                 empStatus = `${formatHours(emp.actualHours)} שעות`;
