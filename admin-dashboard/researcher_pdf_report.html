@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>דו"ח חוקרים</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --accent: #2563eb;
+            --warn: #f59e0b;
+            --good: #16a34a;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Assistant", "Rubik", "Heebo", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .page-wrap {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px 16px 40px;
+        }
+
+        .page-header {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .summary-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .summary-card .label {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .summary-card .value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+
+        .section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            margin: 0 0 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .section-note {
+            font-size: 0.85rem;
+            color: var(--accent);
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: #f8fafc;
+            text-align: center;
+        }
+
+        td {
+            text-align: center;
+        }
+
+        td:first-child {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .status-chip {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .status-chip.good { background: var(--good); }
+        .status-chip.warn { background: var(--warn); }
+        .status-chip.exact { background: var(--accent); }
+        .status-chip.na { background: #94a3b8; }
+
+        .footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 20px;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: center;
+            margin: 12px 0 20px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        #generated-info {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 10px;
+        }
+
+        #loading {
+            text-align: center;
+            padding: 40px 12px;
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrap">
+        <div id="loading">טוען דו"ח...</div>
+
+        <div id="report-page" style="display:none;">
+            <div class="action-bar">
+                <button class="btn-primary" onclick="generatePDF()">הורדת PDF</button>
+            </div>
+
+            <div class="page-header">
+                <div class="page-title" id="report-title"></div>
+                <div class="page-subtitle" id="report-subtitle"></div>
+            </div>
+
+            <div class="summary-cards" id="summary-cards"></div>
+
+            <div id="report-content"></div>
+
+            <div class="footer">דו"ח זה הופק בתאריך <span id="generation-date"></span>.</div>
+        </div>
+        <div id="generated-info"></div>
+    </div>
+
+    <script>
+        const HOURS_PER_DAY = 8;
+
+        function roundToSingleDecimal(value) {
+            return Math.round(Number(value || 0) * 10) / 10;
+        }
+
+        function formatHours(hours) {
+            return parseFloat(Number(hours || 0).toFixed(2));
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function buildHalfYearLabel(halfYearKeys) {
+            return (halfYearKeys || []).map(k => {
+                const parts = String(k).split('-');
+                if (parts.length !== 2) return k;
+                return `${parts[0]} מחצית ${parts[1]}`;
+            }).join(', ');
+        }
+
+        function buildStatus(actualDays, targetDays, hoursLabel) {
+            if (targetDays == null || targetDays <= 0) {
+                return { text: hoursLabel || 'N/A', className: hoursLabel ? '' : 'na' };
+            }
+            const diff = roundToSingleDecimal(actualDays - targetDays);
+            if (diff > 0) return { text: `חריגה של ${diff.toFixed(1)} ימים`, className: 'warn' };
+            if (diff < 0) return { text: `נותרו ${Math.abs(diff).toFixed(1)} ימים`, className: 'good' };
+            return { text: 'בדיוק על היעד', className: 'exact' };
+        }
+
+        function calculateEmployeeActualPercent(emp, globalCalcMethod) {
+            if (globalCalcMethod === 'actual_time') {
+                return emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+            }
+            return (emp.targetDays > 0 && emp.activityPercent != null)
+                ? (emp.actualDays * emp.activityPercent) / emp.targetDays
+                : null;
+        }
+
+        function calculateResearcherPercentTotals(row, globalCalcMethod) {
+            let plannedPctSum = 0;
+            let plannedPctHasValue = false;
+            let actualPctSum = 0;
+            let actualPctHasValue = false;
+
+            (row.employees || []).forEach(emp => {
+                if (emp.isSeminar) return;
+
+                if (emp.activityPercent != null) {
+                    plannedPctSum += roundToSingleDecimal(emp.activityPercent);
+                    plannedPctHasValue = true;
+                }
+
+                const empActualPercent = calculateEmployeeActualPercent(emp, globalCalcMethod);
+                if (empActualPercent != null) {
+                    actualPctSum += roundToSingleDecimal(empActualPercent);
+                    actualPctHasValue = true;
+                }
+            });
+
+            return {
+                plannedPct: !row.isSeminar && plannedPctHasValue
+                    ? `${roundToSingleDecimal(plannedPctSum).toFixed(1)}%`
+                    : 'N/A',
+                actualPct: !row.isSeminar && actualPctHasValue
+                    ? `${roundToSingleDecimal(actualPctSum).toFixed(1)}%`
+                    : 'N/A'
+            };
+        }
+
+        function renderSingleReport(payload) {
+            const { reportData, globalCalcMethod } = payload;
+            const results = reportData.results || [];
+            const totalActualHours = Number(reportData.totalActualHours || 0);
+            const totalTargetDays = Number(reportData.totalTargetDays || 0);
+            const totalActualDays = roundToSingleDecimal(totalActualHours / HOURS_PER_DAY);
+            const researcherName = reportData.researcherName || '';
+            const isSeminarMode = !!reportData.isSeminarMode;
+            const halfYearLabel = buildHalfYearLabel(reportData.halfYearKeys);
+
+            document.getElementById('report-title').textContent = `${researcherName} - דו"ח לפי חוקר`;
+
+            const summaryCards = [
+                { label: 'עובדים שדיווחו', value: results.length },
+                { label: 'סה"כ ימים בפועל', value: totalActualDays.toFixed(1) },
+                { label: 'סה"כ יעד', value: totalTargetDays > 0 ? totalTargetDays.toFixed(1) : 'N/A' }
+            ];
+
+            document.getElementById('summary-cards').innerHTML = summaryCards.map(card => (
+                `<div class="summary-card"><div class="label">${card.label}</div><div class="value">${card.value}</div></div>`
+            )).join('');
+
+            let html = '';
+            if (halfYearLabel) {
+                html += `<div class="section-note">מחציות מכוסות: ${halfYearLabel}</div>`;
+            }
+
+            html += `<div class="section"><div class="section-title">פירוט לפי עובדים</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>עובד/ת</th>
+                            <th>ימים בפועל</th>
+                            <th>יעד לתקופה</th>
+                            <th>אחוז משרה מיועד</th>
+                            <th>אחוז משרה בפועל</th>
+                            <th>סטטוס</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${results.map(row => {
+                            const targetLabel = row.targetDays != null ? row.targetDays.toFixed(1) : 'N/A';
+                            const plannedPct = row.activityPercent != null ? `${row.activityPercent.toFixed(1)}%` : 'N/A';
+                            
+                            // חישוב אחוז משרה בפועל לפי השיטה הנבחרת
+                            let calcPercent = null;
+                            if (globalCalcMethod === 'actual_time') {
+                                calcPercent = row.empTotalDaysAll > 0 ? (row.actualDays / row.empTotalDaysAll) * 100 : null;
+                            } else {
+                                calcPercent = (row.targetDays > 0 && row.activityPercent != null) ? (row.actualDays * row.activityPercent) / row.targetDays : null;
+                            }
+                            const actualPct = calcPercent != null ? `${roundToSingleDecimal(calcPercent).toFixed(1)}%` : 'N/A';
+                            
+                            const status = isSeminarMode
+                                ? buildStatus(row.actualDays, row.targetDays, `${formatHours(row.researcherHours)} שעות`)
+                                : buildStatus(row.actualDays, row.targetDays, null);
+                            return `
+                                <tr>
+                                    <td>${escapeHtml(row.empName)}</td>
+                                    <td>${row.actualDays.toFixed(1)}</td>
+                                    <td>${targetLabel}</td>
+                                    <td>${plannedPct}</td>
+                                    <td>${actualPct}</td>
+                                    <td><span class="status-chip ${status.className}">${escapeHtml(status.text)}</span></td>
+                                </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+
+            document.getElementById('report-content').innerHTML = html;
+        }
+
+        function renderAllReport(payload) {
+            const { reportData, globalCalcMethod } = payload;
+            const summaryRows = reportData.summaryRows || [];
+            const totalActualHours = Number(reportData.totalActualHours || 0);
+            const totalTargetDays = Number(reportData.totalTargetDays || 0);
+            const totalActualDays = roundToSingleDecimal(totalActualHours / HOURS_PER_DAY);
+            const halfYearLabel = buildHalfYearLabel(reportData.halfYearKeys);
+
+            document.getElementById('report-title').textContent = 'דו"ח לכל החוקרים';
+
+            const summaryCards = [
+                { label: 'חוקרות/חוקרים בדו"ח', value: summaryRows.length },
+                { label: 'סה"כ ימים בפועל', value: totalActualDays.toFixed(1) },
+                { label: 'סה"כ יעד', value: totalTargetDays > 0 ? totalTargetDays.toFixed(1) : 'N/A' }
+            ];
+
+            document.getElementById('summary-cards').innerHTML = summaryCards.map(card => (
+                `<div class="summary-card"><div class="label">${card.label}</div><div class="value">${card.value}</div></div>`
+            )).join('');
+
+            let html = '';
+            if (halfYearLabel) {
+                html += `<div class="section-note">מחציות מכוסות: ${halfYearLabel}</div>`;
+            }
+
+            html += `<div class="section"><div class="section-title">סיכום לפי חוקרים</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>חוקר/ת</th>
+                            <th>ימים בפועל</th>
+                            <th>יעד לתקופה</th>
+                            <th>אחוז משרה מיועד</th>
+                            <th>אחוז משרה בפועל</th>
+                            <th>סטטוס</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${summaryRows.map(row => {
+                            const targetLabel = row.totalTargetDays != null && row.totalTargetDays > 0
+                                ? row.totalTargetDays.toFixed(1)
+                                : 'N/A';
+                            const { plannedPct, actualPct } = calculateResearcherPercentTotals(row, globalCalcMethod);
+                            
+                            const status = row.isSeminar
+                                ? buildStatus(row.totalDays, row.totalTargetDays, `${formatHours(row.totalHours)} שעות`)
+                                : buildStatus(row.totalDays, row.totalTargetDays, null);
+                            return `
+                                <tr>
+                                    <td>${escapeHtml(row.name)}</td>
+                                    <td>${row.totalDays.toFixed(1)}</td>
+                                    <td>${row.isSeminar ? 'N/A' : targetLabel}</td>
+                                    <td>${row.isSeminar ? 'N/A' : plannedPct}</td>
+                                    <td>${row.isSeminar ? 'N/A' : actualPct}</td>
+                                    <td><span class="status-chip ${status.className}">${escapeHtml(status.text)}</span></td>
+                                </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+
+            summaryRows.forEach(row => {
+                const rows = row.employees || [];
+                html += `<div class="section">
+                    <div class="section-title">${escapeHtml(row.name)}</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>עובד/ת</th>
+                                <th>ימים בפועל</th>
+                                <th>יעד לתקופה</th>
+                                <th>אחוז משרה מיועד</th>
+                                <th>אחוז משרה בפועל</th>
+                                <th>סטטוס</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows.map(emp => {
+                                const targetLabel = emp.targetDays != null && emp.targetDays > 0
+                                    ? emp.targetDays.toFixed(1)
+                                    : 'N/A';
+                                const plannedPct = emp.activityPercent != null ? `${emp.activityPercent.toFixed(1)}%` : 'N/A';
+                                
+                                const empCalcPercent = calculateEmployeeActualPercent(emp, globalCalcMethod);
+                                const actualPct = empCalcPercent != null ? `${roundToSingleDecimal(empCalcPercent).toFixed(1)}%` : 'N/A';
+                                
+                                const status = emp.isSeminar
+                                    ? buildStatus(emp.actualDays, emp.targetDays, `${formatHours(emp.actualHours)} שעות`)
+                                    : buildStatus(emp.actualDays, emp.targetDays, null);
+                                return `
+                                    <tr>
+                                        <td>${escapeHtml(emp.empName)}</td>
+                                        <td>${emp.actualDays.toFixed(1)}</td>
+                                        <td>${emp.isSeminar ? 'N/A' : targetLabel}</td>
+                                        <td>${emp.isSeminar ? 'N/A' : plannedPct}</td>
+                                        <td>${emp.isSeminar ? 'N/A' : actualPct}</td>
+                                        <td><span class="status-chip ${status.className}">${escapeHtml(status.text)}</span></td>
+                                    </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            });
+
+            document.getElementById('report-content').innerHTML = html;
+        }
+
+        function initReport() {
+            const stored = sessionStorage.getItem('researcherPdfReportData');
+            if (!stored) {
+                document.getElementById('loading').textContent = 'שגיאה בטעינת הדו"ח. הנתונים אינם זמינים.';
+                return;
+            }
+
+            let payload = null;
+            try {
+                payload = JSON.parse(stored);
+            } catch (e) {
+                document.getElementById('loading').textContent = 'שגיאה בטעינת הדו"ח. הנתונים אינם תקינים.';
+                return;
+            }
+
+            const startDate = new Date(payload.startDate);
+            const endDate = new Date(payload.endDate);
+            const flags = [];
+            if (payload.reportData?.includeCategorized) flags.push('כולל קיטלוגים');
+
+            const flagsText = flags.length ? ` • ${flags.join(' • ')}` : '';
+            document.getElementById('report-subtitle').textContent = `לתקופה ${startDate.toLocaleDateString('he-IL')} - ${endDate.toLocaleDateString('he-IL')}${flagsText}`;
+            document.getElementById('generation-date').textContent = new Date().toLocaleDateString('he-IL');
+
+            if (payload.reportMode === 'all') {
+                renderAllReport(payload);
+            } else {
+                renderSingleReport(payload);
+            }
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('report-page').style.display = 'block';
+        }
+
+        async function generatePDF() {
+            const btn = document.querySelector('.btn-primary');
+            const infoEl = document.getElementById('generated-info');
+
+            btn.disabled = true;
+            infoEl.textContent = 'מייצר PDF, נא להמתין...';
+
+            try {
+                await new Promise(r => setTimeout(r, 300));
+                const element = document.getElementById('report-page');
+                const { jsPDF } = window.jspdf;
+
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    windowWidth: element.scrollWidth,
+                    windowHeight: element.scrollHeight
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+                const ratio = imgWidth / pdfWidth;
+                const finalImgHeight = imgHeight / ratio;
+
+                let heightLeft = finalImgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, finalImgHeight);
+                heightLeft -= pdfHeight;
+
+                while (heightLeft > 0) {
+                    position -= pdfHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, finalImgHeight);
+                    heightLeft -= pdfHeight;
+                }
+
+                const dateStr = new Date().toISOString().slice(0, 10);
+                pdf.save(`researchers_report_${dateStr}.pdf`);
+                infoEl.textContent = 'הקובץ נשמר בהצלחה.';
+            } catch (error) {
+                console.error('PDF Generation failed:', error);
+                infoEl.textContent = 'שגיאה ביצירת ה-PDF.';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        initReport();
+    </script>
+</body>
+</html>

@@ -351,6 +351,49 @@
             font-weight: 500;
         }
 
+        .calendar-date-range-fields {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: flex-end;
+            max-width: 500px;
+            margin: 0 auto 1rem;
+            flex-wrap: wrap;
+        }
+
+        .calendar-date-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            min-width: 150px;
+            flex: 1;
+        }
+
+        .calendar-date-field label {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #475569;
+            text-align: right;
+        }
+
+        .calendar-date-field input[type="date"] {
+            width: 100%;
+            padding: 0.85rem 0.9rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #0f172a;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .calendar-date-field input[type="date"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+        }
+
         .date-label {
             font-size: 0.75rem;
             color: #64748b;
@@ -654,6 +697,31 @@
             white-space: nowrap;
         }
 
+        .all-researchers-table,
+        .all-researchers-detail-table {
+            table-layout: fixed;
+        }
+
+        .all-researchers-table>tbody>tr.row-detail>td {
+            padding: 0;
+        }
+
+        .all-researchers-detail-wrap {
+            border: 0;
+            border-radius: 0;
+        }
+
+        .all-researchers-detail-table .col-status {
+            white-space: normal;
+        }
+
+        .all-researchers-detail-table .status-chip {
+            max-width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            line-height: 1.35;
+        }
+
         .comparison-section-header {
             display: flex;
             justify-content: space-between;
@@ -775,21 +843,20 @@
         }
 
         .status-chip.good {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .status-chip.exact {
             background: #dcfce7;
             color: #166534;
         }
 
         .status-chip.warn {
-            background: transparent;
-            color: #475569;
-            border: 1px solid #cbd5e1;
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fbbf24;
         }
 
+        .status-chip.exact {
+            background: #dbeafe;
+            color: #1e40af;
+        }
         .status-chip.na {
             background: #e2e8f0;
             color: #475569;
@@ -1979,6 +2046,7 @@
             cursor: pointer;
             transition: all 0.18s ease;
             min-width: 130px;
+            flex: 1;
             font-family: inherit;
         }
 
@@ -2154,6 +2222,19 @@
             position: relative;
         }
 
+        .researchers-actions {
+            max-width: 420px;
+            margin: 0 auto 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .researchers-actions .employee-button {
+            padding: 1.1rem;
+            font-weight: 600;
+        }
+
         .researchers-search-icon {
             position: absolute;
             left: 0.9rem;
@@ -2217,6 +2298,15 @@
             margin-bottom: 1.5rem;
         }
 
+        .researcher-report-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
         .summary-card {
             background: white;
             border-radius: 14px;
@@ -2236,6 +2326,13 @@
             font-size: 1.35rem;
             font-weight: 700;
             color: #1e293b;
+        }
+
+        .summary-card .sc-subnote {
+            margin-top: 0.35rem;
+            font-size: 0.75rem;
+            color: #3b82f6;
+            font-weight: 600;
         }
 
         .half-year-note {
@@ -2351,6 +2448,89 @@
                 grid-template-columns: 1fr 1fr;
             }
         }
+
+        /* Tooltip עבור אחוז משרה בפועל */
+        .help-tooltip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: #cbd5e1;
+            color: #1e293b;
+            border-radius: 50%;
+            font-size: 13px;
+            font-weight: bold;
+            margin-inline-start: 6px;
+            cursor: help;
+            position: relative;
+            vertical-align: middle;
+        }
+        .help-tooltip:hover {
+            background: #3b82f6;
+            color: white;
+        }
+        .help-tooltip .tooltip-content {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 130%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            width: max-content;
+            max-width: 280px;
+            font-size: 0.85rem;
+            text-align: right;
+            font-weight: normal;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            transition: opacity 0.2s ease;
+            z-index: 9999;
+            line-height: 1.5;
+            pointer-events: none;
+        }
+        .help-tooltip:hover .tooltip-content {
+            visibility: visible;
+            opacity: 1;
+        }
+        .help-tooltip .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 6px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+        }
+
+        /* כפתור הגדרות בכותרת הטבלה */
+        .header-settings-btn {
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            display: inline-flex;
+            vertical-align: middle;
+            margin-inline-start: 4px;
+            padding: 2px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .header-settings-btn:hover {
+            background-color: #e2e8f0;
+            color: #1e3a8a;
+        }
+
+        /* פתרון לחיתוך ה-Tooltip בתוך הטבלה */
+        @media (min-width: 768px) {
+            .comparison-table-wrap {
+                overflow: visible !important;
+            }
+        }
     </style>
 </head>
 
@@ -2416,7 +2596,7 @@
                         <span class="material-symbols-outlined" style="font-size:2rem;">school</span>
                     </div>
                     <div class="hub-card-title">חוקרות וחוקרים פעילים</div>
-                    <div class="hub-card-desc">צפייה בנתונים פר חוקר/ת <br>שעות ואחוזים לפי עובדים/עובדות</div>
+                    <div class="hub-card-desc">צפייה בנתונים לפי חוקר/ת <br>שעות ואחוזים לפי עובדים/עובדות</div>
                 </button>
             </div>
         </div>
@@ -2444,6 +2624,12 @@
         <!-- Researchers List Screen -->
         <div id="researchers-screen" class="screen">
             <h1 class="screen-title">חוקרות וחוקרים פעילים</h1>
+            <div class="researchers-actions">
+                <button type="button" class="employee-button" onclick="showAllResearchersDatesScreen()"
+                    style="border-right: 4px solid #f59e0b; background: #fff7ed;">
+                    דו"ח לכל החוקרים
+                </button>
+            </div>
             <div class="researchers-search-wrap">
                 <span class="material-symbols-outlined researchers-search-icon" aria-hidden="true">search</span>
                 <input
@@ -2478,11 +2664,15 @@
                     </div>
                 </div>
                 <label class="researcher-checkbox-label" id="include-categorized-wrap">
-                    <input type="checkbox" id="include-categorized-hours">
+                    <input type="checkbox" id="include-categorized-hours" checked>
                     <span>לכלול שעות שקוטלגו אצל העובדים תחת החוקר <span style="color:#94a3b8; font-size:0.8rem;">(לא כולל חלוקה יחסית)</span></span>
                 </label>
-                <button class="generate-report-btn" id="generate-researcher-report-btn" onclick="generateResearcherReport()" disabled>
-                    הפקת דו"ח פר חוקר
+                <label class="researcher-checkbox-label" id="include-relative-wrap">
+                    <input type="checkbox" id="include-relative-hours" checked>
+                    <span>לכלול שעות חלוקה יחסית</span>
+                </label>
+                <button class="generate-report-btn" id="generate-researcher-report-btn" onclick="generateResearcherReportAction()" disabled>
+                    הפקת דו"ח לפי חוקר
                 </button>
                 <button class="back-btn" onclick="showResearchersListScreen()">חזרה</button>
             </div>
@@ -2491,15 +2681,19 @@
         <!-- Researcher Report Screen -->
         <div id="researcher-report-screen" class="screen">
             <div class="researcher-report-wrap">
-                <h1 class="screen-title" id="researcher-report-title">דו"ח פר חוקר</h1>
+                <h1 class="screen-title" id="researcher-report-title">דו"ח לפי חוקר</h1>
                 <p style="text-align: center; color: #64748b; margin-bottom: 2rem;" id="researcher-report-subtitle"></p>
                 <div id="researcher-report-content">
                     <div class="loading">מעבד נתונים...</div>
                 </div>
-                <div style="text-align: center; margin-top: 2rem;">
+                <div class="researcher-report-actions">
                     <button class="action-btn csv" onclick="exportResearcherReportCSV()" id="researcher-csv-btn" style="display:none;">
                         <span class="material-symbols-outlined action-btn-icon">download</span>
                         <span>ייצוא CSV</span>
+                    </button>
+                    <button class="action-btn pdf" onclick="openResearcherPdfReport()" id="researcher-pdf-btn" style="display:none;">
+                        <span class="material-symbols-outlined action-btn-icon">picture_as_pdf</span>
+                        <span>הפקת דו"ח PDF</span>
                     </button>
                 </div>
                 <div style="text-align: center; margin-top: 1rem;">
@@ -2510,6 +2704,16 @@
 
         <div id="calendar-screen" class="screen">
             <h1 class="screen-title" id="calendar-title">עובד - הפקת דו"ח</h1>
+            <div class="calendar-date-range-fields">
+                <div class="calendar-date-field">
+                    <label for="calendar-start-date">מתאריך</label>
+                    <input type="date" id="calendar-start-date" onchange="updateCalendarDatesFromInputs()">
+                </div>
+                <div class="calendar-date-field">
+                    <label for="calendar-end-date">עד תאריך</label>
+                    <input type="date" id="calendar-end-date" onchange="updateCalendarDatesFromInputs()">
+                </div>
+            </div>
             <div class="date-selection-info" id="date-selection">
                 <div class="instruction-main">יש לבחור תאריך התחלה וסיום להפקת דו"ח</div>
                 <div class="instruction-sub">(תאריכים מחודשים אחרים מוצגים באפור)</div>
@@ -2662,7 +2866,7 @@
                 <div class="backdate-form">
                     <div class="backdate-toggle" onclick="document.getElementById('backdate-enabled').click();"
                         style="cursor: pointer;">
-                        <label for="backdate-enabled" style="cursor: pointer;">אפשר דיווח ועריכה בדיעבד</label>
+                        <label for="backdate-enabled" style="cursor: pointer;">לאפשר דיווח ועריכה בדיעבד</label>
                         <label class="toggle-switch" onclick="event.stopPropagation();">
                             <input type="checkbox" id="backdate-enabled" onchange="toggleBackdateDates()">
                             <span class="toggle-slider"></span>
@@ -2737,6 +2941,43 @@
         </div>
     </div>
 
+    <!-- Calculation Method Settings Modal -->
+    <div class="modal-overlay" id="calc-method-modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2 class="modal-title">הגדרות חישוב אחוז משרה</h2>
+                <button class="modal-close" onclick="closeCalcMethodModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="backdate-form">
+                    <div class="backdate-field">
+                        <label style="font-weight: 700; margin-bottom: 15px; display: block;">בחר/י את נוסחת החישוב עבור "אחוז משרה בפועל":</label>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                                <input type="radio" name="calc-method-radio" value="budget" style="margin-top: 5px;">
+                                <span>
+                                    <strong>לפי ניצול תקציב (יעד)</strong><br>
+                                    <small style="color: #64748b;">(ימים בפועל × אחוז מיועד) ÷ יעד ימים</small>
+                                </span>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                                <input type="radio" name="calc-method-radio" value="actual_time" style="margin-top: 5px;">
+                                <span>
+                                    <strong>לפי זמן עבודה בפועל</strong><br>
+                                    <small style="color: #64748b;">ימים בפועל לחוקר ÷ סך ימי עבודה של העובד</small>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn primary" onclick="saveCalcMethod()">שמירה ורענון</button>
+                <button class="modal-btn secondary" onclick="closeCalcMethodModal()">ביטול</button>
+            </div>
+        </div>
+    </div>
+
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -2761,11 +3002,70 @@
             selectedResearcher: null,
             researcherStartDate: null,
             researcherEndDate: null,
-            researcherReportData: null
+            researcherReportData: null,
+            allResearchersReportData: null,
+            researcherReportMode: 'single'
         };
 
         const CACHE_PREFIX = 'reportCategorizationCache_';
         const CATEGORIZATIONS_DB_PATH = 'managerSelectionPreferences';
+
+        // משתנה גלובלי לשיטת החישוב
+        window.globalCalcMethod = 'budget';
+
+        // פונקציה להחזרת כותרת עם גלגל שיניים
+        window.getActualPctHeaderHtml = function() {
+            return `אחוז משרה בפועל 
+            <button type="button" class="header-settings-btn" onclick="openCalcMethodModal()" title="הגדרות חישוב">
+                <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+            </button>`;
+        };
+
+        // פונקציות למודל
+        window.openCalcMethodModal = function() {
+            const radio = document.querySelector(`input[name="calc-method-radio"][value="${window.globalCalcMethod}"]`);
+            if (radio) radio.checked = true;
+            document.getElementById('calc-method-modal').classList.add('active');
+        };
+
+        window.closeCalcMethodModal = function() {
+            document.getElementById('calc-method-modal').classList.remove('active');
+        };
+
+        window.saveCalcMethod = async function() {
+            const selected = document.querySelector('input[name="calc-method-radio"]:checked').value;
+            
+            try {
+                const { db, ref, get, set } = window.firebaseApp;
+                const path = 'global/backdateOverride';
+                
+                // 1. שליפת הנתונים הקיימים קודם
+                const snap = await get(ref(db, path));
+                const currentSettings = snap.exists() ? snap.val() : {};
+                
+                // 2. עדכון רק של שדה שיטת החישוב ושמירה מחדש
+                const updatedSettings = {
+                    ...currentSettings,
+                    calcMethod: selected
+                };
+                
+                await set(ref(db, path), updatedSettings);
+                window.globalCalcMethod = selected; // עדכון הסטייט המקומי
+                
+                showToast('ההגדרה נשמרה ומחשבת נתונים מחדש...');
+                closeCalcMethodModal();
+                
+                // 3. רענון מיידי של הדוחות
+                if (AppState.reportData) generateFinalReport();
+                if (AppState.selectedResearcher || AppState.researcherReportMode === 'all') generateResearcherReportAction();
+                
+            } catch (e) {
+                console.error(e);
+                showToast('שגיאה בשמירת ההגדרה', 'error');
+            }
+        };
+
+        const ACTUAL_PCT_HEADER_HTML = window.getActualPctHeaderHtml();
 
         // Toast notification function
         function showToast(message, type = 'success') {
@@ -2959,9 +3259,9 @@
                 if (plannedForPeriod != null) {
                     status = `ניצל ${actualDays.toFixed(1)} ימים מתוך ${plannedForPeriod.toFixed(1)}`;
                     if (diffDays > 0) {
-                        statusClass = 'good';
+                        statusClass = 'warn'; // חריגה - כתום
                     } else if (diffDays < 0) {
-                        statusClass = 'warn';
+                        statusClass = 'good'; // יתרה - ירוק
                     } else {
                         statusClass = 'exact';
                     }
@@ -2988,7 +3288,7 @@
             return rows;
         }
 
-        function calculateComparisonTotals(rows) {
+        function calculateComparisonTotals(rows, options = {}) {
             const totals = {
                 plannedDaysComparable: 0,
                 actualDaysComparable: 0,
@@ -3006,7 +3306,9 @@
             totals.plannedDaysComparable = roundToSingleDecimal(totals.plannedDaysComparable);
             totals.actualDaysComparable = roundToSingleDecimal(totals.actualDaysComparable);
             totals.actualDaysAll = roundToSingleDecimal(totals.actualDaysAll);
-            totals.diffComparable = roundToSingleDecimal(totals.actualDaysComparable - totals.plannedDaysComparable);
+            const includeAllInTotals = options.includeAllInTotals === true;
+            totals.actualDaysTotal = includeAllInTotals ? totals.actualDaysAll : totals.actualDaysComparable;
+            totals.diffTotal = roundToSingleDecimal(totals.actualDaysTotal - totals.plannedDaysComparable);
             return totals;
         }
 
@@ -3057,13 +3359,32 @@
             toggle.setAttribute('aria-expanded', String(!isHidden));
         };
 
-        function renderComparisonTable(title, rows, halfYearsCount, sectionId) {
-            const totals = calculateComparisonTotals(rows);
+        function renderComparisonTable(title, rows, halfYearsCount, sectionId, options = {}) {
+            const includePercentColumns = options.includePercentColumns === true;
+            const includeAllInTotals = options.includeAllInTotals === true;
+            const totals = calculateComparisonTotals(rows, { includeAllInTotals });
+            const columnCount = includePercentColumns ? 6 : 4;
             const rowsHtml = (rows || []).map((row, idx) => {
                 const progress = getProgressForRow(row);
                 const plannedLabel = row.plannedForPeriod != null
                     ? `${row.plannedForPeriod.toFixed(1)} יעד`
                     : 'N/A יעד';
+                const plannedPercentLabel = row.plannedPercent != null
+                    ? `${row.plannedPercent.toFixed(1)}%`
+                    : 'N/A';
+                
+                // חישוב אחוז משרה בפועל לפי השיטה הנבחרת
+                let calcPercent = null;
+                if (window.globalCalcMethod === 'actual_time') {
+                    // נוסחה: ימים בפועל לחוקר ÷ סך כל הימים שבוצעו (כולל סמינרים/אחרות)
+                    calcPercent = totals.actualDaysAll > 0 ? (row.actualDays / totals.actualDaysAll) * 100 : null;
+                } else {
+                    // נוסחה: (ימים בפועל × אחוז מיועד) ÷ יעד ימים
+                    calcPercent = (row.plannedForPeriod > 0 && row.plannedPercent != null) 
+                        ? (row.actualDays * row.plannedPercent) / row.plannedForPeriod 
+                        : null;
+                }
+                const actualPercentLabel = calcPercent != null ? `${roundToSingleDecimal(calcPercent).toFixed(1)}%` : 'N/A';
 
                 const detailPlannedHalf = row.plannedPerHalf != null
                     ? `${row.plannedPerHalf.toFixed(1)} ימים (${row.plannedPercent != null ? row.plannedPercent.toFixed(1) : '—'}%)`
@@ -3086,11 +3407,12 @@
                         <td data-label="חוקר/קטגוריה" style="font-weight:600;">${row.name}</td>
                         <td data-label="בפועל (ימים)" style="text-align:center;">${row.actualDays.toFixed(1)} ימים</td>
                         <td data-label="יעד לתקופה" style="text-align:center;">${plannedLabel}</td>
-                        <td data-label="סטטוס" class="col-status" style="text-align:center;"><span class="status-chip ${row.statusClass}">${row.status}</span></td>
+                        ${includePercentColumns ? `<td data-label="אחוז משרה מיועד" style="text-align:center;">${plannedPercentLabel}</td>` : ''}
+                        ${includePercentColumns ? `<td data-label="אחוז משרה בפועל" style="text-align:center;">${actualPercentLabel}</td>` : ''}
                         <td data-label="פעולות" class="col-action" style="text-align:center;"><button id="${sectionId}-row-${idx}-btn" class="row-toggle-btn" onclick="toggleComparisonRow('${sectionId}', ${idx})">פרטים</button></td>
                     </tr>
                     <tr id="${sectionId}-row-${idx}-detail" class="row-detail">
-                        <td colspan="5">
+                        <td colspan="${columnCount}">
                             <div class="row-detail-content">
                                 <div class="row-detail-progress">
                                     <strong>התקדמות:</strong>
@@ -3122,26 +3444,26 @@
                                     <th>חוקר/קטגוריה</th>
                                     <th>בפועל (ימים)</th>
                                     <th>יעד לתקופה</th>
-                                    <th class="col-status">סטטוס</th>
+                                    ${includePercentColumns ? '<th>אחוז משרה מיועד</th>' : ''}
+                                    ${includePercentColumns ? `<th>${ACTUAL_PCT_HEADER_HTML}</th>` : ''}
                                     <th class="col-action">פעולות</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${rowsHtml || '<tr><td colspan="5" style="text-align:center; color:#64748b;">אין נתונים להצגה</td></tr>'}
+                                ${rowsHtml || `<tr><td colspan="${columnCount}" style="text-align:center; color:#64748b;">אין נתונים להצגה</td></tr>`}
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td data-label="סיכום" style="font-weight:700;">סה"כ*</td>
-                                    <td data-label="בפועל (ימים)" style="text-align:center; font-weight:700;">${totals.actualDaysComparable.toFixed(1)}</td>
+                                    <td data-label="סיכום" style="font-weight:700;">${includeAllInTotals ? 'סה"כ' : 'סה"כ*'}</td>
+                                    <td data-label="בפועל (ימים)" style="text-align:center; font-weight:700;">${totals.actualDaysTotal.toFixed(1)}</td>
                                     <td data-label="יעד לתקופה" style="text-align:center; font-weight:700;">${totals.plannedDaysComparable.toFixed(1)}</td>
-                                    <td data-label="פער" class="col-status" style="text-align:center; font-weight:700;">${totals.diffComparable > 0 ? `נוצל ${totals.diffComparable.toFixed(1)} ימים מעל המכסה` : totals.diffComparable < 0 ? `נותר ${Math.abs(totals.diffComparable).toFixed(1)} ימים למכסה` : '0 ימים'}</td>
+                                    ${includePercentColumns ? '<td data-label="אחוז משרה מיועד" style="text-align:center;">—</td>' : ''}
+                                    ${includePercentColumns ? '<td data-label="אחוז משרה בפועל" style="text-align:center;">—</td>' : ''}
                                     <td data-label="הערה" class="col-action" style="text-align:center;">—</td>
                                 </tr>
                             </tfoot>
                         </table>
-                        <div style="font-size: 0.85rem; color: #64748b; margin-top: 8px; line-height: 1.4;">
-                            * החישוב בסה"כ אינו כולל שעות/ימים של מכון - סמינר/קורס/הכשרה
-                        </div>
+                        ${includeAllInTotals ? '' : '<div style="font-size: 0.85rem; color: #64748b; margin-top: 8px; line-height: 1.4;">* החישוב בסה"כ אינו כולל שעות/ימים של מכון - סמינר/קורס/הכשרה</div>'}
                     </div>
                     </div>
                 </div>`;
@@ -3422,18 +3744,36 @@
             renderResearchersList(researchers, value);
         };
 
+        function updateResearcherDatesScreenUI() {
+            const titleEl = document.getElementById('researcher-dates-title');
+            const buttonEl = document.getElementById('generate-researcher-report-btn');
+            if (AppState.researcherReportMode === 'all') {
+                if (titleEl) titleEl.textContent = 'כל החוקרים - בחירת טווח תאריכים';
+                if (buttonEl) buttonEl.textContent = 'הפקת דו"ח לכל החוקרים';
+            } else {
+                if (titleEl) titleEl.textContent = `${AppState.selectedResearcher} - בחירת טווח תאריכים`;
+                if (buttonEl) buttonEl.textContent = 'הפקת דו"ח לפי חוקר';
+            }
+        }
+
         function showResearcherDatesScreen(researcherName) {
             if (researcherName) {
+                AppState.researcherReportMode = 'single';
                 AppState.selectedResearcher = researcherName;
+                AppState.allResearchersReportData = null;
             }
-            document.getElementById('researcher-dates-title').textContent = `${AppState.selectedResearcher} - בחירת טווח תאריכים`;
+            updateResearcherDatesScreenUI();
             // Set default dates: first of current month to today
             const today = new Date();
             const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             const startInput = document.getElementById('researcher-start-date');
             const endInput = document.getElementById('researcher-end-date');
+            const includeCategorizedCheckbox = document.getElementById('include-categorized-hours');
+            const includeRelativeCheckbox = document.getElementById('include-relative-hours');
             if (!startInput.value) startInput.value = toLocalDateStr(firstOfMonth);
             if (!endInput.value) endInput.value = toLocalDateStr(today);
+            if (includeCategorizedCheckbox) includeCategorizedCheckbox.checked = true;
+            if (includeRelativeCheckbox) includeRelativeCheckbox.checked = true;
             updateResearcherReportButton();
             startInput.onchange = updateResearcherReportButton;
             endInput.onchange = updateResearcherReportButton;
@@ -3441,10 +3781,21 @@
         }
         window.showResearcherDatesScreen = showResearcherDatesScreen;
 
+        function showAllResearchersDatesScreen() {
+            AppState.researcherReportMode = 'all';
+            AppState.selectedResearcher = null;
+            AppState.researcherReportData = null;
+            AppState.allResearchersReportData = null;
+            updateResearcherDatesScreenUI();
+            showResearcherDatesScreen();
+        }
+        window.showAllResearchersDatesScreen = showAllResearchersDatesScreen;
+
         function updateResearcherReportButton() {
             const s = document.getElementById('researcher-start-date').value;
             const e = document.getElementById('researcher-end-date').value;
-            document.getElementById('generate-researcher-report-btn').disabled = !(s && e && s <= e);
+            const hasResearcher = AppState.researcherReportMode === 'all' || !!AppState.selectedResearcher;
+            document.getElementById('generate-researcher-report-btn').disabled = !(s && e && s <= e && hasResearcher);
         }
 
         function showCalendarScreen(employee, shouldResetDates = true) {
@@ -3453,9 +3804,12 @@
                 document.getElementById('calendar-title').textContent = `${employee.firstName} ${employee.lastName} - פעילות`;
             }
             if (shouldResetDates) {
-                AppState.selectedStartDate = null;
-                AppState.selectedEndDate = null;
+                const today = new Date();
+                const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                AppState.selectedStartDate = firstOfMonth;
+                AppState.selectedEndDate = today;
             }
+            syncCalendarDateInputs();
             updateDateSelection();
             updateGenerateButton();
             showScreen('calendar-screen');
@@ -3599,10 +3953,51 @@
                 AppState.selectedStartDate = clickedDate;
                 AppState.selectedEndDate = null;
             }
+            syncCalendarDateInputs();
             updateCalendarSelection();
             updateDateSelection();
             updateGenerateButton();
         }
+
+        function parseCalendarInputDate(value) {
+            if (!value) return null;
+            const [year, month, day] = value.split('-').map(Number);
+            if (!year || !month || !day) return null;
+            return new Date(year, month - 1, day);
+        }
+
+        function syncCalendarDateInputs() {
+            const startInput = document.getElementById('calendar-start-date');
+            const endInput = document.getElementById('calendar-end-date');
+            if (startInput) startInput.value = AppState.selectedStartDate ? toLocalDateStr(AppState.selectedStartDate) : '';
+            if (endInput) endInput.value = AppState.selectedEndDate ? toLocalDateStr(AppState.selectedEndDate) : '';
+        }
+
+        function updateCalendarDatesFromInputs() {
+            const startInput = document.getElementById('calendar-start-date');
+            const endInput = document.getElementById('calendar-end-date');
+            const startDate = parseCalendarInputDate(startInput ? startInput.value : '');
+            const endDate = parseCalendarInputDate(endInput ? endInput.value : '');
+
+            if (startDate && endDate && endDate < startDate) {
+                AppState.selectedStartDate = startDate;
+                AppState.selectedEndDate = null;
+                if (endInput) endInput.value = '';
+            } else {
+                AppState.selectedStartDate = startDate;
+                AppState.selectedEndDate = endDate;
+            }
+
+            if (startDate) {
+                AppState.currentMonth = startDate.getMonth();
+                AppState.currentYear = startDate.getFullYear();
+            }
+
+            updateDateSelection();
+            updateGenerateButton();
+            generateCalendar();
+        }
+        window.updateCalendarDatesFromInputs = updateCalendarDatesFromInputs;
 
         function updateCalendarSelection() {
             document.querySelectorAll('.calendar-day[data-date]').forEach(day => {
@@ -4184,7 +4579,13 @@
                 </div>`;
 
             html += renderComparisonTable('מתוכנן מול בפועל - דיווח גולמי לפי חוקרים', data.plannedComparisonRaw, data.coveredHalfYearsCount, 'comparison-raw');
-            html += renderComparisonTable('מתוכנן מול בפועל - אחרי מיפוי/קטלוג מנהל/ת', data.plannedComparisonMapped, data.coveredHalfYearsCount, 'comparison-mapped');
+            html += renderComparisonTable(
+                'מתוכנן מול בפועל - אחרי מיפוי/קטלוג מנהל/ת',
+                data.plannedComparisonMapped,
+                data.coveredHalfYearsCount,
+                'comparison-mapped',
+                { includePercentColumns: true, includeAllInTotals: true }
+            );
 
             html += `
                 <div class="report-section" id="chart-section" style="display: none;">
@@ -4408,6 +4809,39 @@
             window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
         };
 
+        window.openResearcherPdfReport = function () {
+            const mode = AppState.researcherReportMode === 'all' ? 'all' : 'single';
+            const startDate = AppState.researcherStartDate;
+            const endDate = AppState.researcherEndDate;
+
+            if (!startDate || !endDate) {
+                alert('שגיאה: נתוני התאריכים אינם זמינים.');
+                return;
+            }
+
+            if (mode === 'all' && !AppState.allResearchersReportData) {
+                alert('שגיאה: נתוני דו"ח כל החוקרים אינם זמינים.');
+                return;
+            }
+
+            if (mode === 'single' && !AppState.researcherReportData) {
+                alert('שגיאה: נתוני דו"ח החוקר אינם זמינים.');
+                return;
+            }
+
+            const payload = {
+                reportMode: mode,
+                reportData: mode === 'all' ? AppState.allResearchersReportData : AppState.researcherReportData,
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
+                globalCalcMethod: window.globalCalcMethod
+            };
+
+            sessionStorage.setItem('researcherPdfReportData', JSON.stringify(payload));
+            const url = `researcher_pdf_report.html?v=20260519-6`;
+            window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
+        };
+
         window.openDbReport = function () {
             if (!AppState.selectedEmployee || !AppState.selectedStartDate || !AppState.selectedEndDate) {
                 alert('שגיאה: פרטי העובד או התאריכים אינם זמינים.');
@@ -4485,11 +4919,291 @@
         }
 
 
+        function normalizeResearcherName(value) {
+            return String(value || '')
+                .replace(/[\u200e\u200f\u202a-\u202e]/g, '')
+                .trim()
+                .replace(/\s+/g, ' ')
+                .toLowerCase();
+        }
+
+        function isSeminarEntry(entry) {
+            return entry?.researcher?.includes('סמינר') || entry?.researcher?.includes('קורס') || entry?.researcher?.includes('הכשרה');
+        }
+
+        function collectReportEntries(reports) {
+            const allEntries = [];
+            (reports || []).forEach(report => {
+                (report.entries || []).forEach((entry, entryIndex) => {
+                    let hours = 0;
+                    if (report.type === 'weekly') {
+                        if (entry?.hours != null && entry.hours !== '') hours = parseFloat(entry.hours) || 0;
+                        else if (entry?.days != null && entry.days !== '') hours = (parseFloat(entry.days) || 0) * 8;
+                        else if (Array.isArray(entry?.dailyHours)) hours = entry.dailyHours.reduce((sum, h) => sum + (parseFloat(h) || 0), 0);
+                    } else {
+                        hours = parseFloat(entry?.hours) || 0;
+                    }
+                    const stableId = `${report.id}_${entryIndex}`;
+                    allEntries.push({
+                        ...entry,
+                        hours,
+                        reportType: report.type,
+                        stableId,
+                        reportDate: report.date,
+                        reportId: report.id,
+                        entryIndex
+                    });
+                });
+            });
+            return allEntries;
+        }
+
+        function buildEntriesIndex(allEntries) {
+            const index = new Map();
+            (allEntries || []).forEach(entry => {
+                if (entry?.stableId) {
+                    index.set(entry.stableId, entry);
+                }
+            });
+            return index;
+        }
+
+        function findEntryForCatKey(catKey, entriesIndex, allEntries) {
+            if (!catKey) return null;
+            const directMatch = entriesIndex?.get(catKey);
+            if (directMatch) return directMatch;
+
+            const keyStr = String(catKey);
+            const keyParts = keyStr.split('_');
+            const keyEntryIndex = Number(keyParts.pop());
+            const keyReportId = keyParts.join('_');
+            if (!Number.isFinite(keyEntryIndex)) return null;
+
+            return (allEntries || []).find(e => e.reportId === keyReportId && e.entryIndex === keyEntryIndex) || null;
+        }
+
+        async function loadEmployeeCategorizations(empId) {
+            if (!AppState.currentUser || !empId) return new Map();
+            try {
+                const { db, ref, get } = window.firebaseApp;
+                const catPath = `${CATEGORIZATIONS_DB_PATH}/${AppState.currentUser.uid}/${empId}`;
+                const catSnap = await get(ref(db, catPath));
+                if (catSnap.exists()) {
+                    return new Map(Object.entries(catSnap.val() || {}));
+                }
+            } catch (e) { /* ignore */ }
+            return new Map();
+        }
+
+        function addHoursToMap(map, key, hours) {
+            const prev = map.get(key) || 0;
+            map.set(key, prev + (Number(hours) || 0));
+        }
+
+        function computeRelativeAllocations(allEntries, catMap) {
+            const categories = new Map();
+            const relativeTasks = [];
+            const safeCatMap = catMap instanceof Map ? catMap : new Map();
+
+            (allEntries || []).forEach(entry => {
+                const catValue = safeCatMap.get(entry.stableId);
+                const isSeminar = isSeminarEntry(entry);
+
+                if (catValue === 'relative') {
+                    relativeTasks.push(entry);
+                    return;
+                }
+
+                if (catValue === 'active') {
+                    const activeName = safeCatMap.get(entry.stableId + '_activeResearcher');
+                    if (activeName) {
+                        addHoursToMap(categories, activeName, entry.hours);
+                    } else {
+                        addHoursToMap(categories, 'חוקר פעיל (לא נבחר)', entry.hours);
+                    }
+                    return;
+                }
+
+                if (catValue === 'seminar' || isSeminar) {
+                    addHoursToMap(categories, 'מכון - סמינר/קורס/הכשרה', entry.hours);
+                    return;
+                }
+
+                if (catValue === 'custom') {
+                    const customText = safeCatMap.get(entry.stableId + '_custom');
+                    const label = customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
+                    addHoursToMap(categories, label, entry.hours);
+                    return;
+                }
+
+                if (entry.researcher && entry.researcher !== 'משימות אחרות') {
+                    addHoursToMap(categories, entry.researcher, entry.hours);
+                }
+            });
+
+            const allocations = new Map();
+            const details = [];
+            const DISTRIBUTION_CONFIG = {
+                includeSeminarInRelative: false,
+                includeCustomChargeInRelative: false
+            };
+
+            const isEligibleForDistribution = (name) => {
+                if (!name) return false;
+                if (name === 'משימות אחרות') return false;
+                if (name === 'לא מקוטלג') return false;
+                if (name.includes('חלוקה יחסית')) return false;
+                if (name.includes('חלוקה שווה')) return false;
+                if (name === 'מכון - סמינר/קורס/הכשרה') {
+                    return DISTRIBUTION_CONFIG.includeSeminarInRelative;
+                }
+                if (name.startsWith('חיוב חדש')) {
+                    return DISTRIBUTION_CONFIG.includeCustomChargeInRelative;
+                }
+                return true;
+            };
+
+            relativeTasks.forEach(task => {
+                const taskHours = Number(task.hours) || 0;
+                if (taskHours <= 0) return;
+
+                const taskName = task.detail || task.researcher || task.name || 'משימה';
+
+                const currentResearchers = Array.from(categories.keys())
+                    .filter(r => isEligibleForDistribution(r));
+
+                if (currentResearchers.length === 0) {
+                    details.push({
+                        taskName,
+                        taskHours,
+                        totalBase: 0,
+                        method: 'none',
+                        items: [],
+                        note: 'חלוקה יחסית (ללא זכאים)'
+                    });
+                    return;
+                }
+
+                const weights = currentResearchers.map(name => ({ name, base: categories.get(name) || 0 }));
+                const totalBase = weights.reduce((sum, w) => sum + w.base, 0);
+
+                if (totalBase > 0) {
+                    const detail = {
+                        taskName,
+                        taskHours,
+                        totalBase,
+                        method: 'proportional',
+                        items: [],
+                        note: 'חלוקה יחסית לפי בסיס מעודכן'
+                    };
+                    let remaining = taskHours;
+                    weights.forEach((w, idx) => {
+                        const raw = taskHours * (w.base / totalBase);
+                        const add = (idx === weights.length - 1) ? remaining : raw;
+                        remaining -= add;
+                        addHoursToMap(categories, w.name, add);
+                        addHoursToMap(allocations, w.name, add);
+                        detail.items.push({
+                            researcher: w.name,
+                            baseHours: w.base,
+                            weight: (w.base / totalBase),
+                            allocated: add
+                        });
+                    });
+                    details.push(detail);
+                } else {
+                    const detail = {
+                        taskName,
+                        taskHours,
+                        totalBase: 0,
+                        method: 'equal',
+                        items: [],
+                        note: 'חלוקה יחסית (אין בסיס - בוצעה חלוקה שווה)'
+                    };
+                    const portion = taskHours / currentResearchers.length;
+                    let remaining = taskHours;
+                    currentResearchers.forEach((name, idx) => {
+                        const add = (idx === currentResearchers.length - 1) ? remaining : portion;
+                        remaining -= add;
+                        addHoursToMap(categories, name, add);
+                        addHoursToMap(allocations, name, add);
+                        detail.items.push({
+                            researcher: name,
+                            baseHours: 0,
+                            weight: (1 / currentResearchers.length),
+                            allocated: add
+                        });
+                    });
+                    details.push(detail);
+                }
+            });
+
+            return { allocations, details };
+        }
+
+        function buildEmployeeTargetMap(emp, halfYearKeys, halfYearsCount) {
+            const result = new Map();
+            const settingsByHY = emp?.researcherSettingsByHalfYear;
+
+            if (settingsByHY && typeof settingsByHY === 'object' && !Array.isArray(settingsByHY)) {
+                const aggregated = {};
+                (halfYearKeys || []).forEach(hyKey => {
+                    const normalizedMap = normalizeResearcherSettingsMap(settingsByHY[hyKey] || {});
+                    Object.entries(normalizedMap).forEach(([name, setting]) => {
+                        if (!aggregated[name]) {
+                            aggregated[name] = { totalWorkDays: 0, percentSum: 0, percentCount: 0 };
+                        }
+                        aggregated[name].totalWorkDays += Number(setting.workDays || 0);
+                        if (setting.activityPercent != null) {
+                            aggregated[name].percentSum += Number(setting.activityPercent || 0);
+                            aggregated[name].percentCount += 1;
+                        }
+                    });
+                });
+
+                Object.entries(aggregated).forEach(([name, acc]) => {
+                    const targetDays = acc.totalWorkDays > 0 ? roundToSingleDecimal(acc.totalWorkDays) : null;
+                    const activityPercent = acc.percentCount > 0
+                        ? roundToSingleDecimal(acc.percentSum / acc.percentCount)
+                        : null;
+                    result.set(name, { targetDays, activityPercent });
+                });
+                return result;
+            }
+
+            if (emp?.researcherSettings && typeof emp.researcherSettings === 'object') {
+                Object.entries(emp.researcherSettings).forEach(([name, setting]) => {
+                    const normalized = normalizeResearcherSetting(setting);
+                    if (!normalized) return;
+                    const targetDays = normalized.workDays != null
+                        ? roundToSingleDecimal(normalized.workDays * halfYearsCount)
+                        : null;
+                    const activityPercent = normalized.activityPercent != null
+                        ? roundToSingleDecimal(normalized.activityPercent)
+                        : null;
+                    result.set(name, { targetDays, activityPercent });
+                });
+            }
+
+            return result;
+        }
+
+
         // ============================================
         // Per-Researcher Report Functions
         // ============================================
 
+        function generateResearcherReportAction() {
+            if (AppState.researcherReportMode === 'all') {
+                generateAllResearchersReport();
+            } else {
+                generateResearcherReport();
+            }
+        }
+        window.generateResearcherReportAction = generateResearcherReportAction;
+
         async function generateResearcherReport() {
+            AppState.researcherReportMode = 'single';
             const researcherName = AppState.selectedResearcher;
             const startStr = document.getElementById('researcher-start-date').value;
             const endStr = document.getElementById('researcher-end-date').value;
@@ -4500,12 +5214,20 @@
             AppState.researcherStartDate = startDate;
             AppState.researcherEndDate = endDate;
 
-            document.getElementById('researcher-report-title').textContent = `${researcherName} - דו"ח פר חוקר`;
+            const includeCategorized = document.getElementById('include-categorized-hours')?.checked;
+            const includeRelative = document.getElementById('include-relative-hours')?.checked;
+            const flags = [];
+            if (includeCategorized) flags.push('כולל קיטלוגים');
+            if (includeRelative) flags.push('כולל חלוקה יחסית');
+            const flagsText = flags.length ? ` • ${flags.join(' • ')}` : '';
+
+            document.getElementById('researcher-report-title').textContent = `${researcherName} - דו"ח לפי חוקר`;
             const startDisplay = startDate.toLocaleDateString('he-IL');
             const endDisplay = endDate.toLocaleDateString('he-IL');
-            document.getElementById('researcher-report-subtitle').textContent = `לתקופה ${startDisplay} - ${endDisplay}`;
+            document.getElementById('researcher-report-subtitle').textContent = `לתקופה ${startDisplay} - ${endDisplay}${flagsText}`;
             document.getElementById('researcher-report-content').innerHTML = '<div class="loading">טוען נתונים מכל העובדים...</div>';
             document.getElementById('researcher-csv-btn').style.display = 'none';
+            document.getElementById('researcher-pdf-btn').style.display = 'none';
             showScreen('researcher-report-screen');
 
             try {
@@ -4516,15 +5238,10 @@
 
                 const halfYearsInPeriod = getHalfYearsInPeriod(startDate, endDate);
                 const halfYearsCount = Math.max(halfYearsInPeriod.length, 1);
-                const includeCategorized = document.getElementById('include-categorized-hours')?.checked;
-                const normalizeResearcherName = (value) => String(value || '')
-                    .replace(/[\u200e\u200f\u202a-\u202e]/g, '')
-                    .trim()
-                    .replace(/\s+/g, ' ')
-                    .toLowerCase();
                 const selectedResearcherKey = normalizeResearcherName(researcherName);
 
                 const results = [];
+                const relativeCalculations = [];
                 let totalActualHours = 0;
                 let totalTargetDays = 0;
                 let totalSeminarHours = 0;
@@ -4537,33 +5254,11 @@
                     let researcherHours = 0;
                     let seminarHours = 0;
 
-                    // Build a flat list of all report entries with their hours for matching
-                    const allEntries = [];
-                    reports.forEach(report => {
-                        (report.entries || []).forEach((entry, entryIndex) => {
-                            let hours = 0;
-                            if (report.type === 'weekly') {
-                                if (entry?.hours != null && entry.hours !== '') hours = parseFloat(entry.hours) || 0;
-                                else if (entry?.days != null && entry.days !== '') hours = (parseFloat(entry.days) || 0) * 8;
-                                else if (Array.isArray(entry?.dailyHours)) hours = entry.dailyHours.reduce((sum, h) => sum + (parseFloat(h) || 0), 0);
-                            } else {
-                                hours = parseFloat(entry?.hours) || 0;
-                            }
-                            const stableId = `${report.id}_${entryIndex}`;
-                            allEntries.push({
-                                ...entry,
-                                hours,
-                                reportType: report.type,
-                                stableId,
-                                reportDate: report.date,
-                                reportId: report.id,
-                                entryIndex
-                            });
-                        });
-                    });
+                    const allEntries = collectReportEntries(reports);
+                    const entriesIndex = buildEntriesIndex(allEntries);
 
                     allEntries.forEach(entry => {
-                        const isSeminar = entry.researcher?.includes('סמינר') || entry.researcher?.includes('קורס') || entry.researcher?.includes('הכשרה');
+                        const isSeminar = isSeminarEntry(entry);
                         if (isSeminarMode) {
                             if (isSeminar) researcherHours += entry.hours;
                         } else {
@@ -4579,17 +5274,14 @@
                     let empCatMap = new Map();
                     let categorizedItems = []; // {taskName, hours, type} for display
                     let categorizedHoursForResearcher = 0;
+                    let relativeHoursForResearcher = 0;
+                    let relativeDetails = [];
 
-                    if (includeCategorized && AppState.currentUser) {
-                        try {
-                            const { db, ref, get } = window.firebaseApp;
-                            const catPath = `${CATEGORIZATIONS_DB_PATH}/${AppState.currentUser.uid}/${emp.id}`;
-                            const catSnap = await get(ref(db, catPath));
-                            if (catSnap.exists()) {
-                                empCatMap = new Map(Object.entries(catSnap.val() || {}));
-                            }
-                        } catch (e) { /* ignore */ }
+                    if ((includeCategorized || includeRelative) && AppState.currentUser) {
+                        empCatMap = await loadEmployeeCategorizations(emp.id);
+                    }
 
+                    if (includeCategorized && empCatMap.size > 0) {
                         // Match categorizations to entries in reports
                         empCatMap.forEach((catValue, catKey) => {
                             if (catKey.endsWith('_custom') || catKey.endsWith('_activeResearcher')) return;
@@ -4600,15 +5292,7 @@
 
                             if (!shouldInclude) return;
 
-                            const keyStr = String(catKey);
-                            const keyParts = keyStr.split('_');
-                            const keyEntryIndex = Number(keyParts.pop());
-                            const keyReportId = keyParts.join('_');
-                            // Find the matching entry by stableId or by report/id + index
-                            const matchingEntry = allEntries.find(e => e.stableId === keyStr)
-                                || (Number.isFinite(keyEntryIndex)
-                                    ? allEntries.find(e => e.reportId === keyReportId && e.entryIndex === keyEntryIndex)
-                                    : null);
+                            const matchingEntry = findEntryForCatKey(catKey, entriesIndex, allEntries);
                             if (matchingEntry) {
                                 categorizedItems.push({
                                     taskName: matchingEntry.detail || matchingEntry.researcher || catKey,
@@ -4620,7 +5304,13 @@
                         });
                     }
 
-                    const displayHours = researcherHours + categorizedHoursForResearcher;
+                    if (includeRelative && empCatMap.size > 0) {
+                        const relativeResult = computeRelativeAllocations(allEntries, empCatMap);
+                        relativeHoursForResearcher = Number(relativeResult.allocations.get(researcherName) || 0);
+                        relativeDetails = relativeResult.details || [];
+                    }
+
+                    const displayHours = researcherHours + categorizedHoursForResearcher + relativeHoursForResearcher;
                     const displayDays = roundToSingleDecimal(displayHours / HOURS_PER_DAY);
 
                     if (displayHours <= 0 && seminarHours <= 0) continue;
@@ -4657,27 +5347,52 @@
                         }
                     }
 
-                    const actualDays = roundToSingleDecimal(researcherHours / HOURS_PER_DAY);
-                    totalActualHours += (researcherHours + categorizedHoursForResearcher);
+                    totalActualHours += (researcherHours + categorizedHoursForResearcher + relativeHoursForResearcher);
                     if (targetDays != null) totalTargetDays += targetDays;
                     totalSeminarHours += seminarHours;
 
+                    // חישוב סך הימים של העובד לשימוש בנוסחה actual_time
+                    const empTotalHoursAll = allEntries.reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
+                    const empTotalDaysAll = roundToSingleDecimal(empTotalHoursAll / HOURS_PER_DAY);
+                    
                     results.push({
                         empName: `${emp.firstName} ${emp.lastName}`,
                         researcherHours: displayHours,
                         actualDays: displayDays,
                         rawReportHours: researcherHours,
                         categorizedHours: categorizedHoursForResearcher,
+                        relativeHours: relativeHoursForResearcher,
                         categorizations: categorizedItems,
+                        relativeDetails,
                         targetDays,
                         activityPercent,
                         seminarHours,
-                        seminarDays: roundToSingleDecimal(seminarHours / HOURS_PER_DAY)
+                        seminarDays: roundToSingleDecimal(seminarHours / HOURS_PER_DAY),
+                        empTotalDaysAll: empTotalDaysAll
                     });
+
+                    if (includeRelative && relativeDetails.length > 0) {
+                        relativeCalculations.push({
+                            empName: `${emp.firstName} ${emp.lastName}`,
+                            details: relativeDetails
+                        });
+                    }
                 }
 
                 results.sort((a, b) => b.researcherHours - a.researcherHours);
-                AppState.researcherReportData = { results, totalActualHours, totalTargetDays, totalSeminarHours, halfYearsCount, researcherName, halfYearKeys: halfYearsInPeriod, isSeminarMode, includeCategorized };
+                AppState.researcherReportData = {
+                    results,
+                    totalActualHours,
+                    totalTargetDays,
+                    totalSeminarHours,
+                    halfYearsCount,
+                    researcherName,
+                    halfYearKeys: halfYearsInPeriod,
+                    isSeminarMode,
+                    includeCategorized,
+                    includeRelative,
+                    relativeCalculations
+                };
                 renderResearcherReport(AppState.researcherReportData);
             } catch (error) {
                 console.error('Error generating researcher report:', error);
@@ -4702,17 +5417,16 @@
                 return `${year} מחצית ${half}`;
             }).join(', ') || '';
 
+            const halfYearNote = halfYearLabel ? `<div class="sc-subnote">(מחציות מכוסות: ${halfYearLabel})</div>` : '';
+
             let html = `<div class="researcher-report-summary">
                 <div class="summary-card"><div class="sc-label">עובדים שדיווחו</div><div class="sc-value">${results.length}</div></div>
-                <div class="summary-card"><div class="sc-label">סה"כ ימים בפועל</div><div class="sc-value">${totalActualDays.toFixed(1)}</div></div>
+                <div class="summary-card"><div class="sc-label">סה"כ ימים בפועל</div><div class="sc-value">${totalActualDays.toFixed(1)}</div>${halfYearNote}</div>
                 <div class="summary-card"><div class="sc-label">סה"כ יעד</div><div class="sc-value">${totalTargetDays > 0 ? totalTargetDays.toFixed(1) : 'N/A'}</div></div>
             </div>`;
 
-            if (halfYearLabel) {
-                html += `<div style="text-align:center; margin-bottom:1rem; color:#3b82f6; font-weight:600; font-size:0.9rem;">מחציות מכוסות: ${halfYearLabel}</div>`;
-            }
-
-            const pctHeader = isSeminarMode ? '' : `<th style="text-align:center">אחוז משרה <span class="half-year-note">(${halfYearLabel || 'פר מחצית'})</span></th>`;
+            const pctHeader = isSeminarMode ? '' : `<th style="text-align:center">אחוז משרה מיועד</th>`;
+            const actualPctHeader = isSeminarMode ? '' : `<th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>`;
             const targetHeader = isSeminarMode ? '' : `<th style="text-align:center">יעד לתקופה</th>`;
 
             html += `<div class="report-section"><h3 class="section-title">פירוט לפי עובדים</h3>
@@ -4720,6 +5434,7 @@
                 <thead><tr>
                     <th>עובד/ת</th>
                     <th style="text-align:center">ימים בפועל</th>
+                    ${actualPctHeader}
                     ${targetHeader}
                     ${pctHeader}
                     <th class="col-status" style="text-align:center">סטטוס</th>
@@ -4728,11 +5443,20 @@
             results.forEach(r => {
                 const targetLabel = r.targetDays != null ? `${r.targetDays.toFixed(1)} ימים` : 'N/A';
                 const pctLabel = r.activityPercent != null ? `${r.activityPercent.toFixed(1)}%` : 'N/A';
+                
+                // חישוב אחוז משרה בפועל לפי השיטה הנבחרת
+                let calcPercent = null;
+                if (window.globalCalcMethod === 'actual_time') {
+                    calcPercent = r.empTotalDaysAll > 0 ? (r.actualDays / r.empTotalDaysAll) * 100 : null;
+                } else {
+                    calcPercent = (r.targetDays > 0 && r.activityPercent != null) ? (r.actualDays * r.activityPercent) / r.targetDays : null;
+                }
+                const actualPctLabel = calcPercent != null ? `${roundToSingleDecimal(calcPercent).toFixed(1)}%` : 'N/A';
                 let status = 'N/A', statusClass = 'na';
                 if (!isSeminarMode && r.targetDays != null) {
                     const diff = roundToSingleDecimal(r.actualDays - r.targetDays);
-                    if (diff > 0) { status = `חריגה של ${diff.toFixed(1)} ימים`; statusClass = 'good'; }
-                    else if (diff < 0) { status = `נותרו ${Math.abs(diff).toFixed(1)} ימים`; statusClass = 'warn'; }
+                    if (diff > 0) { status = `חריגה של ${diff.toFixed(1)} ימים`; statusClass = 'warn'; }
+                    else if (diff < 0) { status = `נותרו ${Math.abs(diff).toFixed(1)} ימים`; statusClass = 'good'; }
                     else { status = 'בדיוק על היעד'; statusClass = 'exact'; }
                 } else if (isSeminarMode) {
                     status = `${formatHours(r.researcherHours)} שעות`;
@@ -4741,8 +5465,9 @@
                 html += `<tr>
                     <td data-label="עובד/ת" style="font-weight:600">${r.empName}</td>
                     <td data-label="ימים בפועל" style="text-align:center">${r.actualDays.toFixed(1)}</td>
+                    ${!isSeminarMode ? `<td data-label="אחוז משרה בפועל" style="text-align:center">${actualPctLabel}</td>` : ''}
                     ${!isSeminarMode ? `<td data-label="יעד לתקופה" style="text-align:center">${targetLabel}</td>` : ''}
-                    ${!isSeminarMode ? `<td data-label="אחוז משרה" style="text-align:center">${pctLabel}</td>` : ''}
+                    ${!isSeminarMode ? `<td data-label="אחוז משרה מיועד" style="text-align:center">${pctLabel}</td>` : ''}
                     <td data-label="סטטוס" class="col-status" style="text-align:center"><span class="status-chip ${statusClass}">${status}</span></td>
                 </tr>`;
             });
@@ -4795,8 +5520,483 @@
                 }
             }
 
+            if (data.includeRelative && Array.isArray(data.relativeCalculations) && data.relativeCalculations.length > 0) {
+                html += `<div class="report-section"><h3 class="section-title">חישובי חלוקה יחסית</h3>`;
+                data.relativeCalculations.forEach((employeeBlock, idx) => {
+                    const blockId = `relative-calc-${idx}`;
+                    html += `<div class="emp-cats-toggle">
+                        <div class="emp-cats-header" onclick="toggleCatPanel('${blockId}')">
+                            <span>${employeeBlock.empName}
+                                <span class="categorized-badge">${employeeBlock.details.length} חישובים</span>
+                            </span>
+                            <span class="material-symbols-outlined emp-cats-arrow" id="${blockId}-arrow">expand_more</span>
+                        </div>
+                        <div class="emp-cats-body" id="${blockId}">
+                            ${employeeBlock.details.map((item, itemIdx) => {
+                                const itemLabel = item.method === 'proportional'
+                                    ? 'חלוקה יחסית'
+                                    : item.method === 'equal'
+                                        ? 'חלוקה שווה'
+                                        : 'ללא זכאים';
+                                return `<div class="categorization-item" style="pointer-events:none; opacity:0.95;">
+                                    <div class="categorization-header">
+                                        <div class="task-info">
+                                            <div class="task-name">${itemIdx + 1}. ${item.taskName || 'משימה'} • ${itemLabel}</div>
+                                            <div class="task-hours">סה"כ שעות: ${formatHours(item.taskHours)}</div>
+                                            ${item.note ? `<div class="task-date">${item.note}</div>` : ''}
+                                        </div>
+                                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                                            <span class="categorized-badge">${formatHours(item.totalBase)} בסיס</span>
+                                        </div>
+                                    </div>
+                                    <div style="margin-top:0.75rem; display:grid; gap:0.35rem;">
+                                        ${(item.items || []).map(it => `<div style="font-size:0.9rem; color:#475569;">
+                                            ${it.researcher}: בסיס ${formatHours(it.baseHours)}${item.method === 'proportional' ? `, משקל ${formatHours(it.weight)}, הוקצו ${formatHours(it.allocated)} שעות` : `, הוקצו ${formatHours(it.allocated)} שעות`}
+                                        </div>`).join('')}
+                                    </div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
             document.getElementById('researcher-report-content').innerHTML = html;
             document.getElementById('researcher-csv-btn').style.display = 'inline-flex';
+            document.getElementById('researcher-pdf-btn').style.display = 'inline-flex';
+        }
+
+        async function generateAllResearchersReport() {
+            AppState.researcherReportMode = 'all';
+            const startStr = document.getElementById('researcher-start-date').value;
+            const endStr = document.getElementById('researcher-end-date').value;
+            if (!startStr || !endStr) return;
+
+            const startDate = new Date(startStr + 'T00:00:00');
+            const endDate = new Date(endStr + 'T00:00:00');
+            AppState.researcherStartDate = startDate;
+            AppState.researcherEndDate = endDate;
+
+            const startDisplay = startDate.toLocaleDateString('he-IL');
+            const endDisplay = endDate.toLocaleDateString('he-IL');
+            const includeCategorized = document.getElementById('include-categorized-hours')?.checked;
+            const includeRelative = document.getElementById('include-relative-hours')?.checked;
+            const flags = [];
+            if (includeCategorized) flags.push('כולל קיטלוגים');
+            if (includeRelative) flags.push('כולל חלוקה יחסית');
+            const flagsText = flags.length ? ` • ${flags.join(' • ')}` : '';
+
+            document.getElementById('researcher-report-title').textContent = 'דו"ח לכל החוקרים';
+            document.getElementById('researcher-report-subtitle').textContent = `לתקופה ${startDisplay} - ${endDisplay}${flagsText}`;
+            document.getElementById('researcher-report-content').innerHTML = '<div class="loading">טוען נתונים מכל העובדים...</div>';
+            document.getElementById('researcher-csv-btn').style.display = 'none';
+            document.getElementById('researcher-pdf-btn').style.display = 'none';
+            showScreen('researcher-report-screen');
+
+            try {
+                if (!AppState.employees || AppState.employees.length === 0) {
+                    AppState.employees = await loadEmployeesForManager(AppState.managerName);
+                }
+
+                const halfYearsInPeriod = getHalfYearsInPeriod(startDate, endDate);
+                const halfYearsCount = Math.max(halfYearsInPeriod.length, 1);
+                const summaryMap = new Map();
+
+                // חדש: אתחול כל החוקרים הפעילים כדי שיופיעו גם אם אין להם פעילות בטווח
+                const activeResearchers = await loadAllResearchers();
+
+                activeResearchers.forEach(name => {
+                    if (!summaryMap.has(name)) {
+                        summaryMap.set(name, {
+                            name,
+                            totalHours: 0,
+                            totalDays: 0,
+                            totalTargetDays: 0,
+                            plannedPercentSum: 0,
+                            plannedPercentWeight: 0,
+                            employees: [],
+                            isSeminar: false
+                        });
+                    }
+                });
+
+                const relativeCalculations = [];
+
+                const SEMINAR_ENTRY = 'מכון - סמינר/קורס/הכשרה';
+
+                for (const emp of AppState.employees) {
+                    const reports = await loadEmployeeReports(emp.id, startDate, endDate);
+                    const allEntries = collectReportEntries(reports);
+                    const targetMap = buildEmployeeTargetMap(emp, halfYearsInPeriod, halfYearsCount);
+
+                    // אם אין גם דיווחים וגם אין יעדים - אין מה להציג עבור העובד הזה
+                    if (allEntries.length === 0 && targetMap.size === 0) continue;
+
+                    // חישוב סך השעות של העובד לשימוש בנוסחה actual_time
+                    const empTotalHoursAll = allEntries.reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
+                    const empTotalDaysAll = roundToSingleDecimal(empTotalHoursAll / HOURS_PER_DAY);
+
+                    const entriesIndex = buildEntriesIndex(allEntries);
+                    let empCatMap = new Map();
+                    if ((includeCategorized || includeRelative) && AppState.currentUser) {
+                        empCatMap = await loadEmployeeCategorizations(emp.id);
+                    }
+
+                    const hoursByResearcher = new Map();
+
+                    allEntries.forEach(entry => {
+                        if (isSeminarEntry(entry)) {
+                            addHoursToMap(hoursByResearcher, SEMINAR_ENTRY, entry.hours);
+                            return;
+                        }
+                        if (entry.researcher && entry.researcher !== 'משימות אחרות') {
+                            addHoursToMap(hoursByResearcher, entry.researcher, entry.hours);
+                        }
+                    });
+
+                    if (includeCategorized && empCatMap.size > 0) {
+                        empCatMap.forEach((catValue, catKey) => {
+                            if (catKey.endsWith('_custom') || catKey.endsWith('_activeResearcher')) return;
+                            if (catValue !== 'active' && catValue !== 'seminar') return;
+
+                            const matchingEntry = findEntryForCatKey(catKey, entriesIndex, allEntries);
+                            if (!matchingEntry) return;
+
+                            if (catValue === 'seminar') {
+                                addHoursToMap(hoursByResearcher, SEMINAR_ENTRY, matchingEntry.hours);
+                                return;
+                            }
+
+                            const activeName = empCatMap.get(catKey + '_activeResearcher');
+                            if (activeName) {
+                                addHoursToMap(hoursByResearcher, activeName, matchingEntry.hours);
+                            }
+                        });
+                    }
+
+                    if (includeRelative && empCatMap.size > 0) {
+                        const relativeResult = computeRelativeAllocations(allEntries, empCatMap);
+                        relativeResult.allocations.forEach((hours, name) => {
+                            addHoursToMap(hoursByResearcher, name, hours);
+                        });
+                        if (relativeResult.details && relativeResult.details.length > 0) {
+                            relativeCalculations.push({
+                                empName: `${emp.firstName} ${emp.lastName}`,
+                                details: relativeResult.details
+                            });
+                        }
+                    }
+
+                    // חדש: מוסיף גם חוקרים שיש להם יעד אצל העובד,
+                    // גם אם אין להם שעות בפועל בטווח הנבחר
+                    targetMap.forEach((settings, name) => {
+                        if (!hoursByResearcher.has(name)) {
+                            hoursByResearcher.set(name, 0);
+                        }
+                    });
+
+                    hoursByResearcher.forEach((actualHours, name) => {
+                        const settings = targetMap.get(name) || {};
+                        const targetDays = settings.targetDays ?? null;
+
+                        // מדלגים רק אם גם אין שעות וגם אין יעד לאותו חוקר אצל העובד
+                        if ((!actualHours || actualHours <= 0) && targetDays == null) return;
+
+                        const actualDays = roundToSingleDecimal((actualHours || 0) / HOURS_PER_DAY);
+                        const activityPercent = settings.activityPercent ?? null;
+                        const actualPercent = targetDays != null && targetDays > 0 && activityPercent != null
+                            ? roundToSingleDecimal((actualDays * activityPercent) / targetDays)
+                            : null;
+                        const isSeminar = name === SEMINAR_ENTRY;
+
+                        if (!summaryMap.has(name)) {
+                            summaryMap.set(name, {
+                                name,
+                                totalHours: 0,
+                                totalTargetDays: 0,
+                                plannedPercentSum: 0,
+                                plannedPercentWeight: 0,
+                                employees: [],
+                                isSeminar
+                            });
+                        }
+
+                        const summary = summaryMap.get(name);
+                        summary.totalHours += actualHours;
+                        if (targetDays != null && !isSeminar) {
+                            summary.totalTargetDays += targetDays;
+                            if (activityPercent != null) {
+                                summary.plannedPercentSum += activityPercent * targetDays;
+                                summary.plannedPercentWeight += targetDays;
+                            }
+                        }
+
+                        summary.employees.push({
+                            empName: `${emp.firstName} ${emp.lastName}`,
+                            actualHours,
+                            actualDays,
+                            targetDays,
+                            activityPercent,
+                            actualPercent,
+                            isSeminar,
+                            empTotalDaysAll: empTotalDaysAll
+                        });
+                    });
+                }
+
+                const summaryRows = Array.from(summaryMap.values()).map(item => {
+                    const totalDays = roundToSingleDecimal(item.totalHours / HOURS_PER_DAY);
+                    const plannedPercent = item.plannedPercentWeight > 0
+                        ? roundToSingleDecimal(item.plannedPercentSum / item.plannedPercentWeight)
+                        : null;
+                    const actualPercent = item.totalTargetDays > 0 && plannedPercent != null
+                        ? roundToSingleDecimal((totalDays * plannedPercent) / item.totalTargetDays)
+                        : null;
+
+                    item.employees.sort((a, b) => b.actualHours - a.actualHours);
+
+                    return {
+                        name: item.name,
+                        totalHours: item.totalHours,
+                        totalDays,
+                        totalTargetDays: item.totalTargetDays || null,
+                        plannedPercent,
+                        actualPercent,
+                        employees: item.employees,
+                        isSeminar: item.isSeminar
+                    };
+                });
+
+                summaryRows.sort((a, b) => b.totalHours - a.totalHours);
+
+                const totalActualHours = summaryRows.reduce((sum, row) => sum + (row.totalHours || 0), 0);
+                const totalTargetDays = summaryRows.reduce((sum, row) => sum + (row.totalTargetDays || 0), 0);
+
+                AppState.allResearchersReportData = {
+                    summaryRows,
+                    totalActualHours,
+                    totalTargetDays,
+                    halfYearsCount,
+                    halfYearKeys: halfYearsInPeriod,
+                    includeCategorized,
+                    includeRelative,
+                    relativeCalculations
+                };
+
+                renderAllResearchersReport(AppState.allResearchersReportData);
+            } catch (error) {
+                console.error('Error generating all researchers report:', error);
+                document.getElementById('researcher-report-content').innerHTML = '<div class="empty-state">שגיאה בהפקת הדו"ח</div>';
+            }
+        }
+
+        function renderAllResearchersReport(data) {
+            const { summaryRows, totalActualHours, totalTargetDays, halfYearsCount, halfYearKeys } = data;
+            const totalActualDays = roundToSingleDecimal(totalActualHours / HOURS_PER_DAY);
+
+            if (!summaryRows.length) {
+                document.getElementById('researcher-report-content').innerHTML = '<div class="empty-state">לא נמצאו דיווחים לתקופה הנבחרת</div>';
+                return;
+            }
+
+            const halfYearLabel = (halfYearKeys || []).map(k => {
+                const [year, half] = k.split('-');
+                return `${year} מחצית ${half}`;
+            }).join(', ') || '';
+
+            const halfYearNote = halfYearLabel ? `<div class="sc-subnote">(מחציות מכוסות: ${halfYearLabel})</div>` : '';
+
+            let html = `<div class="researcher-report-summary">
+                <div class="summary-card"><div class="sc-label">חוקרות/חוקרים בדו"ח</div><div class="sc-value">${summaryRows.length}</div></div>
+                <div class="summary-card"><div class="sc-label">סה"כ ימים בפועל</div><div class="sc-value">${totalActualDays.toFixed(1)}</div>${halfYearNote}</div>
+                <div class="summary-card"><div class="sc-label">סה"כ יעד</div><div class="sc-value">${totalTargetDays > 0 ? totalTargetDays.toFixed(1) : 'N/A'}</div></div>
+            </div>`;
+
+            html += `<div class="report-section"><h3 class="section-title">סיכום לפי חוקרים</h3>
+            <div class="comparison-table-wrap"><table class="stats-table all-researchers-table" style="margin-bottom:0;">
+                <colgroup>
+                    <col style="width:22%">
+                    <col style="width:14%">
+                    <col style="width:18%">
+                    <col style="width:16%">
+                    <col style="width:18%">
+                    <col style="width:12%">
+                </colgroup>
+                <thead><tr>
+                    <th>חוקר/ת</th>
+                    <th style="text-align:center">ימים בפועל</th>
+                    <th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>
+                    <th style="text-align:center">יעד לתקופה</th>
+                    <th style="text-align:center">אחוז משרה מיועד</th>
+                    <th class="col-action" style="text-align:center">פירוט</th>
+                </tr></thead><tbody>`;
+
+            summaryRows.forEach((row, idx) => {
+                const targetLabel = row.totalTargetDays != null && row.totalTargetDays > 0
+                    ? `${row.totalTargetDays.toFixed(1)} ימים`
+                    : 'N/A';
+                // שורת החוקר מציגה סכום של אחוזי העובדים (כמו בפירוט שנפתח).
+                let plannedPctSum = 0;
+                let plannedPctHasValue = false;
+                let actualPctSum = 0;
+                let actualPctHasValue = false;
+
+                row.employees.forEach(emp => {
+                    if (emp.isSeminar) return;
+
+                    if (emp.activityPercent != null) {
+                        plannedPctSum += roundToSingleDecimal(emp.activityPercent);
+                        plannedPctHasValue = true;
+                    }
+
+                    let empCalcPercent = null;
+                    if (window.globalCalcMethod === 'actual_time') {
+                        empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                    } else {
+                        empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null)
+                            ? (emp.actualDays * emp.activityPercent) / emp.targetDays
+                            : null;
+                    }
+
+                    if (empCalcPercent != null) {
+                        actualPctSum += roundToSingleDecimal(empCalcPercent);
+                        actualPctHasValue = true;
+                    }
+                });
+
+                const plannedPctLabel = !row.isSeminar && plannedPctHasValue
+                    ? `${roundToSingleDecimal(plannedPctSum).toFixed(1)}%`
+                    : 'N/A';
+                const actualPctLabel = !row.isSeminar && actualPctHasValue
+                    ? `${roundToSingleDecimal(actualPctSum).toFixed(1)}%`
+                    : 'N/A';
+
+                html += `
+                    <tr id="all-researchers-row-${idx}-main" class="row-main">
+                        <td data-label="חוקר/ת" style="font-weight:600">${row.name}</td>
+                        <td data-label="ימים בפועל" style="text-align:center">${row.totalDays.toFixed(1)}</td>
+                        <td data-label="אחוז משרה בפועל" style="text-align:center">${row.isSeminar ? 'N/A' : actualPctLabel}</td>
+                        <td data-label="יעד לתקופה" style="text-align:center">${targetLabel}</td>
+                        <td data-label="אחוז משרה מיועד" style="text-align:center">${row.isSeminar ? 'N/A' : plannedPctLabel}</td>
+                        <td data-label="פירוט" class="col-action" style="text-align:center;"><button id="all-researchers-row-${idx}-btn" class="row-toggle-btn" onclick="toggleComparisonRow('all-researchers', ${idx})">פרטים</button></td>
+                    </tr>
+                    <tr id="all-researchers-row-${idx}-detail" class="row-detail">
+                        <td colspan="6">
+                            <div class="comparison-table-wrap all-researchers-detail-wrap" style="margin: 0;">
+                                <table class="stats-table all-researchers-detail-table" style="margin-bottom:0;">
+                                    <colgroup>
+                                        <col style="width:22%">
+                                        <col style="width:14%">
+                                        <col style="width:18%">
+                                        <col style="width:16%">
+                                        <col style="width:18%">
+                                        <col style="width:12%">
+                                    </colgroup>
+                                    <thead>
+                                        <tr>
+                                            <th>עובד/ת</th>
+                                            <th style="text-align:center">ימים בפועל</th>
+                                            <th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>
+                                            <th style="text-align:center">יעד לתקופה</th>
+                                            <th style="text-align:center">אחוז משרה מיועד</th>
+                                            <th class="col-status" style="text-align:center">סטטוס</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${row.employees.map(emp => {
+                                            const empTarget = emp.targetDays != null && emp.targetDays > 0
+                                                ? `${emp.targetDays.toFixed(1)} ימים`
+                                                : 'N/A';
+                                            const empPlannedPct = emp.activityPercent != null
+                                                ? `${emp.activityPercent.toFixed(1)}%`
+                                                : 'N/A';
+                                            
+                                            // חישוב אחוז משרה בפועל לפי השיטה הנבחרת
+                                            let empCalcPercent = null;
+                                            if (window.globalCalcMethod === 'actual_time') {
+                                                empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                                            } else {
+                                                empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null) ? (emp.actualDays * emp.activityPercent) / emp.targetDays : null;
+                                            }
+                                            const empActualPct = empCalcPercent != null ? `${roundToSingleDecimal(empCalcPercent).toFixed(1)}%` : 'N/A';
+
+                                            let empStatus = 'N/A';
+                                            let empStatusClass = 'na';
+                                            if (!emp.isSeminar && emp.targetDays != null) {
+                                                const diff = roundToSingleDecimal(emp.actualDays - emp.targetDays);
+                                                if (diff > 0) { empStatus = `חריגה של ${diff.toFixed(1)} ימים`; empStatusClass = 'warn'; }
+                                                else if (diff < 0) { empStatus = `נותרו ${Math.abs(diff).toFixed(1)} ימים`; empStatusClass = 'good'; }
+                                                else { empStatus = 'בדיוק על היעד'; empStatusClass = 'exact'; }
+                                            } else if (emp.isSeminar) {
+                                                empStatus = `${formatHours(emp.actualHours)} שעות`;
+                                                empStatusClass = '';
+                                            }
+
+                                            return `
+                                                <tr>
+                                                    <td data-label="עובד/ת" style="font-weight:600">${emp.empName}</td>
+                                                    <td data-label="ימים בפועל" style="text-align:center">${emp.actualDays.toFixed(1)}</td>
+                                                    <td data-label="אחוז משרה בפועל" style="text-align:center">${emp.isSeminar ? 'N/A' : empActualPct}</td>
+                                                    <td data-label="יעד לתקופה" style="text-align:center">${empTarget}</td>
+                                                    <td data-label="אחוז משרה מיועד" style="text-align:center">${emp.isSeminar ? 'N/A' : empPlannedPct}</td>
+                                                    <td data-label="סטטוס" class="col-status" style="text-align:center"><span class="status-chip ${empStatusClass}">${empStatus}</span></td>
+                                                </tr>`;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>`;
+            });
+
+            html += `</tbody></table></div></div>`;
+
+            if (Array.isArray(data.relativeCalculations) && data.relativeCalculations.length > 0) {
+                html += `<div class="report-section"><h3 class="section-title">חישובי חלוקה יחסית</h3>`;
+                data.relativeCalculations.forEach((employeeBlock, idx) => {
+                    const blockId = `all-relative-calc-${idx}`;
+                    html += `<div class="emp-cats-toggle">
+                        <div class="emp-cats-header" onclick="toggleCatPanel('${blockId}')">
+                            <span>${employeeBlock.empName}
+                                <span class="categorized-badge">${employeeBlock.details.length} חישובים</span>
+                            </span>
+                            <span class="material-symbols-outlined emp-cats-arrow" id="${blockId}-arrow">expand_more</span>
+                        </div>
+                        <div class="emp-cats-body" id="${blockId}">
+                            ${(employeeBlock.details || []).map((item, itemIdx) => {
+                                const itemLabel = item.method === 'proportional'
+                                    ? 'חלוקה יחסית'
+                                    : item.method === 'equal'
+                                        ? 'חלוקה שווה'
+                                        : 'ללא זכאים';
+                                return `<div class="categorization-item" style="pointer-events:none; opacity:0.95;">
+                                    <div class="categorization-header">
+                                        <div class="task-info">
+                                            <div class="task-name">${itemIdx + 1}. ${item.taskName || 'משימה'} • ${itemLabel}</div>
+                                            <div class="task-hours">סה"כ שעות: ${formatHours(item.taskHours)}</div>
+                                            ${item.note ? `<div class="task-date">${item.note}</div>` : ''}
+                                        </div>
+                                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                                            <span class="categorized-badge">${formatHours(item.totalBase)} בסיס</span>
+                                        </div>
+                                    </div>
+                                    <div style="margin-top:0.75rem; display:grid; gap:0.35rem;">
+                                        ${(item.items || []).map(it => `<div style="font-size:0.9rem; color:#475569;">
+                                            ${it.researcher}: בסיס ${formatHours(it.baseHours)}${item.method === 'proportional' ? `, משקל ${formatHours(it.weight)}, הוקצו ${formatHours(it.allocated)} שעות` : `, הוקצו ${formatHours(it.allocated)} שעות`}
+                                        </div>`).join('')}
+                                    </div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
+            document.getElementById('researcher-report-content').innerHTML = html;
+            document.getElementById('researcher-csv-btn').style.display = 'inline-flex';
+            document.getElementById('researcher-pdf-btn').style.display = 'inline-flex';
         }
 
         window.toggleCatPanel = function(panelId) {
@@ -4808,27 +6008,126 @@
         };
 
         window.exportResearcherReportCSV = function () {
+            if (AppState.researcherReportMode === 'all') {
+                exportAllResearchersReportCSV();
+                return;
+            }
+
             const data = AppState.researcherReportData;
             if (!data) { alert('אין נתונים לייצוא'); return; }
             const startDisplay = AppState.researcherStartDate.toLocaleDateString('he-IL');
             const endDisplay = AppState.researcherEndDate.toLocaleDateString('he-IL');
-            let csv = `דו"ח פר חוקר: ${data.researcherName}\nתקופה: ${startDisplay} - ${endDisplay}\n\n`;
+            let csv = `דו"ח לפי חוקר: ${data.researcherName}\nתקופה: ${startDisplay} - ${endDisplay}\n\n`;
             const rows = data.results.map(r => ({
                 name: r.empName,
                 actualDays: r.actualDays.toFixed(1),
                 targetDays: r.targetDays != null ? r.targetDays.toFixed(1) : 'N/A',
-                pct: r.activityPercent != null ? r.activityPercent.toFixed(1) + '%' : 'N/A'
+                plannedPct: r.activityPercent != null ? r.activityPercent.toFixed(1) + '%' : 'N/A',
+                actualPct: r.targetDays != null && r.targetDays > 0 && r.activityPercent != null
+                    ? roundToSingleDecimal((r.actualDays * r.activityPercent) / r.targetDays).toFixed(1) + '%'
+                    : 'N/A'
             }));
             const cols = [
                 { key: 'name', header: 'עובד/ת' },
                 { key: 'actualDays', header: 'ימים בפועל' },
                 { key: 'targetDays', header: 'יעד לתקופה' },
-                { key: 'pct', header: 'אחוז משרה (פר מחצית)' }
+                { key: 'plannedPct', header: 'אחוז משרה מיועד' },
+                { key: 'actualPct', header: 'אחוז משרה בפועל' }
             ];
             csv += toCsv(rows, cols);
             const dateForFile = new Date().toISOString().slice(0, 10);
             download(`researcher_report_${data.researcherName.replace(/ /g, '_')}_${dateForFile}.csv`, csv);
         };
+
+        function exportAllResearchersReportCSV() {
+            const data = AppState.allResearchersReportData;
+            if (!data) { alert('אין נתונים לייצוא'); return; }
+            const startDisplay = AppState.researcherStartDate.toLocaleDateString('he-IL');
+            const endDisplay = AppState.researcherEndDate.toLocaleDateString('he-IL');
+            let csv = `דו"ח לכל החוקרים\nתקופה: ${startDisplay} - ${endDisplay}\n\n`;
+
+            const summaryRows = data.summaryRows.map(row => {
+                let plannedPctSum = 0;
+                let plannedPctHasValue = false;
+                let actualPctSum = 0;
+                let actualPctHasValue = false;
+
+                (row.employees || []).forEach(emp => {
+                    if (emp.isSeminar) return;
+
+                    if (emp.activityPercent != null) {
+                        plannedPctSum += roundToSingleDecimal(emp.activityPercent);
+                        plannedPctHasValue = true;
+                    }
+
+                    let empCalcPercent = null;
+                    if (window.globalCalcMethod === 'actual_time') {
+                        empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                    } else {
+                        empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null)
+                            ? (emp.actualDays * emp.activityPercent) / emp.targetDays
+                            : null;
+                    }
+
+                    if (empCalcPercent != null) {
+                        actualPctSum += roundToSingleDecimal(empCalcPercent);
+                        actualPctHasValue = true;
+                    }
+                });
+
+                return {
+                    name: row.name,
+                    actualDays: row.totalDays.toFixed(1),
+                    targetDays: row.totalTargetDays != null && row.totalTargetDays > 0 ? row.totalTargetDays.toFixed(1) : 'N/A',
+                    plannedPct: !row.isSeminar && plannedPctHasValue ? roundToSingleDecimal(plannedPctSum).toFixed(1) + '%' : 'N/A',
+                    actualPct: !row.isSeminar && actualPctHasValue ? roundToSingleDecimal(actualPctSum).toFixed(1) + '%' : 'N/A'
+                };
+            });
+
+            const summaryCols = [
+                { key: 'name', header: 'חוקר/ת' },
+                { key: 'actualDays', header: 'ימים בפועל' },
+                { key: 'targetDays', header: 'יעד לתקופה' },
+                { key: 'plannedPct', header: 'אחוז משרה מיועד' },
+                { key: 'actualPct', header: 'אחוז משרה בפועל' }
+            ];
+
+            csv += 'סיכום לפי חוקרים\n';
+            csv += toCsv(summaryRows, summaryCols);
+
+            const detailCols = [
+                { key: 'name', header: 'עובד/ת' },
+                { key: 'actualDays', header: 'ימים בפועל' },
+                { key: 'targetDays', header: 'יעד לתקופה' },
+                { key: 'plannedPct', header: 'אחוז משרה מיועד' },
+                { key: 'actualPct', header: 'אחוז משרה בפועל' }
+            ];
+
+            data.summaryRows.forEach(row => {
+                const detailRows = (row.employees || []).map(emp => {
+                    // חישוב אחוז משרה בפועל לפי השיטה הנבחרת (עבור detail rows ב-CSV)
+                    let empCalcPercent = null;
+                    if (window.globalCalcMethod === 'actual_time') {
+                        empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                    } else {
+                        empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null) ? (emp.actualDays * emp.activityPercent) / emp.targetDays : null;
+                    }
+                    return {
+                        name: emp.empName,
+                        actualDays: emp.actualDays.toFixed(1),
+                        targetDays: emp.targetDays != null && emp.targetDays > 0 ? emp.targetDays.toFixed(1) : 'N/A',
+                        plannedPct: emp.activityPercent != null ? emp.activityPercent.toFixed(1) + '%' : 'N/A',
+                        actualPct: empCalcPercent != null ? roundToSingleDecimal(empCalcPercent).toFixed(1) + '%' : 'N/A'
+                    };
+                });
+
+                csv += `\n${row.name}\n`;
+                csv += toCsv(detailRows, detailCols);
+            });
+
+            const dateForFile = new Date().toISOString().slice(0, 10);
+            download(`researcher_report_all_${dateForFile}.csv`, csv);
+        }
 
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -4855,6 +6154,20 @@
                         AppState.isManager = true;
                         document.getElementById('header-name').textContent = ` ${AppState.managerName} `;
                         sessionStorage.setItem('mgr_dashboard_name', AppState.managerName);
+                        
+                        // --- טעינת הגדרת שיטת החישוב מה-DB ---
+                        try {
+                            const settingsRef = ref(db, 'global/backdateOverride');
+                            const settingsSnap = await get(settingsRef);
+                            if (settingsSnap.exists() && settingsSnap.val().calcMethod) {
+                                window.globalCalcMethod = settingsSnap.val().calcMethod;
+                                console.log('Calculation method loaded:', window.globalCalcMethod);
+                            }
+                        } catch (e) {
+                            console.warn('Could not load calc method:', e);
+                        }
+                        // --------------------------------
+                        
                         renderEmployeesList();
                     } catch (error) {
                         console.error('Auth error:', error);
@@ -5162,7 +6475,7 @@
                 statusDiv.textContent = statusText;
                 statusDiv.className = 'backdate-status active';
             } else if (isExpired) {
-                statusDiv.textContent = '⚠️ ההרשאה לדיווח בדיעבד פגה - יש לעדכן את התאריכים או לכבות';
+                statusDiv.textContent = 'ההרשאה לדיווח ועריכה בדיעבד פגה ';
                 statusDiv.className = 'backdate-status inactive';
             } else {
                 statusDiv.textContent = ' דיווח ועריכה בדיעבד סגור - עובדים יכולים לדווח רק על השבוע הנוכחי והקודם';
