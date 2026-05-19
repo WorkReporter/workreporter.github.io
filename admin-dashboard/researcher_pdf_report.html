@@ -239,6 +239,46 @@
             return { text: 'בדיוק על היעד', className: 'exact' };
         }
 
+        function calculateEmployeeActualPercent(emp, globalCalcMethod) {
+            if (globalCalcMethod === 'actual_time') {
+                return emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+            }
+            return (emp.targetDays > 0 && emp.activityPercent != null)
+                ? (emp.actualDays * emp.activityPercent) / emp.targetDays
+                : null;
+        }
+
+        function calculateResearcherPercentTotals(row, globalCalcMethod) {
+            let plannedPctSum = 0;
+            let plannedPctHasValue = false;
+            let actualPctSum = 0;
+            let actualPctHasValue = false;
+
+            (row.employees || []).forEach(emp => {
+                if (emp.isSeminar) return;
+
+                if (emp.activityPercent != null) {
+                    plannedPctSum += roundToSingleDecimal(emp.activityPercent);
+                    plannedPctHasValue = true;
+                }
+
+                const empActualPercent = calculateEmployeeActualPercent(emp, globalCalcMethod);
+                if (empActualPercent != null) {
+                    actualPctSum += roundToSingleDecimal(empActualPercent);
+                    actualPctHasValue = true;
+                }
+            });
+
+            return {
+                plannedPct: !row.isSeminar && plannedPctHasValue
+                    ? `${roundToSingleDecimal(plannedPctSum).toFixed(1)}%`
+                    : 'N/A',
+                actualPct: !row.isSeminar && actualPctHasValue
+                    ? `${roundToSingleDecimal(actualPctSum).toFixed(1)}%`
+                    : 'N/A'
+            };
+        }
+
         function renderSingleReport(payload) {
             const { reportData, globalCalcMethod } = payload;
             const results = reportData.results || [];
@@ -354,19 +394,7 @@
                             const targetLabel = row.totalTargetDays != null && row.totalTargetDays > 0
                                 ? row.totalTargetDays.toFixed(1)
                                 : 'N/A';
-                            const plannedPct = row.plannedPercent != null ? `${row.plannedPercent.toFixed(1)}%` : 'N/A';
-                            
-                            // חישוב אחוז משרה בפועל לפי השיטה הנבחרת (טבלה ראשית)
-                            let rowCalcPercent = null;
-                            if (globalCalcMethod === 'actual_time') {
-                                const rowTotalDaysAll = row.employees.reduce((sum, emp) => sum + emp.empTotalDaysAll, 0);
-                                rowCalcPercent = rowTotalDaysAll > 0 ? (row.totalDays / rowTotalDaysAll) * 100 : null;
-                            } else {
-                                rowCalcPercent = row.totalTargetDays > 0 && row.plannedPercent != null
-                                    ? (row.totalDays * row.plannedPercent) / row.totalTargetDays
-                                    : null;
-                            }
-                            const actualPct = rowCalcPercent != null ? `${roundToSingleDecimal(rowCalcPercent).toFixed(1)}%` : 'N/A';
+                            const { plannedPct, actualPct } = calculateResearcherPercentTotals(row, globalCalcMethod);
                             
                             const status = row.isSeminar
                                 ? buildStatus(row.totalDays, row.totalTargetDays, `${formatHours(row.totalHours)} שעות`)
@@ -407,13 +435,7 @@
                                     : 'N/A';
                                 const plannedPct = emp.activityPercent != null ? `${emp.activityPercent.toFixed(1)}%` : 'N/A';
                                 
-                                // חישוב אחוז משרה בפועל לפי השיטה הנבחרת (detail rows)
-                                let empCalcPercent = null;
-                                if (globalCalcMethod === 'actual_time') {
-                                    empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
-                                } else {
-                                    empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null) ? (emp.actualDays * emp.activityPercent) / emp.targetDays : null;
-                                }
+                                const empCalcPercent = calculateEmployeeActualPercent(emp, globalCalcMethod);
                                 const actualPct = empCalcPercent != null ? `${roundToSingleDecimal(empCalcPercent).toFixed(1)}%` : 'N/A';
                                 
                                 const status = emp.isSeminar
