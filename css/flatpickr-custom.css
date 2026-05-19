@@ -1,0 +1,414 @@
+/* =========================================
+   Flatpickr Custom Theme — מותאם למערכת ח"ץ
+   ========================================= */
+
+/* Calendar container — מעל מודאלים (layout .modal-overlay z-index: 1000) */
+.flatpickr-calendar {
+    font-family: 'Heebo', 'Segoe UI', Tahoma, sans-serif !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid #e0e4ea !important;
+    /* visible: לא לחתוך חודש/שנה בכותרת; במובייל .fp-calendar--mobile משתמש ב-overflow ממוקד */
+    overflow: visible;
+    direction: rtl;
+    z-index: 10050 !important;
+    /* בלי transform באנימציה — לא מתנגש עם מיקום fixed/מרכוז של flatpickr */
+    animation: fpCalFadeIn 0.22s ease-out;
+}
+
+@keyframes fpCalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .flatpickr-calendar {
+        animation: none;
+    }
+}
+
+/* רקע מעומעם מאחורי הלוח (מובייל) — מופעל מ-date-picker-init.js */
+.fp-cal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10040;
+    background: rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+}
+
+.fp-cal-backdrop.fp-cal-backdrop--active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* נעילת גלילת רקע בזמן לוח פתוח (מובייל) */
+html.fp-cal-scroll-lock,
+body.fp-cal-scroll-lock {
+    overflow: hidden !important;
+}
+
+.flatpickr-calendar.arrowTop::before,
+.flatpickr-calendar.arrowTop::after {
+    display: none;
+}
+
+/* Month navigation header */
+.flatpickr-months {
+    background: linear-gradient(135deg, #0a2f72, #153d82) !important;
+    padding: 10px 0 !important;
+    border-radius: 0 !important;
+}
+
+.flatpickr-months .flatpickr-month {
+    height: 40px !important;
+}
+
+.flatpickr-current-month {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #fff !important;
+    padding-top: 8px !important;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+    background: transparent !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months option {
+    background: #fff;
+    color: #333;
+}
+
+.flatpickr-current-month input.cur-year {
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+/*
+ * שנה: flatpickr שם את החצים ב-position:absolute מעל השדה — על רקע כחול וב־RTL זה נראה רע.
+ * פתרון: inline-grid — עמודה 1 = רק השנה, עמודה 2 = שני חצים זה מתחת לזה (בלי חפיפה).
+ */
+.flatpickr-current-month .numInputWrapper {
+    direction: ltr !important;
+    display: inline-grid !important;
+    grid-template-columns: minmax(3.5rem, 1fr) 26px !important;
+    grid-template-rows: 15px 15px !important;
+    column-gap: 4px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    vertical-align: middle !important;
+    align-items: stretch !important;
+    margin-inline: 4px !important;
+}
+
+.flatpickr-current-month .numInputWrapper input.cur-year {
+    grid-column: 1 !important;
+    grid-row: 1 / span 2 !important;
+    align-self: center !important;
+    justify-self: stretch !important;
+    width: 100% !important;
+    max-width: 5rem !important;
+    min-width: 3.25rem !important;
+    padding: 3px 6px !important;
+    margin: 0 !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    direction: ltr !important;
+    unicode-bidi: isolate !important;
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+.flatpickr-current-month .numInputWrapper span.arrowUp,
+.flatpickr-current-month .numInputWrapper span.arrowDown {
+    position: static !important;
+    grid-column: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    line-height: 1 !important;
+    opacity: 1 !important;
+    border: none !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.flatpickr-current-month .numInputWrapper span.arrowUp {
+    grid-row: 1 !important;
+    border-radius: 4px 4px 0 0 !important;
+}
+
+.flatpickr-current-month .numInputWrapper span.arrowDown {
+    grid-row: 2 !important;
+    border-radius: 0 0 4px 4px !important;
+}
+
+.flatpickr-current-month .numInputWrapper span:hover {
+    background: rgba(255, 255, 255, 0.28) !important;
+}
+
+.flatpickr-current-month .numInputWrapper span.arrowUp:after,
+.flatpickr-current-month .numInputWrapper span.arrowDown:after {
+    position: relative !important;
+    display: block !important;
+    content: "" !important;
+    border-left: 4px solid transparent !important;
+    border-right: 4px solid transparent !important;
+}
+
+.flatpickr-current-month .numInputWrapper span.arrowUp:after {
+    border-bottom: 5px solid #ffffff !important;
+    top: -1px !important;
+}
+
+.flatpickr-current-month .numInputWrapper span.arrowDown:after {
+    border-top: 5px solid #ffffff !important;
+    top: 1px !important;
+}
+
+.flatpickr-current-month .numInputWrapper:hover {
+    background: transparent !important;
+}
+
+/* Navigation arrows */
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+    fill: #fff !important;
+    color: #fff !important;
+    padding: 10px 15px !important;
+}
+
+.flatpickr-months .flatpickr-prev-month:hover,
+.flatpickr-months .flatpickr-next-month:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 50%;
+}
+
+/* Weekday headers */
+.flatpickr-weekdays {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    height: 32px !important;
+}
+
+span.flatpickr-weekday {
+    color: #64748b !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+}
+
+/* Day cells */
+.flatpickr-day {
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    height: 38px !important;
+    line-height: 38px !important;
+    max-width: 38px !important;
+    margin: 2px !important;
+    color: #1e293b !important;
+}
+
+.flatpickr-day:hover {
+    background: #f1f5f9 !important;
+    border-color: transparent !important;
+}
+
+/* Today */
+.flatpickr-day.today {
+    border-color: #0a2f72 !important;
+    color: #0a2f72 !important;
+    font-weight: 800 !important;
+    background: #eff6ff !important;
+}
+
+/* Selected day */
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+    background: #0a2f72 !important;
+    border-color: #0a2f72 !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(10, 47, 114, 0.3) !important;
+}
+
+/* Alt-input — תאריך LTR במרכז, ריווח אופקי סימטרי + אייקון בצד ימין (פיזית) של השדה */
+.form-group .flatpickr-alt-input,
+.soil-input.flatpickr-alt-input,
+.modal-input-sm.flatpickr-alt-input,
+.flatpickr-alt-input {
+    cursor: pointer !important;
+    direction: ltr !important;
+    text-align: center !important;
+    padding-left: 36px !important;
+    padding-right: 36px !important;
+    border-radius: 6px !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%230a2f72' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 18px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.flatpickr-alt-input:focus {
+    border-color: #0a2f72 !important;
+    box-shadow: 0 0 0 3px rgba(10, 47, 114, 0.1) !important;
+}
+
+/* כפתורי פעולה בתחתית (במידה ונוסיף) */
+.fp-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.fp-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    border: 1px solid transparent;
+}
+
+.fp-btn-today {
+    color: #0a2f72;
+    background: #eff6ff;
+}
+
+.fp-btn-clear {
+    color: #ef4444;
+    background: #fef2f2;
+}
+
+/*
+ * מובייל / מסך צר: לוח כמו בורר מערכת — ממורכז, רוחב מלא (עד מקסימום נוח), גובה מוגבל עם גלילה פנימית
+ * class fp-calendar--mobile נוסף ב-JS בפתיחה (max-width: 768px)
+ */
+.flatpickr-calendar.fp-calendar--mobile.open {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    margin: 0 !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(calc(100vw - 20px), 440px) !important;
+    max-width: calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px) - 16px) !important;
+    max-height: min(
+        92dvh,
+        calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 16px)
+    ) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    animation: none !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22) !important;
+}
+
+.flatpickr-calendar.fp-calendar--mobile.open .flatpickr-months {
+    flex-shrink: 0 !important;
+}
+
+.flatpickr-calendar.fp-calendar--mobile.open .flatpickr-innerContainer {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+.flatpickr-calendar.fp-calendar--mobile.open .flatpickr-rContainer {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.flatpickr-calendar.fp-calendar--mobile.open .flatpickr-days {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+}
+
+.flatpickr-calendar.fp-calendar--mobile.open .dayContainer {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+}
+
+.flatpickr-calendar.fp-calendar--mobile.open .fp-footer {
+    flex-shrink: 0 !important;
+}
+
+@media (max-width: 768px) {
+    .flatpickr-months {
+        padding: 8px 0 !important;
+    }
+
+    .flatpickr-months .flatpickr-month {
+        height: auto !important;
+        min-height: 40px !important;
+    }
+
+    .flatpickr-current-month {
+        font-size: 15px !important;
+    }
+
+    .flatpickr-weekdays {
+        height: 30px !important;
+    }
+
+    span.flatpickr-weekday {
+        font-size: 11px !important;
+    }
+
+    .flatpickr-day {
+        height: 40px !important;
+        line-height: 40px !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        font-size: 15px !important;
+        margin: 1px !important;
+    }
+
+    .fp-footer {
+        padding: 10px 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .fp-btn {
+        flex: 1 1 auto;
+        min-width: calc(50% - 4px);
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 380px) {
+    .flatpickr-calendar.fp-calendar--mobile.open {
+        width: calc(100vw - 12px) !important;
+    }
+
+    .flatpickr-day {
+        font-size: 14px !important;
+        height: 38px !important;
+        line-height: 38px !important;
+    }
+}

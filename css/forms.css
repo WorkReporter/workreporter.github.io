@@ -1,0 +1,268 @@
+/* =========================================
+   Forms - General Form Styles
+   ========================================= */
+
+.form-container {
+    max-width: 1000px;
+    direction: rtl;
+    text-align: right;
+}
+
+/* Form Rows */
+.form-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+    direction: rtl;
+}
+
+.form-row.full-width .form-group {
+    flex: 1;
+    min-width: 100%;
+}
+
+/* Form Groups */
+.form-group {
+    flex: 1;
+    min-width: 180px;
+    text-align: right;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 9px;
+    font-weight: 600;
+    color: #24364f;
+    font-size: 14px;
+    text-align: right;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid #d4deeb;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #ffffff;
+    color: #1f2937;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    direction: rtl;
+    text-align: right;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #7a879b;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #18408d;
+    box-shadow: 0 0 0 3px rgba(24, 64, 141, 0.14);
+}
+
+.form-group input[readonly] {
+    background: #f6f8fc;
+    color: #526178;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-group input[type="date"],
+.form-group input.flatpickr-input {
+    cursor: pointer;
+}
+
+/* שדה תאריך (flatpickr alt-input): עיצוב ב-css/flatpickr-custom.css */
+
+/* Input with button */
+.input-with-btn {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.input-with-btn input,
+.input-with-btn select {
+    flex: 1;
+}
+
+/* =========================================
+   Buttons
+   ========================================= */
+.btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s, transform 0.12s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background: #0a2f72;
+    color: white;
+    border: none;
+    box-shadow: 0 2px 8px rgba(10, 47, 114, 0.22);
+}
+
+.btn-primary:hover {
+    background: #082354;
+    box-shadow: 0 5px 14px rgba(10, 47, 114, 0.28);
+}
+
+.btn-secondary {
+    background: #f6f8fb;
+    border: 1px solid #d4deeb;
+    color: #40526d;
+}
+
+.btn-secondary:hover {
+    background: #ebf0f8;
+}
+
+/* Icon Buttons */
+.btn-icon {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid #d4deeb;
+    border-radius: 10px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #50607a;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    cursor: pointer;
+}
+
+.btn-icon:hover {
+    background: #f1f5fc;
+    border-color: #bed0ec;
+    color: #23447f;
+}
+
+.btn-icon.btn-delete:hover {
+    background: #fee;
+    color: #d00;
+    border-color: #fcc;
+}
+
+.btn-icon.btn-delete.disabled,
+.btn-icon.btn-delete:disabled {
+    background: #f5f5f5;
+    color: #ccc;
+    border-color: #e0e0e0;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-icon.btn-delete.disabled:hover,
+.btn-icon.btn-delete:disabled:hover {
+    background: #f5f5f5;
+    color: #ccc;
+    border-color: #e0e0e0;
+}
+
+/* Google Maps Button */
+.btn-icon.btn-google-maps {
+    background: #fff;
+    border: 1px solid #4285f4;
+    color: #4285f4;
+}
+
+.btn-icon.btn-google-maps:hover {
+    background: #4285f4;
+    color: #fff;
+}
+
+/* Add Button */
+.btn-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: #0a2f72;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(10, 47, 114, 0.24);
+}
+
+.btn-add:hover {
+    background: #082354;
+    box-shadow: 0 7px 16px rgba(10, 47, 114, 0.32);
+    transform: translateY(-1px);
+}
+
+.btn-add:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(10, 47, 114, 0.2);
+}
+
+.btn-add.disabled,
+.btn-add:disabled {
+    background: #b0b8c9;
+    color: #fff;
+    cursor: not-allowed;
+    opacity: 0.6;
+    box-shadow: none;
+}
+
+.btn-add.disabled:hover,
+.btn-add:disabled:hover {
+    background: #b0b8c9;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Save Button */
+.btn-save {
+    padding: 12px 40px;
+    background: #0a2f72;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(10, 47, 114, 0.2);
+}
+
+.btn-save:hover {
+    background: #082354;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(10, 47, 114, 0.3);
+}
+
+/* =========================================
+   Form Actions
+   ========================================= */
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid #e4eaf4;
+}
+

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>שליפת ניסוי - מיזם ח"ץ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css?v=20260503-1">
+    <link rel="stylesheet" href="css/layout.css?v=20260503-1">
+    <link rel="stylesheet" href="css/accessibility.css?v=20260503-1">
+    <link rel="stylesheet" href="css/chatbot.css?v=20260503-1">
+    <link rel="stylesheet" href="css/research-map.css?v=20260503-1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* ── Export Page Styles ── */
+        .export-main {
+            flex: 1;
+            order: 1;
+            padding: 30px 40px;
+            background: #fff;
+            direction: rtl;
+            text-align: right;
+        }
+
+        .export-main h1 {
+            margin-bottom: 8px;
+        }
+
+        .export-subtitle {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+
+        /* Experiment Export Cards */
+        .export-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .export-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .export-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            border-color: #d1d5db;
+        }
+
+        .export-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .export-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 17px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .export-card-title i {
+            color: #0a2f72;
+            font-size: 18px;
+        }
+
+        .export-card-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: #6b7280;
+            flex-wrap: wrap;
+        }
+
+        .export-card-meta span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .export-card-meta i {
+            font-size: 12px;
+        }
+
+        .export-card-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-export {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: 1.5px solid;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            background: #fff;
+        }
+
+        .btn-export i {
+            font-size: 14px;
+        }
+
+        .btn-export.excel {
+            color: #0a2f72;
+            border-color: #0a2f72;
+        }
+
+        .btn-export.excel:hover {
+            background: #0a2f72;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(10, 47, 114, 0.25);
+        }
+
+        .btn-export.zip {
+            color: #7c3aed;
+            border-color: #7c3aed;
+        }
+
+        .btn-export.zip:hover {
+            background: #7c3aed;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+        }
+
+        .btn-export:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn-export:disabled:hover {
+            background: #fff;
+            color: inherit;
+        }
+
+        /* Export progress indicator */
+        .export-progress {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .export-progress.active {
+            display: flex;
+        }
+
+        .export-progress i {
+            color: #0a2f72;
+        }
+
+        /* Empty state */
+        .export-empty {
+            text-align: center;
+            padding: 80px 20px;
+            color: #9ca3af;
+        }
+
+        .export-empty i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .export-empty p {
+            font-size: 15px;
+        }
+
+        /* Ownership badge in export card */
+        .export-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .export-badge.owner {
+            background: #f0fdf4;
+            color: #15803d;
+        }
+
+        .export-badge.shared {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .export-main {
+                padding: 20px 16px;
+            }
+
+            .export-card {
+                padding: 16px;
+            }
+
+            .export-card-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .export-card-actions {
+                flex-direction: column;
+            }
+
+            .btn-export {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body data-page-context="dashboard">
+    <!-- Hamburger Menu Button (Mobile) -->
+    <button class="hamburger-btn" id="hamburger-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="app-container">
+        <!-- Sidebar - Right Side -->
+        <aside class="sidebar">
+            <div class="user-info">
+                <i class="fas fa-user"></i>
+                <span id="user-display-name"></span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>בית</span>
+                </a>
+                <a href="export.html" class="nav-item active">
+                    <i class="fas fa-file-export"></i>
+                    <span>שליפת ניסוי</span>
+                </a>
+                <a href="my-bi.html" class="nav-item">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>הסטטיסטיקה שלי</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=1Ts8Nb7SBUedhjc0Bkz5yY9XvXTtZwZBjymvdvhbcjNUOVdGWUNWV1FYOFRERDRES1BQWjhXMzhSVy4u" class="btn-report-issue" target="_blank" rel="noopener">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span>דיווח תקלות</span>
+                    <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                </a>
+                <button id="btn-logout" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>התנתקות</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="export-main">
+            <h1><i class="fas fa-file-export" style="color: #0a2f72; margin-left: 10px;"></i>שליפת ניסוי</h1>
+            <p class="export-subtitle">בחירת ניסוי להורדה — Excel עם כל השדות, או ZIP הכולל Excel + כל הקבצים המצורפים.</p>
+
+            <!-- Loading Spinner -->
+            <div class="loading-container" id="loading-container">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <p class="loading-text">טוען ניסויים...</p>
+            </div>
+
+            <!-- Export Grid -->
+            <div class="export-grid" id="export-grid" style="display: none;"></div>
+        </main>
+    </div>
+
+    <!-- Accessibility Widget -->
+    <div class="a11y-widget" aria-label="תפריט נגישות">
+        <button class="btn-a11y-toggle" id="btn-a11y" aria-haspopup="true" aria-expanded="false" title="אפשרויות נגישות">
+            <i class="fa-solid fa-universal-access"></i>
+        </button>
+        <div class="a11y-menu" id="a11y-menu" role="menu">
+            <h4>התאמת נגישות</h4>
+            <button class="a11y-btn" id="toggle-contrast" role="menuitem">
+                <i class="fa-solid fa-circle-half-stroke"></i> ניגודיות גבוהה
+            </button>
+            <button class="a11y-btn" id="toggle-text-size" role="menuitem">
+                <i class="fa-solid fa-text-height"></i> הגדלת טקסט
+            </button>
+            <button class="a11y-btn" id="reset-a11y" role="menuitem" style="color: #dc2626; margin-top: 8px;">
+                <i class="fa-solid fa-rotate-left"></i> איפוס הגדרות
+            </button>
+        </div>
+    </div>
+
+    <!-- Chatbot Widget -->
+    <div class="chat-container">
+        <div class="chat-panel" id="chat-panel">
+            <div class="chat-header">
+                <h4><i class="fa-solid fa-robot"></i> עוזר מיזם ח"ץ</h4>
+                <button class="btn-close-chat" id="btn-close-chat" title="סגור"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="chat-body" id="chat-body">
+                <div class="faq-list" id="faq-list"></div>
+                <div class="chat-active-view" id="chat-active-view">
+                    <div class="user-bubble" id="chat-user-question">...</div>
+                    <div class="typing-indicator" id="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                    <div class="bot-bubble" id="chat-bot-answer" style="display: none;"></div>
+                    <button class="btn-back-chat" id="btn-back-chat">
+                        <i class="fa-solid fa-arrow-right"></i> חזור לשאלות
+                    </button>
+                </div>
+            </div>
+        </div>
+        <button class="btn-chat-toggle" id="btn-chat-toggle" aria-label="פתיחת עוזר וירטואלי">
+            <i class="fa-solid fa-comment-dots"></i>
+        </button>
+    </div>
+
+    <!-- Client-side libraries for Excel + ZIP generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <script src="js/accessibility.js?v=20260503-1"></script>
+    <script src="js/chatbot.js?v=20260503-1"></script>
+    <script type="module" src="js/research-map.js?v=20260503-1"></script>
+    <script type="module" src="js/export.js?v=20260503-1"></script>
+</body>
+</html>
+

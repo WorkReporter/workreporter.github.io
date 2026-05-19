@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת איגום נתונים - מיזם ח"ץ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css?v=20260503-1">
+    <link rel="stylesheet" href="css/layout.css?v=20260503-1">
+    <link rel="stylesheet" href="css/accessibility.css?v=20260503-1">
+    <link rel="stylesheet" href="css/chatbot.css?v=20260503-1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+</head>
+<body data-page-context="dashboard">
+    <!-- Hamburger Menu Button (Mobile) -->
+    <button class="hamburger-btn" id="hamburger-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="app-container">
+        <!-- Sidebar - Right Side -->
+        <aside class="sidebar">
+            <div class="user-info">
+                <i class="fas fa-user"></i>
+                <span id="user-display-name"></span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item active">
+                    <i class="fas fa-home"></i>
+                    <span>בית</span>
+                </a>
+                <a href="export.html" class="nav-item">
+                    <i class="fas fa-file-export"></i>
+                    <span>שליפת ניסוי</span>
+                </a>
+                <a href="#" class="nav-item" id="btn-start-tour">
+        <i class="fas fa-circle-question"></i>
+        <span>סיור במערכת</span>
+    </a>
+                <a href="my-bi.html" class="nav-item">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>הסטטיסטיקה שלי</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=1Ts8Nb7SBUedhjc0Bkz5yY9XvXTtZwZBjymvdvhbcjNUOVdGWUNWV1FYOFRERDRES1BQWjhXMzhSVy4u" class="btn-report-issue" target="_blank" rel="noopener">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span>דיווח תקלות</span>
+                    <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                </a>
+                <button id="btn-logout" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>התנתקות</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <h1>הניסויים שלי</h1>
+
+            <!-- מקרא -->
+            <div class="experiments-legend">
+                <div class="legend-item" style="font-weight:700; width: 100%;">מקרא</div>
+                <div class="legend-item">
+                    <span class="ownership-badge owner"><i class="fas fa-user-check"></i></span>
+                    <span>ניסוי שהקמתי</span>
+                </div>
+                <div class="legend-item">
+                    <span class="ownership-badge shared"><i class="fas fa-users"></i></span>
+                    <span>ניסוי שאני שותף/ה בו</span>
+                </div>
+                <div class="legend-item">
+                    <span class="visibility-badge-card public" style="position: static; padding: 3px 6px;"><i class="fas fa-globe"></i> ציבורי</span>
+                </div>
+                <div class="legend-item">
+                    <span class="visibility-badge-card private" style="position: static; padding: 3px 6px;"><i class="fas fa-lock"></i> פרטי</span>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="loading-container" id="loading-container">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <p class="loading-text">קורא נתונים מהשרת...</p>
+            </div>
+
+            <div class="experiments-grid" id="experiments-grid">
+                <!-- Add experiment button - always visible -->
+                <div class="experiment-card add-experiment-btn" id="add-experiment-btn">
+                    <div class="plus-icon">+</div>
+                    <span>הוספת ניסוי חדש</span>
+                </div>
+                <!-- Experiments will be loaded here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for new experiment -->
+    <div id="new-experiment-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2>יצירת ניסוי חדש</h2>
+            <input type="text" id="new-experiment-name" class="modal-input" placeholder="שם הניסוי">
+            <div class="modal-actions">
+                <button id="cancel-new-experiment" class="modal-btn modal-btn-secondary">ביטול</button>
+                <button id="confirm-new-experiment" class="modal-btn modal-btn-primary">יצירת ניסוי</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accessibility Widget -->
+    <div class="a11y-widget" aria-label="תפריט נגישות">
+        <button class="btn-a11y-toggle" id="btn-a11y" aria-haspopup="true" aria-expanded="false" title="אפשרויות נגישות">
+            <i class="fa-solid fa-universal-access"></i>
+        </button>
+        <div class="a11y-menu" id="a11y-menu" role="menu">
+            <h4>התאמת נגישות</h4>
+            <button class="a11y-btn" id="toggle-contrast" role="menuitem">
+                <i class="fa-solid fa-circle-half-stroke"></i> ניגודיות גבוהה
+            </button>
+            <button class="a11y-btn" id="toggle-text-size" role="menuitem">
+                <i class="fa-solid fa-text-height"></i> הגדלת טקסט
+            </button>
+            <button class="a11y-btn" id="reset-a11y" role="menuitem" style="color: #dc2626; margin-top: 8px;">
+                <i class="fa-solid fa-rotate-left"></i> איפוס הגדרות
+            </button>
+        </div>
+    </div>
+
+    <!-- Chatbot Widget -->
+    <div class="chat-container">
+        <div class="chat-panel" id="chat-panel">
+            <div class="chat-header">
+                <h4><i class="fa-solid fa-robot"></i> עוזר מיזם ח"ץ</h4>
+                <button class="btn-close-chat" id="btn-close-chat" title="סגור"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="chat-body" id="chat-body">
+                <div class="faq-list" id="faq-list"></div>
+                <div class="chat-active-view" id="chat-active-view">
+                    <div class="user-bubble" id="chat-user-question">...</div>
+                    <div class="typing-indicator" id="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                    <div class="bot-bubble" id="chat-bot-answer" style="display: none;"></div>
+                    <button class="btn-back-chat" id="btn-back-chat">
+                        <i class="fa-solid fa-arrow-right"></i> חזרה לשאלות
+                    </button>
+                </div>
+            </div>
+        </div>
+        <button class="btn-chat-toggle" id="btn-chat-toggle" aria-label="פתיחת עוזר וירטואלי">
+            <i class="fa-solid fa-comment-dots"></i>
+        </button>
+    </div>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+    <script src="js/accessibility.js?v=20260503-1"></script>
+    <script src="js/chatbot.js?v=20260503-1"></script>
+    <script type="module" src="js/dashboard.js?v=20260503-1"></script>
+</body>
+</html>
+

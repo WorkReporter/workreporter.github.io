@@ -1,0 +1,306 @@
+/* =========================================
+   Accessibility Widget - Shared Across All Pages
+   ========================================= */
+
+/* ── Accessibility Widget ── */
+.a11y-widget {
+    position: fixed;
+    top: 100px;
+    left: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+}
+
+.btn-a11y-toggle {
+    background: #0a2f72;
+    color: white;
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 0 8px 8px 0;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: width 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-a11y-toggle:hover {
+    width: 56px;
+}
+
+.btn-a11y-toggle:focus-visible {
+    outline: 3px solid #facc15;
+    outline-offset: 2px;
+}
+
+.a11y-menu {
+    position: absolute;
+    left: 56px;
+    top: 0;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    width: 220px;
+    transform: translateX(-20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s;
+}
+
+.a11y-menu.show {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.a11y-menu h4 {
+    margin-bottom: 12px;
+    color: #111827;
+    font-size: 15px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 8px;
+    font-weight: 600;
+}
+
+.a11y-btn {
+    width: 100%;
+    text-align: right;
+    background: transparent;
+    border: none;
+    padding: 8px 0;
+    color: #6b7280;
+    font-size: 13px;
+    cursor: pointer;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+}
+
+.a11y-btn:hover {
+    color: #0a2f72;
+}
+
+.a11y-btn.active {
+    color: #0a2f72;
+    font-weight: bold;
+}
+
+.a11y-btn:focus-visible {
+    outline: 2px solid #0a2f72;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ── High Contrast Mode ── */
+body.a11y-high-contrast {
+    --bg-primary: #000000 !important;
+    --bg-secondary: #121212 !important;
+    background: #000000 !important;
+}
+
+body.a11y-high-contrast .auth-wrapper {
+    background-color: #121212;
+    border-color: #ffffff;
+}
+
+body.a11y-high-contrast .info-panel {
+    background: #000 !important;
+    border: 1px solid #fff;
+    color: #ffffff;
+}
+
+body.a11y-high-contrast .info-panel .info-content h1,
+body.a11y-high-contrast .info-panel .brand-text h3 {
+    color: #facc15;
+}
+
+body.a11y-high-contrast .info-panel .info-content p {
+    color: #d1d5db;
+}
+
+body.a11y-high-contrast .login-panel,
+body.a11y-high-contrast .form-panel {
+    background-color: #121212;
+}
+
+body.a11y-high-contrast .form-panel-header h2,
+body.a11y-high-contrast .login-header h2 {
+    color: #ffffff;
+}
+
+body.a11y-high-contrast .form-panel-header p,
+body.a11y-high-contrast .login-header p {
+    color: #d1d5db;
+}
+
+body.a11y-high-contrast .form-group label,
+body.a11y-high-contrast .input-group label {
+    color: #facc15;
+}
+
+body.a11y-high-contrast .form-input,
+body.a11y-high-contrast .input-wrapper input,
+body.a11y-high-contrast .input-wrapper select {
+    background-color: #1e1e1e !important;
+    border-color: #ffffff !important;
+    color: #ffffff !important;
+}
+
+body.a11y-high-contrast .btn-primary,
+body.a11y-high-contrast .auth-card button {
+    background: #facc15 !important;
+    color: #000 !important;
+}
+
+body.a11y-high-contrast .auth-card {
+    background: #121212;
+    border-color: #ffffff;
+}
+
+body.a11y-high-contrast .auth-card h2 {
+    color: #ffffff;
+}
+
+body.a11y-high-contrast .auth-card > p {
+    color: #d1d5db;
+}
+
+body.a11y-high-contrast .dev-notice {
+    background: #333 !important;
+    color: #facc15 !important;
+    border-color: #facc15 !important;
+}
+
+body.a11y-high-contrast .text-link,
+body.a11y-high-contrast .link-action {
+    color: #facc15 !important;
+}
+
+body.a11y-high-contrast .a11y-menu {
+    background: #1e1e1e;
+    border-color: #ffffff;
+}
+
+body.a11y-high-contrast .a11y-menu h4 {
+    color: #ffffff;
+    border-color: #555;
+}
+
+body.a11y-high-contrast .a11y-btn {
+    color: #d1d5db;
+}
+
+body.a11y-high-contrast .a11y-btn:hover,
+body.a11y-high-contrast .a11y-btn.active {
+    color: #facc15;
+}
+
+/* Dashboard / Admin high contrast */
+body.a11y-high-contrast .sidebar {
+    background: #000 !important;
+    border-color: #fff !important;
+}
+
+body.a11y-high-contrast .sidebar .nav-item {
+    color: #d1d5db !important;
+}
+
+body.a11y-high-contrast .sidebar .nav-item.active,
+body.a11y-high-contrast .sidebar .nav-item:hover {
+    color: #facc15 !important;
+    background: #1e1e1e !important;
+}
+
+body.a11y-high-contrast .dashboard-main,
+body.a11y-high-contrast main {
+    background: #121212 !important;
+    color: #ffffff !important;
+}
+
+body.a11y-high-contrast .dashboard-main h1,
+body.a11y-high-contrast main h1 {
+    color: #facc15 !important;
+}
+
+/* ── Large Text Mode ── */
+body.a11y-large-text {
+    font-size: 18px !important;
+}
+
+body.a11y-large-text h1 {
+    font-size: 2rem !important;
+}
+
+body.a11y-large-text h2 {
+    font-size: 1.75rem !important;
+}
+
+body.a11y-large-text h3 {
+    font-size: 1.5rem !important;
+}
+
+body.a11y-large-text p,
+body.a11y-large-text label,
+body.a11y-large-text span,
+body.a11y-large-text a,
+body.a11y-large-text button,
+body.a11y-large-text input,
+body.a11y-large-text select,
+body.a11y-large-text textarea {
+    font-size: 1.1em !important;
+}
+
+body.a11y-large-text .a11y-btn,
+body.a11y-large-text .a11y-menu h4 {
+    font-size: 16px !important;
+}
+
+body.a11y-large-text .dev-notice {
+    font-size: 16px !important;
+    padding: 14px 20px !important;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .a11y-widget {
+        top: 60px;
+    }
+
+    .btn-a11y-toggle {
+        width: 42px;
+        height: 42px;
+        font-size: 20px;
+    }
+
+    .a11y-menu {
+        width: 200px;
+        left: 50px;
+    }
+}
+
+@media (max-width: 480px) {
+    .a11y-widget {
+        top: 50px;
+    }
+
+    .btn-a11y-toggle {
+        width: 38px;
+        height: 38px;
+        font-size: 18px;
+    }
+
+    .a11y-menu {
+        width: 180px;
+        left: 44px;
+        padding: 12px;
+    }
+}
+

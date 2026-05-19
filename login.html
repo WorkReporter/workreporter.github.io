@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="מערכת איגום נתונים - התחברות מאובטחת">
+    <title>התחברות - מיזם ח"ץ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/accessibility.css">
+    <link rel="stylesheet" href="css/chatbot.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+</head>
+<body data-page-context="auth">
+    <!-- Accessibility Widget -->
+    <div class="a11y-widget" aria-label="תפריט נגישות">
+        <button class="btn-a11y-toggle" id="btn-a11y" aria-haspopup="true" aria-expanded="false" title="אפשרויות נגישות">
+            <i class="fa-solid fa-universal-access"></i>
+        </button>
+        <div class="a11y-menu" id="a11y-menu" role="menu">
+            <h4>התאמת נגישות</h4>
+            <button class="a11y-btn" id="toggle-contrast" role="menuitem">
+                <i class="fa-solid fa-circle-half-stroke"></i> ניגודיות גבוהה
+            </button>
+            <button class="a11y-btn" id="toggle-text-size" role="menuitem">
+                <i class="fa-solid fa-text-height"></i> הגדלת טקסט
+            </button>
+            <button class="a11y-btn" id="reset-a11y" role="menuitem" style="color: var(--auth-error); margin-top: 8px;">
+                <i class="fa-solid fa-rotate-left"></i> איפוס הגדרות
+            </button>
+        </div>
+    </div>
+
+    <!-- Auth Layout -->
+    <div class="auth-wrapper">
+        <div class="info-panel">
+            <div class="brand-section">
+                <img src="gptlogo.jpeg" alt="לוגו מיזם ח&quot;ץ" class="brand-logo">
+            </div>
+            <div class="info-content">
+                <h1>מערכת איגום נתונים</h1>
+                <p>פלטפורמה לניהול נתונים מחקריים בתחום ניסויי עגבניות. איגום נתונים ותיעוד ניסויי שדה בחקלאות.</p>
+            </div>
+
+            <!-- Security note -->
+            <div class="security-note">
+                <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                <span>גישה לנתונים בהתאם לכללי אבטחה.</span>
+            </div>
+
+            <button type="button" class="btn-info" id="btn-about"><i class="fa-solid fa-users"></i><span>אודות וצוות פיתוח המערכת</span></button>
+        </div>
+
+        <!-- About & Team Modal -->
+        <div class="about-overlay" id="about-overlay">
+            <div class="about-modal">
+                <button class="about-close" id="about-close" title="סגירה"><i class="fa-solid fa-xmark"></i></button>
+                <div class="about-header">
+                    <h2>מערכת איגום הנתונים</h2>
+                    <p>צוות הפיתוח של מערכת איגום הנתונים</p>
+                </div>
+                <div class="about-body">
+                    <h3><i class="fa-solid fa-users"></i> צוות פיתוח המערכת</h3>
+                    <div class="team-grid">
+                        <div class="team-card"><i class="fa-solid fa-user"></i><span>ד"ר אביב דומברובסקי</span></div>
+                        <div class="team-card"><i class="fa-solid fa-user-large"></i><span>ד"ר יעל זלצר</span></div>
+                        <div class="team-card"><i class="fa-solid fa-user"></i><span>פרופ' גלעד רביד</span></div>
+                        <div class="team-card"><i class="fa-solid fa-user"></i><span>נוי שרף</span></div>
+                        <div class="team-card"><i class="fa-solid fa-user"></i><span>יהודה הלר</span></div>
+                    </div>
+                    <div class="about-thanks">
+                        <h3><i class="fa-solid fa-heart"></i> תודות</h3>
+                        <p>תודה מיוחדת לכל מי שתרמו לפיתוח וקידום המיזם.</p>
+                        <div class="thanks-names" id="thanks-names"></div>
+                    </div>
+                </div>
+                <div class="about-footer">מכון וולקני · ארגון המחקר החקלאי</div>
+            </div>
+        </div>
+
+        <div class="form-panel">
+            <div class="form-panel-header">
+                <h2>התחברות למערכת</h2>
+                <p>מיזם ח״ץ - איגום נתונים חקלאיים</p>
+            </div>
+
+            <div class="input-group">
+                <label for="login-email">כתובת דוא״ל</label>
+                <div class="input-wrapper">
+                    <i class="fa-regular fa-envelope input-icon"></i>
+                    <input type="email" id="login-email" placeholder="הזנת כתובת אימייל">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="login-pass">סיסמה</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <input type="password" id="login-pass" placeholder="הזנת סיסמה">
+                    <button type="button" class="btn-toggle-pass" id="toggle-pass-btn" title="הצג/הסתר סיסמה"><i class="fa-regular fa-eye"></i></button>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="forgot_password.html" class="link-action">שכחת סיסמה?</a>
+                <span>חדש/ה? <a href="register.html" class="link-action">הרשמה</a></span>
+            </div>
+
+            <button id="btn-login" class="btn-primary">
+                <span class="btn-text">התחברות</span>
+                <i class="fa-solid fa-arrow-left" style="margin-right: 4px;"></i>
+            </button>
+
+            <div class="form-panel-footer">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>למורשים בלבד. השימוש במערכת כפוף למדיניות האבטחה של הארגון.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chatbot Widget -->
+    <div class="chat-container">
+        <div class="chat-panel" id="chat-panel">
+            <div class="chat-header">
+                <h4><i class="fa-solid fa-robot"></i> עוזר מיזם ח"ץ</h4>
+                <button class="btn-close-chat" id="btn-close-chat" title="סגור"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="chat-body" id="chat-body">
+                <div class="faq-list" id="faq-list"></div>
+                <div class="chat-active-view" id="chat-active-view">
+                    <div class="user-bubble" id="chat-user-question">...</div>
+                    <div class="typing-indicator" id="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                    <div class="bot-bubble" id="chat-bot-answer" style="display: none;"></div>
+                    <button class="btn-back-chat" id="btn-back-chat">
+                        <i class="fa-solid fa-arrow-right"></i> חזרה לשאלות
+                    </button>
+                </div>
+            </div>
+        </div>
+        <button class="btn-chat-toggle" id="btn-chat-toggle" aria-label="פתיחת עוזר וירטואלי">
+            <i class="fa-solid fa-comment-dots"></i>
+        </button>
+    </div>
+
+    <script src="js/accessibility.js?v=20260503-1"></script>
+    <script src="js/chatbot.js?v=20260503-1"></script>
+    <script>
+        // Password toggle
+        document.getElementById('toggle-pass-btn').addEventListener('click', function() {
+            const passInput = document.getElementById('login-pass');
+            const icon = this.querySelector('i');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                passInput.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
+    </script>
+    <script type="module" src="js/login.js?v=20260503-1"></script>
+    <script>
+        // About modal
+        document.getElementById('btn-about').addEventListener('click', () => {
+            document.getElementById('about-overlay').classList.add('active');
+        });
+        document.getElementById('about-close').addEventListener('click', () => {
+            document.getElementById('about-overlay').classList.remove('active');
+        });
+        document.getElementById('about-overlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) document.getElementById('about-overlay').classList.remove('active');
+        });
+    </script>
+</body>
+</html>

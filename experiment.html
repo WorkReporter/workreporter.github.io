@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>תוכנית הניסוי - מיזם ח"ץ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css?v=20260503-1">
+    <link rel="stylesheet" href="css/layout.css?v=20260503-1">
+    <link rel="stylesheet" href="css/forms.css?v=20260503-1">
+    <link rel="stylesheet" href="css/experiment.css?v=20260503-1">
+    <link rel="stylesheet" href="css/accessibility.css?v=20260503-1">
+    <link rel="stylesheet" href="css/chatbot.css?v=20260503-1">
+    <link rel="stylesheet" href="css/research-map.css?v=20260503-1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="css/flatpickr-custom.css?v=20260503-1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+</head>
+<body data-page-context="experiment">
+    <!-- Hamburger Menu Button (Mobile) -->
+    <button class="hamburger-btn" id="hamburger-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="app-container">
+        <!-- Sidebar - Right Side -->
+        <aside class="sidebar">
+            <div class="user-info">
+                <i class="fas fa-user"></i>
+                <span id="user-display-name"></span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>בית</span>
+                </a>
+                <a href="export.html" class="nav-item">
+                    <i class="fas fa-file-export"></i>
+                    <span>שליפת ניסוי</span>
+                </a>
+                <a href="my-bi.html" class="nav-item">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>הסטטיסטיקה שלי</span>
+                </a>
+                <a href="#" class="nav-item" id="btn-start-experiment-tour">
+                    <i class="fas fa-circle-question"></i>
+                    <span>סיור בניסוי</span>
+                </a>
+
+                <!-- Current Experiment -->
+                <div class="experiment-nav-item">
+                    <div class="experiment-header active expanded" id="current-experiment-header">
+                        <i class="fas fa-flask"></i>
+                        <span id="sidebar-experiment-name">ניסוי 1</span>
+                        <i class="fas fa-caret-down toggle-icon"></i>
+                    </div>
+                    <div class="sub-menu open">
+                        <!-- תוכנית הניסוי - Top Level -->
+                        <a href="#" class="sub-item active" data-view="basic">
+                            <span>תוכנית הניסוי</span>
+                        </a>
+
+                        <!-- הכנות לניסוי - Expandable -->
+                        <div class="sub-item has-submenu expanded" data-submenu="prep-submenu" id="prep-toggle">
+                            <i class="fas fa-caret-down"></i>
+                            <span>הכנות לניסוי</span>
+                        </div>
+                        <div class="sub-sub-menu open" id="prep-submenu">
+                            <a href="#" class="sub-sub-item" data-view="crop">פרטי הגידול</a>
+                            <a href="#" class="sub-sub-item" data-view="structure">מבנה</a>
+                            <a href="#" class="sub-sub-item" data-view="soil">טיפול בקרקע</a>
+                            <a href="#" class="sub-sub-item" data-view="drip">סוג ופריסת הטפטוף</a>
+                        </div>
+
+                        <!-- מהלך הניסוי - Expandable -->
+                        <div class="sub-item has-submenu" data-submenu="progress-submenu" id="progress-toggle">
+                            <i class="fas fa-caret-down"></i>
+                            <span>מהלך הניסוי</span>
+                        </div>
+                        <div class="sub-sub-menu" id="progress-submenu">
+                            <a href="#" class="sub-sub-item" data-view="irrigation">השקיה ודשן</a>
+                            <a href="#" class="sub-sub-item" data-view="growth">צימוח</a>
+                            <a href="#" class="sub-sub-item" data-view="climate">נתוני אקלים וסנסורים</a>
+                            <a href="#" class="sub-sub-item" data-view="agrotechnics">אגרוטכניקה</a>
+                            <a href="#" class="sub-sub-item" data-view="plant-protection">הגנת הצומח</a>
+                        </div>
+
+                        <!-- נתוני יבול -->
+                        <a href="#" class="sub-item" data-view="yield">
+                            <span>נתוני יבול</span>
+                        </a>
+
+                        <!-- יומן אירועים -->
+                        <a href="#" class="sub-item" data-view="events">
+                            <span>יומן אירועים</span>
+                        </a>
+
+                        <!-- ניתוחים פיננסים -->
+                        <a href="#" class="sub-item" data-view="financial-analysis">
+                            <span>ניתוחים פיננסים</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=1Ts8Nb7SBUedhjc0Bkz5yY9XvXTtZwZBjymvdvhbcjNUOVdGWUNWV1FYOFRERDRES1BQWjhXMzhSVy4u" class="btn-report-issue" target="_blank" rel="noopener">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span>דיווח תקלות</span>
+                    <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                </a>
+                <button id="btn-logout" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>התנתק</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Loading Spinner -->
+            <div class="loading-container" id="loading-container">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <p class="loading-text">טוען את פרטי הניסוי...</p>
+            </div>
+
+            <!-- Experiment Content (hidden during loading) -->
+            <div id="experiment-content">
+                <!-- Tabs for treatments - shown when in crop/structure/soil/drip views -->
+                <div class="tabs-container" id="treatments-tabs" style="display: none;">
+                    <div class="tabs-nav" id="tabs-nav">
+                        <!-- Tabs will be generated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Breadcrumb -->
+                <div class="breadcrumb">
+                    <span id="breadcrumb-text">ניסוי 1 > תוכנית הניסוי</span>
+                </div>
+
+                <!-- Toggle for shared data - shown in crop details views -->
+                <div class="toggle-container" id="shared-toggle-container" style="display: none;">
+                    <span class="toggle-label">נתונים זהים לכלל הטיפולים</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="shared-data-toggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <!-- All view sections -->
+                <form id="experiment-form" class="form-container">
+
+                    <!-- View: Basic Info (תוכנית הניסוי) -->
+                    <div id="view-basic" class="view-section active">
+
+                    <!-- ============================================================
+                         אזור חשיפה והרשאות
+                         ============================================================ -->
+                    <section id="permissions-section" class="permissions-section collapsible-section">
+                        <button type="button" class="permissions-section-header" id="permissions-toggle-btn" aria-expanded="false">
+                            <h3 class="permissions-section-title">
+                                <i class="fas fa-shield-halved"></i>
+                                חשיפה והרשאות
+                            </h3>
+                            <i class="fas fa-chevron-down toggle-icon"></i>
+                        </button>
+                        
+                        <div class="permissions-section-content" id="permissions-section-content" style="display: none;">
+                        <!-- Role Badge (viewer-only notice) -->
+                        <div id="viewer-notice" class="viewer-notice" style="display:none;">
+                            <i class="fas fa-eye"></i>
+                            <span>יש לך הרשאת <strong>צפייה בלבד</strong> בניסוי זה. לא ניתן לערוך.</span>
+                        </div>
+
+                        <!-- Visibility Radio -->
+                        <div class="perm-group">
+                            <label class="perm-label">חשיפת הניסוי:</label>
+                            <div class="visibility-radios" id="visibility-radio-group">
+                                <label class="radio-option" id="radio-label-public">
+                                    <input type="radio" name="experiment-visibility" id="visibility-public" value="public">
+                                    <span class="radio-custom"></span>
+                                    <span class="radio-text">
+                                        <i class="fas fa-globe-asia"></i>
+                                        ציבורי
+                                        <small>כל משתמש מאושר במערכת יכול לצפות</small>
+                                    </span>
+                                </label>
+                                <label class="radio-option" id="radio-label-private">
+                                    <input type="radio" name="experiment-visibility" id="visibility-private" value="private">
+                                    <span class="radio-custom"></span>
+                                    <span class="radio-text">
+                                        <i class="fas fa-lock"></i>
+                                        פרטי
+                                        <small>רק שותפים ומנהלים יכולים לצפות</small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Private Until (shown when private) -->
+                        <div id="private-until-panel" class="perm-panel" style="display:none;">
+                            <label class="perm-label" for="private-until-date">
+                                <i class="fas fa-calendar-xmark"></i>
+                                הניסוי פרטי עד תאריך:
+                            </label>
+                            <input type="date" id="private-until-date">
+                            <small class="perm-hint">לאחר תאריך זה הניסוי יחשב ציבורי אוטומטית.</small>
+                        </div>
+
+                        <!-- Public Access Options (shown when public) -->
+                        <div id="public-access-panel" class="perm-panel">
+                            <div class="perm-checkbox-row">
+                                <label class="perm-checkbox-label">
+                                    <input type="checkbox" id="public-can-read" checked disabled>
+                                    <span class="checkbox-text">
+                                        <i class="fas fa-eye"></i>
+                                        כל משתמש מאושר במערכת יכול לצפות
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Partners & Permissions Table -->
+                        <div id="partners-permissions-panel" class="perm-panel">
+                            <div class="perm-partners-header">
+                                <h4 class="perm-sub-title">
+                                    <i class="fas fa-users"></i>
+                                    שותפים והרשאות
+                                </h4>
+                                <!-- Add Partner with Role -->
+                                <div id="add-permission-partner-area" class="add-permission-area">
+                                    <div class="autocomplete-wrapper perm-search-wrapper">
+                                        <input type="text" id="permission-partner-search" placeholder="חיפוש לפי שם או אימייל..." autocomplete="off">
+                                        <div id="permission-partner-suggestions" class="autocomplete-suggestions"></div>
+                                    </div>
+                                    <select id="permission-role-select" class="perm-role-select">
+                                        <option value="viewer">צפייה בלבד</option>
+                                        <option value="editor">עריכה</option>
+                                    </select>
+                                    <button type="button" id="add-permission-partner-btn" class="btn-perm-add">
+                                        <i class="fas fa-plus"></i>
+                                        הוספה
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="permissions-table-container">
+                                <table class="permissions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>שם</th>
+                                            <th>אימייל</th>
+                                            <th>הרשאה</th>
+                                            <th>פעולות</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="permissions-table-body">
+                                        <!-- נמלא דינמית -->
+                                    </tbody>
+                                </table>
+                                <div id="permissions-empty-state" class="permissions-empty" style="display:none;">
+                                    <i class="fas fa-users-slash"></i>
+                                    <span>אין שותפים עם הרשאות ספציפיות</span>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </section>
+
+                    <!-- Legacy partners (hidden, for backward compatibility) -->
+                    <input type="hidden" id="experiment-visibility">
+                    <div style="display:none;">
+                        <div id="private-until-group">
+                            <input type="date" id="private-until-date-legacy">
+                        </div>
+                    </div>
+
+                    <!-- Lead Researcher -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-user-tie" style="margin-left: 6px; color: #0a2f72;"></i>חוקר מוביל:</label>
+                            <div class="autocomplete-wrapper">
+                                <input type="text" id="lead-researcher" placeholder="חיפוש חוקר מוביל לפי שם או אימייל..." autocomplete="off">
+                                <div id="lead-researcher-suggestions" class="autocomplete-suggestions"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Experiment Partners (multi-select) -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-users" style="margin-left: 6px; color: #0a2f72;"></i>שותפים לניסוי:</label>
+                            <div class="experiment-partners-container">
+                                <div class="experiment-partners-add">
+                                    <div class="autocomplete-wrapper">
+                                        <input type="text" id="experiment-partner-search" placeholder="חיפוש שותף לפי שם או אימייל..." autocomplete="off">
+                                        <div id="experiment-partner-suggestions" class="autocomplete-suggestions"></div>
+                                    </div>
+                                    <button type="button" id="add-experiment-partner" class="btn-add" title="הוסף שותף"><i class="fas fa-plus"></i></button>
+                                </div>
+                                <div class="experiment-partners-list" id="experiment-partners-list">
+                                    <!-- נמלא דינמית -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Experiment Creator (read-only) -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-user-pen" style="margin-left: 6px; color: #0a2f72;"></i>מקים הניסוי:</label>
+                            <input type="text" id="experiment-creator" readonly class="readonly-field" placeholder="—">
+                        </div>
+                    </div>
+
+                    <!-- Legacy Partners (hidden - kept for syncSharedExperiments backward compat) -->
+                    <div style="display:none;">
+                        <div class="partners-add-container">
+                            <div class="autocomplete-wrapper">
+                                <input type="text" id="partner-search" placeholder="חיפוש שותף (שם או אימייל)..." autocomplete="off">
+                                <div id="partner-suggestions" class="autocomplete-suggestions"></div>
+                            </div>
+                            <button type="button" id="add-partner" class="btn-add"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <div class="partners-container" id="partners-container"></div>
+                    </div>
+
+                    <!-- Year & Month -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>שנת הניסוי:</label>
+                            <select id="experiment-year"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>חודש הניסוי:</label>
+                            <select id="experiment-month">
+                                <option value="">בחירת חודש</option>
+                                <option value="1">ינואר</option>
+                                <option value="2">פברואר</option>
+                                <option value="3">מרץ</option>
+                                <option value="4">אפריל</option>
+                                <option value="5">מאי</option>
+                                <option value="6">יוני</option>
+                                <option value="7">יולי</option>
+                                <option value="8">אוגוסט</option>
+                                <option value="9">ספטמבר</option>
+                                <option value="10">אוקטובר</option>
+                                <option value="11">נובמבר</option>
+                                <option value="12">דצמבר</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Research Period & Work Package -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>תקופת המחקר:</label>
+                            <select id="research-period">
+                                <option value="">בחירת תקופה</option>
+                                <option value="תקופה ראשונה">תקופה ראשונה</option>
+                                <option value="תקופה שניה">תקופה שניה</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>סוג המחקר:</label>
+                            <div class="study-type-toggle" role="group" aria-label="סוג המחקר">
+                                <button type="button" class="study-type-option" data-study-type="field">מחקר שדה</button>
+                                <button type="button" class="study-type-option" data-study-type="lab">מחקר מעבדה</button>
+                            </div>
+                            <input type="hidden" id="study-type" value="field">
+                        </div>
+                        <div class="form-group">
+                            <label>חבילת עבודה:</label>
+                            <select id="work-package">
+                                <option value="">בחירת חבילה</option>
+                                <option value="wp1">חבילת עבודה 1 – אגרוטכניקה</option>
+                                <option value="wp2">חבילת עבודה 2 – הגנה"צ</option>
+                                <option value="wp3">חבילת עבודה 3 – קרקע ומים (הדשייה)</option>
+                                <option value="wp4">חבילת עבודה 4 – חקלאות מקיימת</option>
+                                <option value="wp5">חבילת עבודה 5 – היבטים כלכליים לשיפור הרווחיות</option>
+                                <option value="wp6">חבילת עבודה 6 – צמצום השימוש בידיים עובדות</option>
+                                <option value="not-related">לא שייך למיזם ח"ץ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Site & Coordinates -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>אתר הניסוי:</label>
+                            <select id="experiment-site">
+                                <option value="">בחירת אתר</option>
+                                <option value="volcani-bet-dagan">מכון וולקני - בית דגן</option>
+                                <option value="mop-darom">מו"פ דרום</option>
+                                <option value="gilat">גילת</option>
+                                <option value="other">אחר</option>
+                            </select>
+                            <input type="text" id="experiment-site-other" list="datalist-experiment-site-other" placeholder="הזן אתר ניסוי" style="display: none; margin-top: 8px;">
+                        </div>
+                        <div class="form-group">
+                            <label id="site-field-label">קורדינטות אתר הניסוי:</label>
+                            <div id="site-coordinates-group">
+                                <div class="input-with-btn">
+                                    <input type="text" id="site-coordinates" placeholder="בחירת מיקום מהכפתור או הזנה ידנית (לדוגמה: 31.5, 34.75)">
+                                    <button type="button" id="pick-location-btn" class="btn-icon" title="בחירת מיקום ממפה">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </button>
+                                    <button type="button" id="open-google-maps-btn" class="btn-icon btn-google-maps" title="פתיחה בגוגל מפות" style="display: none;">
+                                        <i class="fab fa-google"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="lab-cell-number-group" style="display:none;">
+                                <input type="text" id="lab-cell-number" placeholder="הזנת מס' תא">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Goal -->
+                    <div class="form-row full-width">
+                        <div class="form-group">
+                            <label>מטרת הניסוי:</label>
+                            <textarea id="experiment-goal" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="form-row full-width">
+                        <div class="form-group">
+                            <label>תקציר הניסוי:</label>
+                            <textarea id="experiment-summary" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Treatments & Repetitions Count -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>מספר הטיפולים:</label>
+                            <input type="number" id="treatments-count" min="1" value="3">
+                        </div>
+                        <div class="form-group">
+                            <label>מספר החזרות לטיפול:</label>
+                            <input type="number" id="repetitions-count" min="1" max="100">
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Treatments -->
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label>פרטי טיפולים:</label>
+                            <div id="treatments-container" class="treatments-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Independent Variables -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>משתנה בלתי תלוי:</label>
+                            <div class="variables-list" id="independent-vars-container"></div>
+                            <div class="input-with-btn" style="margin-top: 10px;">
+                                <input type="text" id="new-independent-var" placeholder="הוספת משתנה...">
+                                <button type="button" id="add-independent-var" class="btn-add"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>מספר רמות:</label>
+                            <input type="number" id="levels-count" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>ערך:</label>
+                            <input type="text" id="level-value">
+                        </div>
+                    </div>
+
+                    <!-- Dependent Variables -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>משתנה תלוי:</label>
+                            <div class="variables-list" id="dependent-vars-container"></div>
+                            <div class="input-with-btn" style="margin-top: 10px;">
+                                <input type="text" id="new-dependent-var" placeholder="הוספת משתנה...">
+                                <button type="button" id="add-dependent-var" class="btn-add"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Keywords -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>מילות מפתח:</label>
+                            <div class="keywords-container">
+                                <select id="keywords-select">
+                                    <option value="">בחירת מילת מפתח</option>
+                                    <option value="עגבניות">עגבניות</option>
+                                    <option value="הדברה">הדברה</option>
+                                    <option value="חממה">חממה</option>
+                                    <option value="__custom__">אחר (הזנה חופשית)...</option>
+                                </select>
+                                <button type="button" id="add-keyword" class="btn-add"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <div id="custom-keyword-container" class="keywords-container" style="display: none; margin-top: 10px;">
+                                <input type="text" id="custom-keyword-input" placeholder="הזנת מילת מפתח חופשית...">
+                                <button type="button" id="add-custom-keyword" class="btn-add"><i class="fas fa-plus"></i></button>
+                                <button type="button" id="cancel-custom-keyword" class="btn-add btn-cancel" title="ביטול"><i class="fas fa-times"></i></button>
+                            </div>
+                            <div id="keywords-list" class="keywords-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Crop Details (פרטי הגידול) -->
+                <div id="view-crop" class="view-section">
+                    <h3 class="section-title">פרטי הגידול</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>מועד שתילה:</label>
+                            <input type="date" id="planting-date">
+                        </div>
+                        <div class="form-group">
+                            <label>סוג גידול:</label>
+                            <input type="text" id="crop-type" list="datalist-crop-type">
+                        </div>
+                        <div class="form-group">
+                            <label>זן:</label>
+                            <input type="text" id="variety" list="datalist-variety">
+                        </div>
+                        <div class="form-group">
+                            <label>מועד הדבקה 1:</label>
+                            <input type="date" id="inoculation-date-1">
+                        </div>
+                        <div class="form-group">
+                            <label>מועד הדבקה 2:</label>
+                            <input type="date" id="inoculation-date-2">
+                        </div>
+                        <div class="grafted-group" style="grid-column: 1 / -1;">
+                            <div class="grafted-group-fields">
+                                <div class="form-group grafted-inline-field">
+                                    <label>צמח מורכב:</label>
+                                    <select id="grafted-plant">
+                                        <option value="">בחר</option>
+                                        <option value="no">לא</option>
+                                        <option value="yes">כן</option>
+                                    </select>
+                                </div>
+                                <div class="form-group grafted-inline-field" id="variety-type-group" style="display: none;">
+                                    <label>סוג הזן:</label>
+                                    <select id="variety-type">
+                                        <option value="">בחר</option>
+                                        <option value="regular">רגיל</option>
+                                        <option value="finishing">מסיים</option>
+                                    </select>
+                                </div>
+                                <div class="form-group grafted-inline-field" id="preparation-name-group" style="display: none;">
+                                    <label>שם הכנה:</label>
+                                    <input type="text" id="preparation-name">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>צמח מפוצל:</label>
+                            <select id="split-plant">
+                                <option value="">בחר</option>
+                                <option value="לא">לא</option>
+                                <option value="כן">כן</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>משתלה:</label>
+                            <input type="text" id="nursery" list="datalist-nursery">
+                        </div>
+                        <div class="form-group">
+                            <label>כמות שתילים:</label>
+                            <input type="number" id="seedlings-count">
+                        </div>
+                        <div class="form-group" id="planting-density-group">
+                            <label>עומד שתילה:</label>
+                            <input type="number" id="planting-density" step="any">
+                        </div>
+                        <div class="form-group" id="pots-count-group" style="display:none;">
+                            <label>מס' עציצים:</label>
+                            <input type="number" id="pots-count" step="1" min="0">
+                        </div>
+                        <div class="form-group" id="seedlings-per-pot-group" style="display:none;">
+                            <label>מס' שתילים בעציץ:</label>
+                            <input type="number" id="seedlings-per-pot" step="1" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>מבנה שתילה:</label>
+                            <input type="text" id="planting-structure">
+                        </div>
+                        <div class="form-group">
+                            <label>שטח הניסוי (דונם):</label>
+                            <input type="number" id="experiment-area" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-row full-width">
+                        <div class="form-group">
+                            <label>הערות:</label>
+                            <textarea id="crop-notes" rows="4"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Structure (מבנה) -->
+                <div id="view-structure" class="view-section">
+                    <h3 class="section-title">דרישות המבנה</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>סוג המבנה:</label>
+                            <select id="structure-type">
+                                <option value="">בחירת ערך</option>
+                                <option value="חממות">חממות</option>
+                                <option value="בתי רשת">בתי רשת</option>
+                                <option value="מנהרות">מנהרות</option>
+                                <option value="שטחים פתוחים">שטחים פתוחים</option>
+                                <option value="קרנטינה">קרנטינה</option>
+                                <option value="מעבדה">מעבדה</option>
+                                <option value="תא גידול">תא גידול</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>גודל מבנה (מטר):</label>
+                            <input type="number" id="structure-size" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>חיפוי גג:</label>
+                            <select id="roof-covering">
+                                <option value="">בחירת ערך</option>
+                                <option value="nylon">ניילון</option>
+                                <option value="glass">זכוכית</option>
+                                <option value="net">רשת</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>טמפ' תא:</label>
+                            <select id="cell-temp-mode">
+                                <option value="">בחירת ערך</option>
+                                <option value="קבועה">קבועה</option>
+                                <option value="משתנה">משתנה</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="cell-temp-fixed-group" style="display:none;">
+                            <label>טמפ':</label>
+                            <input type="number" id="cell-temp-fixed" step="any">
+                        </div>
+                        <div class="form-group" id="cell-temp-min-group" style="display:none;">
+                            <label>מינימום (לילה):</label>
+                            <input type="number" id="cell-temp-min-night" step="any">
+                        </div>
+                        <div class="form-group" id="cell-temp-max-group" style="display:none;">
+                            <label>מקסימום (יום):</label>
+                            <input type="number" id="cell-temp-max-day" step="any">
+                        </div>
+                        <div class="form-group">
+                            <label>מפנה המבנה:</label>
+                            <select id="structure-direction">
+                                <option value="">בחירת ערך</option>
+                                <option value="north">צפון</option>
+                                <option value="south">דרום</option>
+                                <option value="east">מזרח</option>
+                                <option value="west">מערב</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row full-width">
+                        <div class="form-group">
+                            <label>פעולות חריגות חשובות הנדרשות בהמשך:</label>
+                            <textarea id="structure-notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Soil Treatment (טיפול בקרקע) -->
+                <div id="view-soil" class="view-section">
+                    <h3 class="section-title">דרישות הטיפול בקרקע</h3>
+
+                    <!-- מצע מנותק - grouped card (ללא כותרת כפולה) -->
+                    <div class="soil-detached-group">
+                        <div class="soil-group-fields">
+                            <div class="form-group soil-inline-field">
+                                <label>מצע מנותק:</label>
+                                <select id="detached-substrate">
+                                    <option value="">בחר</option>
+                                    <option value="לא">לא</option>
+                                    <option value="כן">כן</option>
+                                </select>
+                            </div>
+                            <div class="form-group soil-inline-field">
+                                <label>סוג החברה:</label>
+                                <input type="text" id="substrate-company" list="datalist-substrate-company" placeholder="שם החברה">
+                            </div>
+                            <div class="form-group soil-inline-field">
+                                <label>סוג המצע:</label>
+                                <input type="text" id="substrate-type" list="datalist-substrate-type" placeholder="סוג המצע">
+                            </div>
+                            <div class="form-group soil-inline-field">
+                                <label>נפח המצע לעציץ:</label>
+                                <input type="number" id="substrate-volume" step="any" placeholder="נפח">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-grid soil-main-grid"></div>
+
+                    <!-- חיטוי בהמטרה אדיגן + כמות - grouped card -->
+                    <div class="soil-adigan-group">
+                        <div class="soil-group-fields">
+                            <div class="form-group soil-inline-field">
+                                <label>חיטוי בהמטרה אדיגן:</label>
+                                <select id="soil-disinfection-adigan">
+                                    <option value="">בחר</option>
+                                    <option value="לא">לא</option>
+                                    <option value="כן">כן</option>
+                                </select>
+                            </div>
+                            <div class="form-group soil-inline-field">
+                                <label>כמות:</label>
+                                <select id="soil-adigan-amount" style="display: none;">
+                                    <option value="">בחירת כמות</option>
+                                    <option value="40">40</option>
+                                    <option value="60">60</option>
+                                    <option value="80">80</option>
+                                    <option value="100">100</option>
+                                    <option value="120">120</option>
+                                    <option value="other">אחר</option>
+                                </select>
+                                <input type="number" id="soil-adigan-amount-custom" step="any" placeholder="כמות אחרת" style="display: none; margin-top: 8px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- פיזור קומפוסט -->
+                    <div class="soil-dynamic-section">
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-compost-row">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <span class="soil-section-title">פיזור קומפוסט</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="compost-table">
+                                <thead>
+                                    <tr>
+                                        <th>תאריך</th>
+                                        <th>כמות</th>
+                                        <th>אופן יישום</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="compost-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- חיטוי קרקע -->
+                    <div class="soil-dynamic-section">
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-disinfect-row">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <span class="soil-section-title">חיטוי קרקע</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="disinfect-table">
+                                <thead>
+                                    <tr>
+                                        <th>תאריך</th>
+                                        <th>חומר החיטוי</th>
+                                        <th>כמות</th>
+                                        <th>אופן יישום</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="disinfect-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Drip (סוג ופריסת הטפטוף) -->
+                <div id="view-drip" class="view-section">
+                    <h3 class="section-title">דרישות סוג ופריסת הטפטוף</h3>
+
+                    <div class="drip-fields-list">
+
+                        <!-- שלוחה בודדת / כפולה -->
+                        <div class="drip-field-row">
+                            <label class="drip-field-label">שלוחה בודדת/ כפולה:</label>
+                            <div class="drip-field-value">
+                                <select id="drip-single-double">
+                                    <option value="">בחירת ערך</option>
+                                    <option value="בודדת">בודדת</option>
+                                    <option value="כפולה">כפולה</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- קוטר צינור טפטוף -->
+                        <div class="drip-field-row">
+                            <label class="drip-field-label">קוטר צינור טפטוף:</label>
+                            <div class="drip-field-value drip-editable">
+                                <button type="button" class="drip-edit-btn" data-target="drip-pipe-diameter" title="ערוך">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <input type="number" id="drip-pipe-diameter" class="drip-number-input" step="any">
+                            </div>
+                        </div>
+                        <div class="drip-field-row">
+                            <label class="drip-field-label">סוג:</label>
+                            <div class="drip-field-value">
+                                <select id="drip-type">
+                                    <option value="">בחירת ערך</option>
+                                    <option value="נעץ">נעץ</option>
+                                    <option value="כפתור">כפתור</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- מרחק בין טפטפות -->
+                        <div class="drip-field-row">
+                            <label class="drip-field-label">מרחק בין טפטפות (ס"מ):</label>
+                            <div class="drip-field-value drip-editable">
+                                <button type="button" class="drip-edit-btn" data-target="drip-emitter-spacing" title="ערוך">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <input type="number" id="drip-emitter-spacing" class="drip-number-input" step="any">
+                            </div>
+                        </div>
+
+                        <!-- ספיקה -->
+                        <div class="drip-field-row">
+                            <label class="drip-field-label">ספיקה (ליטר/שעה):</label>
+                            <div class="drip-field-value drip-editable">
+                                <button type="button" class="drip-edit-btn" data-target="drip-flow-rate" title="ערוך">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <input type="number" id="drip-flow-rate" class="drip-number-input" step="any">
+                            </div>
+                        </div>
+                        <div class="drip-field-row">
+                            <label class="drip-field-label">משך השקייה (דקות):</label>
+                            <div class="drip-field-value drip-editable">
+                                <button type="button" class="drip-edit-btn" data-target="drip-irrigation-duration-minutes" title="ערוך">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <input type="number" id="drip-irrigation-duration-minutes" class="drip-number-input" step="1" min="0">
+                            </div>
+                        </div>
+                        <div class="drip-field-row">
+                            <label class="drip-field-label">מס' השקיות ביום:</label>
+                            <div class="drip-field-value drip-editable">
+                                <button type="button" class="drip-edit-btn" data-target="drip-irrigations-per-day" title="ערוך">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <input type="number" id="drip-irrigations-per-day" class="drip-number-input" step="1" min="0">
+                            </div>
+                        </div>
+                        <div id="drip-irrigation-times-container"></div>
+
+                        <!-- מס' שלוחות -->
+                        <div class="drip-field-row">
+                            <label class="drip-field-label">מס' שלוחות (יח'):</label>
+                            <div class="drip-field-value drip-editable">
+                                <button type="button" class="drip-edit-btn" data-target="drip-lines-count" title="ערוך">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <input type="number" id="drip-lines-count" class="drip-number-input" step="1">
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+
+                <!-- View: Irrigation & Fertilization (השקיה ודשן) -->
+                <div id="view-irrigation" class="view-section">
+                    <h3 class="section-title">השקיה ודשן</h3>
+
+                    <!-- השקיה -->
+                    <div class="soil-dynamic-section">
+                        <div class="progress-subsection-title-sm">השקיה</div>
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-irrigation-row"><i class="fas fa-plus"></i></button>
+                            <span class="soil-section-title">קובץ חדש</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="irrigation-table">
+                                <thead>
+                                    <tr>
+                                        <th>שם הקובץ</th>
+                                        <th>תאריך העלאה</th>
+                                        <th>תאריך התחלה</th>
+                                        <th>תאריך סיום</th>
+                                        <th>סה"כ כמות מים (ליטר)</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="irrigation-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- דישון -->
+                    <div class="soil-dynamic-section">
+                        <div class="progress-subsection-title-sm">דישון</div>
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-fertilization-row"><i class="fas fa-plus"></i></button>
+                            <span class="soil-section-title">קובץ חדש</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="fertilization-table">
+                                <thead>
+                                    <tr>
+                                        <th>שם הקובץ</th>
+                                        <th>תאריך העלאה</th>
+                                        <th>תאריך התחלה</th>
+                                        <th>תאריך סיום</th>
+                                        <th>סוג הדשן</th>
+                                        <th>חברה</th>
+                                        <th>סה"כ כמות דשן</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fertilization-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Growth (צימוח) -->
+                <div id="view-growth" class="view-section">
+                    <h3 class="section-title">צימוח</h3>
+                    <div class="soil-dynamic-section">
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-growth-row"><i class="fas fa-plus"></i></button>
+                            <span class="soil-section-title">הוספת נתון חדש</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="growth-table">
+                                <thead>
+                                    <tr>
+                                        <th>נתון</th>
+                                        <th>ערך</th>
+                                        <th>תאריך מדידה</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="growth-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Climate Data & Sensors (נתוני אקלים וסנסורים) -->
+                <div id="view-climate" class="view-section">
+                    <h3 class="section-title">נתוני אקלים וסנסורים</h3>
+                    <div class="soil-dynamic-section">
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-climate-row"><i class="fas fa-plus"></i></button>
+                            <span class="soil-section-title">הוספת נתון חדש</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="climate-table">
+                                <thead>
+                                    <tr>
+                                        <th>נתון</th>
+                                        <th>מיקום מדידה</th>
+                                        <th>מיקום חיישן במרחב</th>
+                                        <th>גובה/עומק חיישן</th>
+                                        <th>תאריך התחלה</th>
+                                        <th>תאריך סיום</th>
+                                        <th>קובץ מצורף</th>
+                                        <th>הערות</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="climate-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Agrotechnics (אגרוטכניקה) -->
+                <div id="view-agrotechnics" class="view-section">
+                    <h3 class="section-title">אגרוטכניקה</h3>
+                    <div class="soil-dynamic-section">
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-agro-row"><i class="fas fa-plus"></i></button>
+                            <span class="soil-section-title">הוספת פעולה חדשה</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="agro-table">
+                                <thead>
+                                    <tr>
+                                        <th>פעולה</th>
+                                        <th>פירוט פעולה</th>
+                                        <th>תאריך ביצוע הפעולה</th>
+                                        <th>כמות שעות לפעולה</th>
+                                        <th>כמות עובדים לפעולה</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="agro-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Plant Protection (הגנת הצומח) -->
+                <div id="view-plant-protection" class="view-section">
+                    <h3 class="section-title">הגנת הצומח</h3>
+
+                    <!-- מזיקים -->
+                    <div class="soil-dynamic-section">
+                        <div class="progress-subsection-title-sm">מזיקים</div>
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-pest-row"><i class="fas fa-plus"></i></button>
+                            <span class="soil-section-title">מפגע חדש</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="pest-table">
+                                <thead>
+                                    <tr>
+                                        <th>מפגע</th>
+                                        <th>תאריך</th>
+                                        <th>סוג האילוח</th>
+                                        <th>שיטת האילוח</th>
+                                        <th>כמות האילוח</th>
+                                        <th>הערות</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pest-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- מחלות -->
+                    <div class="soil-dynamic-section">
+                        <div class="progress-subsection-title-sm">מחלות</div>
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-disease-row"><i class="fas fa-plus"></i></button>
+                            <span class="soil-section-title">מפגע חדש</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="disease-table">
+                                <thead>
+                                    <tr>
+                                        <th>מפגע</th>
+                                        <th>תאריך</th>
+                                        <th>סוג האילוח</th>
+                                        <th>שיטת האילוח</th>
+                                        <th>כמות האילוח</th>
+                                        <th>הערות</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="disease-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- הדברה -->
+                    <div class="progress-subsection-title">הדברה</div>
+
+                    <!-- ריסוסים -->
+                    <div class="soil-dynamic-section">
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-spray-prot-row"><i class="fas fa-plus"></i></button>
+                            <span class="soil-section-title">ריסוסים:</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="spray-prot-table">
+                                <thead>
+                                    <tr>
+                                        <th>חומר</th>
+                                        <th>תאריך</th>
+                                        <th>מינון לטיפול</th>
+                                        <th>משולב עם חומרים נוספים</th>
+                                        <th>הערות</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="spray-prot-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- הגמעות -->
+                    <div class="soil-dynamic-section">
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-drench-row"><i class="fas fa-plus"></i></button>
+                            <span class="soil-section-title">הגמעות:</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="drench-table">
+                                <thead>
+                                    <tr>
+                                        <th>חומר</th>
+                                        <th>תאריך</th>
+                                        <th>מינון לטיפול</th>
+                                        <th>משולב עם חומרים נוספים</th>
+                                        <th>הערות</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="drench-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Yield (נתוני יבול) -->
+                <div id="view-yield" class="view-section">
+                    <h3 class="section-title">נתוני יבול</h3>
+
+                    <!-- מדידה חדשה -->
+                    <div class="soil-dynamic-section">
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-yield-measure-row"><i class="fas fa-plus"></i></button>
+                            <span class="soil-section-title">מדידה חדשה</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="yield-measure-table">
+                                <thead>
+                                    <tr>
+                                        <th>תאריך מדידה</th>
+                                        <th>חזרה</th>
+                                        <th>קומת הפרי</th>
+                                        <th>איכות (לק"ג)</th>
+                                        <th>כמות (ק"ג)</th>
+                                        <th>תיאור הפרי</th>
+                                        <th>הערות</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="yield-measure-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- פגע חדש -->
+                    <div class="soil-dynamic-section">
+                        <div class="soil-section-header">
+                            <button type="button" class="btn-add-soil-row" id="add-yield-damage-row"><i class="fas fa-plus"></i></button>
+                            <span class="soil-section-title">פגע חדש</span>
+                        </div>
+                        <div class="soil-table-wrapper">
+                            <table class="soil-table" id="yield-damage-table">
+                                <thead>
+                                    <tr>
+                                        <th>תאריך מדידה</th>
+                                        <th>חזרה</th>
+                                        <th>הפגע הנמדד</th>
+                                        <th>מדד נזק (%/ס"מ/No.)</th>
+                                        <th>ערך הנזק</th>
+                                        <th>תיאור הנזק</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="yield-damage-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Events (יומן אירועים) -->
+                <div id="view-events" class="view-section">
+                    <h3 class="section-title">יומן אירועים</h3>
+
+                    <div class="events-toolbar">
+                        <button type="button" id="add-event-btn" class="btn-add-event">
+                            <i class="fas fa-plus"></i>
+                            <span>אירוע חדש</span>
+                        </button>
+                    </div>
+
+                    <div class="events-table-container">
+                        <table class="events-table" id="events-table">
+                            <thead>
+                                <tr>
+                                    <th>תאריך</th>
+                                    <th>תיאור</th>
+                                    <th>קובץ</th>
+                                    <th>פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody id="events-table-body">
+                                <!-- שורות אירועים יתווספו כאן דינמית -->
+                            </tbody>
+                        </table>
+                        <div id="no-events-message" class="no-events-message">
+                            <i class="fas fa-calendar-plus"></i>
+                            <p>אין אירועים עדיין. בחירה ב-"אירוע חדש +" תוסיף אירוע ראשון.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Financial Analysis (ניתוחים פיננסים) -->
+                <div id="view-financial-analysis" class="view-section">
+                    <h3 class="section-title">ניתוחים פיננסים</h3>
+
+                    <div class="events-toolbar">
+                        <button type="button" id="add-financial-entry-btn" class="btn-add-event">
+                            <i class="fas fa-plus"></i>
+                            <span>נתון פיננסי חדש</span>
+                        </button>
+                    </div>
+
+                    <div class="events-table-container">
+                        <table class="events-table" id="financial-table">
+                            <thead>
+                                <tr>
+                                    <th>תאריך</th>
+                                    <th>תיאור</th>
+                                    <th>קובץ</th>
+                                    <th>פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody id="financial-table-body">
+                                <!-- שורות נתונים פיננסיים יתווספו כאן דינמית -->
+                            </tbody>
+                        </table>
+                        <div id="no-financial-message" class="no-events-message">
+                            <i class="fas fa-coins"></i>
+                            <p>אין נתונים פיננסיים עדיין. בחירה ב-"נתון פיננסי חדש +" תוסיף נתון ראשון.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Button -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-save">שמירה</button>
+                </div>
+            </form>
+            </div><!-- End experiment-content -->
+        </main>
+    </div>
+
+    <!-- Modal: Irrigation File Upload -->
+    <div id="irrigation-file-modal" class="modal-overlay hidden">
+        <div class="modal modal-progress">
+            <h2>העלאת קובץ השקיה חדש</h2>
+            <div class="modal-form-row modal-form-row-single">
+                <label>שם הקובץ:</label>
+                <input type="text" id="irr-modal-filename" class="modal-input-sm" placeholder="שם הקובץ">
+            </div>
+            <div class="modal-form-grid">
+                <div class="modal-form-row">
+                    <label>תאריך התחלה:</label>
+                    <input type="date" id="irr-modal-start-date" class="modal-input-sm">
+                </div>
+                <div class="modal-form-row">
+                    <label>תאריך סיום:</label>
+                    <input type="date" id="irr-modal-end-date" class="modal-input-sm">
+                </div>
+            </div>
+            <div class="modal-form-row modal-form-row-single">
+                <label>סה"כ כמות מים (ליטר):</label>
+                <input type="number" id="irr-modal-total" class="modal-input-sm" placeholder="כמות" step="any">
+            </div>
+            <div class="modal-dropzone" id="irr-modal-dropzone">
+                <input type="file" id="irr-modal-file" class="modal-file-input">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p id="irr-modal-file-name">גרירת קובץ לכאן או לחיצה לבחירה</p>
+            </div>
+            <div class="modal-upload-progress hidden" id="irr-modal-progress">
+                <div class="progress-bar"><div class="progress-bar-fill" id="irr-modal-progress-fill"></div></div>
+                <span class="progress-text" id="irr-modal-progress-text">0%</span>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="irr-modal-cancel" class="modal-btn modal-btn-secondary">ביטול</button>
+                <button type="button" id="irr-modal-save" class="modal-btn modal-btn-primary">שמירה</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Fertilization File Upload -->
+    <div id="fertilization-file-modal" class="modal-overlay hidden">
+        <div class="modal modal-progress">
+            <h2>העלאת קובץ דישון חדש</h2>
+            <div class="modal-form-row modal-form-row-single">
+                <label>שם הקובץ:</label>
+                <input type="text" id="fert-modal-filename" class="modal-input-sm" placeholder="שם הקובץ">
+            </div>
+            <div class="modal-form-grid">
+                <div class="modal-form-row">
+                    <label>תאריך התחלה:</label>
+                    <input type="date" id="fert-modal-start-date" class="modal-input-sm">
+                </div>
+                <div class="modal-form-row">
+                    <label>תאריך סיום:</label>
+                    <input type="date" id="fert-modal-end-date" class="modal-input-sm">
+                </div>
+            </div>
+            <div class="modal-form-grid">
+                <div class="modal-form-row">
+                    <label>סוג הדשן:</label>
+                        <input type="text" id="fert-modal-type" list="datalist-fertilizer-type" class="modal-input-sm" placeholder="סוג הדשן">
+                </div>
+                <div class="modal-form-row">
+                    <label>חברה:</label>
+                        <input type="text" id="fert-modal-company" list="datalist-fertilizer-company" class="modal-input-sm" placeholder="חברה">
+                </div>
+            </div>
+            <div class="modal-form-row modal-form-row-single">
+                <label>סה"כ כמות דשן:</label>
+                <input type="number" id="fert-modal-total" class="modal-input-sm" placeholder="כמות" step="any">
+            </div>
+            <div class="modal-dropzone" id="fert-modal-dropzone">
+                <input type="file" id="fert-modal-file" class="modal-file-input">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p id="fert-modal-file-name">גרירת קובץ לכאן או לחיצה לבחירה</p>
+            </div>
+            <div class="modal-upload-progress hidden" id="fert-modal-progress">
+                <div class="progress-bar"><div class="progress-bar-fill" id="fert-modal-progress-fill"></div></div>
+                <span class="progress-text" id="fert-modal-progress-text">0%</span>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="fert-modal-cancel" class="modal-btn modal-btn-secondary">ביטול</button>
+                <button type="button" id="fert-modal-save" class="modal-btn modal-btn-primary">שמירה</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Growth Data (צימוח) -->
+    <div id="growth-data-modal" class="modal-overlay hidden">
+        <div class="modal modal-progress">
+            <h2>הוספת נתון חדש</h2>
+            <div class="modal-form-row modal-form-row-single">
+                <select id="growth-modal-name" class="modal-input-sm modal-select">
+                    <option value="">בחירת נתון</option>
+                    <option value="קצב צימוח (גובה)">קצב צימוח (גובה)</option>
+                    <option value="עובי הגבעול">עובי הגבעול</option>
+                    <option value="מספר פרחים בתפרחת">מספר פרחים בתפרחת</option>
+                    <option value="מספר חנטים">מספר חנטים</option>
+                    <option value="LAI">LAI</option>
+                    <option value="מוליכות פיוניות">מוליכות פיוניות</option>
+                    <option value="SPAD">SPAD</option>
+                    <option value="פוטוסינתזה">פוטוסינתזה</option>
+                    <option value="ביומסה - רטוב">ביומסה - רטוב</option>
+                    <option value="ביומסה - יבש">ביומסה - יבש</option>
+                    <option value="other">אחר</option>
+                </select>
+            </div>
+            <div id="growth-modal-custom-name-row" class="modal-form-row modal-form-row-single hidden">
+                <label>שם נתון אחר:</label>
+                <input type="text" id="growth-modal-custom-name" class="modal-input-sm" placeholder="הזן שם נתון">
+            </div>
+            <div class="modal-form-grid">
+                <div class="modal-form-row">
+                    <label>תאריך מדידה:</label>
+                    <input type="date" id="growth-modal-date" class="modal-input-sm">
+                </div>
+                <div class="modal-form-row">
+                    <label>ערך:</label>
+                    <input type="text" id="growth-modal-value" class="modal-input-sm" placeholder="ערך">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="growth-modal-cancel" class="modal-btn modal-btn-secondary">ביטול</button>
+                <button type="button" id="growth-modal-save" class="modal-btn modal-btn-primary">שמירה</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: New Event (אירוע חדש) -->
+    <div id="event-modal" class="modal-overlay hidden">
+        <div class="modal modal-progress">
+            <h2>הוספת אירוע חדש</h2>
+            <div class="modal-form-row modal-form-row-single">
+                <label>תאריך:</label>
+                <input type="date" id="event-modal-date" class="modal-input-sm">
+            </div>
+            <div class="modal-form-row modal-form-row-single">
+                <label>תיאור האירוע:</label>
+                <textarea id="event-modal-description" class="modal-input-sm" placeholder="תיאור האירוע..." rows="3" style="resize:vertical;min-height:60px;"></textarea>
+            </div>
+            <div class="modal-dropzone" id="event-modal-dropzone">
+                <input type="file" id="event-modal-file" class="modal-file-input" accept="*/*">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p id="event-modal-file-name">גרירת קובץ לכאן או לחיצה לבחירה (עד 10MB)</p>
+            </div>
+            <div class="modal-upload-progress hidden" id="event-modal-progress">
+                <div class="progress-bar"><div class="progress-bar-fill" id="event-modal-progress-fill"></div></div>
+                <span class="progress-text" id="event-modal-progress-text">0%</span>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="event-modal-cancel" class="modal-btn modal-btn-secondary">ביטול</button>
+                <button type="button" id="event-modal-save" class="modal-btn modal-btn-primary">שמירה</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: New Financial Entry (נתון פיננסי חדש) -->
+    <div id="financial-modal" class="modal-overlay hidden">
+        <div class="modal modal-progress">
+            <h2>הוספת נתון פיננסי חדש</h2>
+            <div class="modal-form-row modal-form-row-single">
+                <label>תאריך:</label>
+                <input type="date" id="financial-modal-date" class="modal-input-sm">
+            </div>
+            <div class="modal-form-row modal-form-row-single">
+                <label>תיאור הנתון:</label>
+                <textarea id="financial-modal-description" class="modal-input-sm" placeholder="תיאור הנתון..." rows="3" style="resize:vertical;min-height:60px;"></textarea>
+            </div>
+            <div class="modal-dropzone" id="financial-modal-dropzone">
+                <input type="file" id="financial-modal-file" class="modal-file-input" accept="*/*">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p id="financial-modal-file-name">גרירת קובץ לכאן או לחיצה לבחירה (עד 10MB)</p>
+            </div>
+            <div class="modal-upload-progress hidden" id="financial-modal-progress">
+                <div class="progress-bar"><div class="progress-bar-fill" id="financial-modal-progress-fill"></div></div>
+                <span class="progress-text" id="financial-modal-progress-text">0%</span>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="financial-modal-cancel" class="modal-btn modal-btn-secondary">ביטול</button>
+                <button type="button" id="financial-modal-save" class="modal-btn modal-btn-primary">שמירה</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Add Row Modal -->
+    <div id="generic-row-modal" class="modal-overlay hidden">
+        <div class="modal modal-progress">
+            <h2 id="generic-modal-title">הוספת שורה חדשה</h2>
+            <div id="generic-modal-body"></div>
+            <div class="modal-actions">
+                <button type="button" id="generic-modal-cancel" class="modal-btn modal-btn-secondary">ביטול</button>
+                <button type="button" id="generic-modal-save" class="modal-btn modal-btn-primary">שמירה</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Location Picker -->
+    <div id="location-picker-modal" class="modal-overlay hidden">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h2>בחירת מיקום מהמפה (OpenStreetMap)</h2>
+                <button type="button" id="close-location-modal" class="btn-close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
+                    <input type="text" id="location-search-input" class="modal-input-sm" placeholder="חיפוש כתובת / מקום" style="flex: 1; min-width: 220px;">
+                    <button type="button" id="location-search-btn" class="modal-btn modal-btn-secondary" style="min-width: 90px;">חיפוש</button>
+                    <button type="button" id="location-current-btn" class="modal-btn modal-btn-secondary" style="min-width: 150px;">
+                        <i class="fas fa-location-arrow"></i>
+                        המיקום הנוכחי שלי
+                    </button>
+                </div>
+                <div id="location-search-suggestions" style="display:none; max-height: 180px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; background: #fff;"></div>
+                <div id="location-search-status" style="min-height: 18px; margin-bottom: 8px; color: #666; font-size: 13px;"></div>
+                <div id="map-container" style="width: 100%; height: 500px; border-radius: 8px;"></div>
+                <div class="selected-coords" style="margin-top: 10px; text-align: center;">
+                    <strong>קורדינטות נבחרות:</strong> <span id="selected-coordinates">לא נבחרו</span>
+                </div>
+                <p style="text-align: center; margin-top: 10px; color: #666; font-size: 13px;">
+                    <i class="fas fa-info-circle"></i> ניתן ללחוץ על המפה או לגרור את הסמן
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="cancel-location" class="modal-btn modal-btn-secondary">ביטול</button>
+                <button type="button" id="confirm-location" class="modal-btn modal-btn-primary">אישור</button>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="datalist-experiment-site-other"></datalist>
+    <datalist id="datalist-crop-type"></datalist>
+    <datalist id="datalist-variety"></datalist>
+    <datalist id="datalist-nursery"></datalist>
+    <datalist id="datalist-substrate-company"></datalist>
+    <datalist id="datalist-substrate-type"></datalist>
+    <datalist id="datalist-soil-disinfection-material"></datalist>
+    <datalist id="datalist-fertilizer-type"></datalist>
+    <datalist id="datalist-fertilizer-company"></datalist>
+    <datalist id="datalist-plant-protection-material"></datalist>
+
+    <!-- Leaflet (OpenStreetMap) - Free and Open Source -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Accessibility Widget -->
+    <div class="a11y-widget" aria-label="תפריט נגישות">
+        <button class="btn-a11y-toggle" id="btn-a11y" aria-haspopup="true" aria-expanded="false" title="אפשרויות נגישות">
+            <i class="fa-solid fa-universal-access"></i>
+        </button>
+        <div class="a11y-menu" id="a11y-menu" role="menu">
+            <h4>התאמת נגישות</h4>
+            <button class="a11y-btn" id="toggle-contrast" role="menuitem">
+                <i class="fa-solid fa-circle-half-stroke"></i> ניגודיות גבוהה
+            </button>
+            <button class="a11y-btn" id="toggle-text-size" role="menuitem">
+                <i class="fa-solid fa-text-height"></i> הגדלת טקסט
+            </button>
+            <button class="a11y-btn" id="reset-a11y" role="menuitem" style="color: #dc2626; margin-top: 8px;">
+                <i class="fa-solid fa-rotate-left"></i> איפוס הגדרות
+            </button>
+        </div>
+    </div>
+
+    <!-- Chatbot Widget -->
+    <div class="chat-container">
+        <div class="chat-panel" id="chat-panel">
+            <div class="chat-header">
+                <h4><i class="fa-solid fa-robot"></i> עוזר מיזם ח"ץ</h4>
+                <button class="btn-close-chat" id="btn-close-chat" title="סגור"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="chat-body" id="chat-body">
+                <div class="faq-list" id="faq-list"></div>
+                <div class="chat-active-view" id="chat-active-view">
+                    <div class="user-bubble" id="chat-user-question">...</div>
+                    <div class="typing-indicator" id="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                    <div class="bot-bubble" id="chat-bot-answer" style="display: none;"></div>
+                    <button class="btn-back-chat" id="btn-back-chat">
+                        <i class="fa-solid fa-arrow-right"></i> חזרה לשאלות
+                    </button>
+                </div>
+            </div>
+        </div>
+        <button class="btn-chat-toggle" id="btn-chat-toggle" aria-label="פתיחת עוזר וירטואלי">
+            <i class="fa-solid fa-comment-dots"></i>
+        </button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/he.js"></script>
+    <script src="js/date-picker-init.js?v=20260503-1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+    <script src="js/accessibility.js?v=20260503-1"></script>
+    <script src="js/chatbot.js?v=20260503-1"></script>
+    <script type="module" src="js/research-map.js?v=20260503-1"></script>
+    <script type="module" src="js/experiment.js?v=20260503-1"></script>
+</body>
+</html>
