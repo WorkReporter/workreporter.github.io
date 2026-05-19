@@ -2664,11 +2664,11 @@
                     </div>
                 </div>
                 <label class="researcher-checkbox-label" id="include-categorized-wrap">
-                    <input type="checkbox" id="include-categorized-hours">
+                    <input type="checkbox" id="include-categorized-hours" checked>
                     <span>לכלול שעות שקוטלגו אצל העובדים תחת החוקר <span style="color:#94a3b8; font-size:0.8rem;">(לא כולל חלוקה יחסית)</span></span>
                 </label>
                 <label class="researcher-checkbox-label" id="include-relative-wrap">
-                    <input type="checkbox" id="include-relative-hours">
+                    <input type="checkbox" id="include-relative-hours" checked>
                     <span>לכלול שעות חלוקה יחסית</span>
                 </label>
                 <button class="generate-report-btn" id="generate-researcher-report-btn" onclick="generateResearcherReportAction()" disabled>
@@ -3768,8 +3768,12 @@
             const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             const startInput = document.getElementById('researcher-start-date');
             const endInput = document.getElementById('researcher-end-date');
+            const includeCategorizedCheckbox = document.getElementById('include-categorized-hours');
+            const includeRelativeCheckbox = document.getElementById('include-relative-hours');
             if (!startInput.value) startInput.value = toLocalDateStr(firstOfMonth);
             if (!endInput.value) endInput.value = toLocalDateStr(today);
+            if (includeCategorizedCheckbox) includeCategorizedCheckbox.checked = true;
+            if (includeRelativeCheckbox) includeRelativeCheckbox.checked = true;
             updateResearcherReportButton();
             startInput.onchange = updateResearcherReportButton;
             endInput.onchange = updateResearcherReportButton;
@@ -3800,8 +3804,10 @@
                 document.getElementById('calendar-title').textContent = `${employee.firstName} ${employee.lastName} - פעילות`;
             }
             if (shouldResetDates) {
-                AppState.selectedStartDate = null;
-                AppState.selectedEndDate = null;
+                const today = new Date();
+                const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                AppState.selectedStartDate = firstOfMonth;
+                AppState.selectedEndDate = today;
             }
             syncCalendarDateInputs();
             updateDateSelection();
