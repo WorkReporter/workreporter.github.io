@@ -351,6 +351,49 @@
             font-weight: 500;
         }
 
+        .calendar-date-range-fields {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: flex-end;
+            max-width: 560px;
+            margin: 0 auto 1rem;
+            flex-wrap: wrap;
+        }
+
+        .calendar-date-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            min-width: 180px;
+            flex: 1;
+        }
+
+        .calendar-date-field label {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #475569;
+            text-align: right;
+        }
+
+        .calendar-date-field input[type="date"] {
+            width: 100%;
+            padding: 0.85rem 0.9rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #0f172a;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .calendar-date-field input[type="date"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+        }
+
         .date-label {
             font-size: 0.75rem;
             color: #64748b;
@@ -2662,6 +2705,16 @@
 
         <div id="calendar-screen" class="screen">
             <h1 class="screen-title" id="calendar-title">עובד - הפקת דו"ח</h1>
+            <div class="calendar-date-range-fields">
+                <div class="calendar-date-field">
+                    <label for="calendar-start-date">מתאריך</label>
+                    <input type="date" id="calendar-start-date" onchange="updateCalendarDatesFromInputs()">
+                </div>
+                <div class="calendar-date-field">
+                    <label for="calendar-end-date">עד תאריך</label>
+                    <input type="date" id="calendar-end-date" onchange="updateCalendarDatesFromInputs()">
+                </div>
+            </div>
             <div class="date-selection-info" id="date-selection">
                 <div class="instruction-main">יש לבחור תאריך התחלה וסיום להפקת דו"ח</div>
                 <div class="instruction-sub">(תאריכים מחודשים אחרים מוצגים באפור)</div>
@@ -3751,6 +3804,7 @@
                 AppState.selectedStartDate = null;
                 AppState.selectedEndDate = null;
             }
+            syncCalendarDateInputs();
             updateDateSelection();
             updateGenerateButton();
             showScreen('calendar-screen');
@@ -3894,10 +3948,51 @@
                 AppState.selectedStartDate = clickedDate;
                 AppState.selectedEndDate = null;
             }
+            syncCalendarDateInputs();
             updateCalendarSelection();
             updateDateSelection();
             updateGenerateButton();
         }
+
+        function parseCalendarInputDate(value) {
+            if (!value) return null;
+            const [year, month, day] = value.split('-').map(Number);
+            if (!year || !month || !day) return null;
+            return new Date(year, month - 1, day);
+        }
+
+        function syncCalendarDateInputs() {
+            const startInput = document.getElementById('calendar-start-date');
+            const endInput = document.getElementById('calendar-end-date');
+            if (startInput) startInput.value = AppState.selectedStartDate ? toLocalDateStr(AppState.selectedStartDate) : '';
+            if (endInput) endInput.value = AppState.selectedEndDate ? toLocalDateStr(AppState.selectedEndDate) : '';
+        }
+
+        function updateCalendarDatesFromInputs() {
+            const startInput = document.getElementById('calendar-start-date');
+            const endInput = document.getElementById('calendar-end-date');
+            const startDate = parseCalendarInputDate(startInput ? startInput.value : '');
+            const endDate = parseCalendarInputDate(endInput ? endInput.value : '');
+
+            if (startDate && endDate && endDate < startDate) {
+                AppState.selectedStartDate = startDate;
+                AppState.selectedEndDate = null;
+                if (endInput) endInput.value = '';
+            } else {
+                AppState.selectedStartDate = startDate;
+                AppState.selectedEndDate = endDate;
+            }
+
+            if (startDate) {
+                AppState.currentMonth = startDate.getMonth();
+                AppState.currentYear = startDate.getFullYear();
+            }
+
+            updateDateSelection();
+            updateGenerateButton();
+            generateCalendar();
+        }
+        window.updateCalendarDatesFromInputs = updateCalendarDatesFromInputs;
 
         function updateCalendarSelection() {
             document.querySelectorAll('.calendar-day[data-date]').forEach(day => {
@@ -4738,7 +4833,7 @@
             };
 
             sessionStorage.setItem('researcherPdfReportData', JSON.stringify(payload));
-            const url = `researcher_pdf_report.html?v=20260519-2`;
+            const url = `researcher_pdf_report.html?v=20260519-3`;
             window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
         };
 
