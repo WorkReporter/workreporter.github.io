@@ -865,7 +865,7 @@ charts.bar = new Chart(barCtx, {
                     windowHeight: element.scrollHeight,
                 });
 
-                const imgData = canvas.toDataURL('image/png');
+                const imgData = canvas.toDataURL('image/jpeg', 0.85);
                 const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
 
                 const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -878,13 +878,13 @@ charts.bar = new Chart(barCtx, {
                 let heightLeft = finalImgHeight;
                 let position = 0;
 
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, finalImgHeight);
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, finalImgHeight);
                 heightLeft -= pdfHeight;
 
                 while (heightLeft > 0) {
                     position = position - pdfHeight;
                     pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, finalImgHeight);
+                    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, finalImgHeight);
                     heightLeft -= pdfHeight;
                 }
 
