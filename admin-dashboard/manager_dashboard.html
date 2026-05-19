@@ -654,6 +654,31 @@
             white-space: nowrap;
         }
 
+        .all-researchers-table,
+        .all-researchers-detail-table {
+            table-layout: fixed;
+        }
+
+        .all-researchers-table>tbody>tr.row-detail>td {
+            padding: 0;
+        }
+
+        .all-researchers-detail-wrap {
+            border: 0;
+            border-radius: 0;
+        }
+
+        .all-researchers-detail-table .col-status {
+            white-space: normal;
+        }
+
+        .all-researchers-detail-table .status-chip {
+            max-width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            line-height: 1.35;
+        }
+
         .comparison-section-header {
             display: flex;
             justify-content: space-between;
@@ -5657,49 +5682,63 @@
             </div>`;
 
             html += `<div class="report-section"><h3 class="section-title">סיכום לפי חוקרים</h3>
-            <div class="comparison-table-wrap"><table class="stats-table" style="margin-bottom:0;">
+            <div class="comparison-table-wrap"><table class="stats-table all-researchers-table" style="margin-bottom:0;">
+                <colgroup>
+                    <col style="width:22%">
+                    <col style="width:14%">
+                    <col style="width:18%">
+                    <col style="width:16%">
+                    <col style="width:18%">
+                    <col style="width:12%">
+                </colgroup>
                 <thead><tr>
                     <th>חוקר/ת</th>
                     <th style="text-align:center">ימים בפועל</th>
                     <th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>
                     <th style="text-align:center">יעד לתקופה</th>
                     <th style="text-align:center">אחוז משרה מיועד</th>
-                    <th class="col-status" style="text-align:center">סטטוס</th>
-                    <th class="col-action" style="text-align:center">פעולות</th>
+                    <th class="col-action" style="text-align:center">פירוט</th>
                 </tr></thead><tbody>`;
 
             summaryRows.forEach((row, idx) => {
                 const targetLabel = row.totalTargetDays != null && row.totalTargetDays > 0
                     ? `${row.totalTargetDays.toFixed(1)} ימים`
                     : 'N/A';
-                const plannedPctLabel = row.plannedPercent != null
-                    ? `${row.plannedPercent.toFixed(1)}%`
-                    : 'N/A';
-                
-                // חישוב אחוז משרה בפועל לפי השיטה הנבחרת (עבור טבלה ראשית)
-                let rowCalcPercent = null;
-                if (window.globalCalcMethod === 'actual_time') {
-                    // סך כל הימים של כל העובדים בחוקר זה
-                    const rowTotalDaysAll = row.employees.reduce((sum, emp) => sum + emp.empTotalDaysAll, 0);
-                    rowCalcPercent = rowTotalDaysAll > 0 ? (row.totalDays / rowTotalDaysAll) * 100 : null;
-                } else {
-                    rowCalcPercent = row.totalTargetDays > 0 && row.plannedPercent != null
-                        ? (row.totalDays * row.plannedPercent) / row.totalTargetDays
-                        : null;
-                }
-                const actualPctLabel = rowCalcPercent != null ? `${roundToSingleDecimal(rowCalcPercent).toFixed(1)}%` : 'N/A';
+                // שורת החוקר מציגה סכום של אחוזי העובדים (כמו בפירוט שנפתח).
+                let plannedPctSum = 0;
+                let plannedPctHasValue = false;
+                let actualPctSum = 0;
+                let actualPctHasValue = false;
 
-                let status = 'N/A';
-                let statusClass = 'na';
-                if (!row.isSeminar && row.totalTargetDays != null) {
-                    const diff = roundToSingleDecimal(row.totalDays - row.totalTargetDays);
-                    if (diff > 0) { status = `חריגה של ${diff.toFixed(1)} ימים`; statusClass = 'good'; }
-                    else if (diff < 0) { status = `נותרו ${Math.abs(diff).toFixed(1)} ימים`; statusClass = 'warn'; }
-                    else { status = 'בדיוק על היעד'; statusClass = 'exact'; }
-                } else if (row.isSeminar) {
-                    status = `${formatHours(row.totalHours)} שעות`;
-                    statusClass = '';
-                }
+                row.employees.forEach(emp => {
+                    if (emp.isSeminar) return;
+
+                    if (emp.activityPercent != null) {
+                        plannedPctSum += roundToSingleDecimal(emp.activityPercent);
+                        plannedPctHasValue = true;
+                    }
+
+                    let empCalcPercent = null;
+                    if (window.globalCalcMethod === 'actual_time') {
+                        empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                    } else {
+                        empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null)
+                            ? (emp.actualDays * emp.activityPercent) / emp.targetDays
+                            : null;
+                    }
+
+                    if (empCalcPercent != null) {
+                        actualPctSum += roundToSingleDecimal(empCalcPercent);
+                        actualPctHasValue = true;
+                    }
+                });
+
+                const plannedPctLabel = !row.isSeminar && plannedPctHasValue
+                    ? `${roundToSingleDecimal(plannedPctSum).toFixed(1)}%`
+                    : 'N/A';
+                const actualPctLabel = !row.isSeminar && actualPctHasValue
+                    ? `${roundToSingleDecimal(actualPctSum).toFixed(1)}%`
+                    : 'N/A';
 
                 html += `
                     <tr id="all-researchers-row-${idx}-main" class="row-main">
@@ -5708,13 +5747,20 @@
                         <td data-label="אחוז משרה בפועל" style="text-align:center">${row.isSeminar ? 'N/A' : actualPctLabel}</td>
                         <td data-label="יעד לתקופה" style="text-align:center">${targetLabel}</td>
                         <td data-label="אחוז משרה מיועד" style="text-align:center">${row.isSeminar ? 'N/A' : plannedPctLabel}</td>
-                        <td data-label="סטטוס" class="col-status" style="text-align:center"><span class="status-chip ${statusClass}">${status}</span></td>
-                        <td data-label="פעולות" class="col-action" style="text-align:center;"><button id="all-researchers-row-${idx}-btn" class="row-toggle-btn" onclick="toggleComparisonRow('all-researchers', ${idx})">פרטים</button></td>
+                        <td data-label="פירוט" class="col-action" style="text-align:center;"><button id="all-researchers-row-${idx}-btn" class="row-toggle-btn" onclick="toggleComparisonRow('all-researchers', ${idx})">פרטים</button></td>
                     </tr>
                     <tr id="all-researchers-row-${idx}-detail" class="row-detail">
-                        <td colspan="7">
-                            <div class="comparison-table-wrap" style="margin: 0;">
-                                <table class="stats-table" style="margin-bottom:0;">
+                        <td colspan="6">
+                            <div class="comparison-table-wrap all-researchers-detail-wrap" style="margin: 0;">
+                                <table class="stats-table all-researchers-detail-table" style="margin-bottom:0;">
+                                    <colgroup>
+                                        <col style="width:22%">
+                                        <col style="width:14%">
+                                        <col style="width:18%">
+                                        <col style="width:16%">
+                                        <col style="width:18%">
+                                        <col style="width:12%">
+                                    </colgroup>
                                     <thead>
                                         <tr>
                                             <th>עובד/ת</th>
@@ -5869,22 +5915,40 @@
             let csv = `דו"ח לכל החוקרים\nתקופה: ${startDisplay} - ${endDisplay}\n\n`;
 
             const summaryRows = data.summaryRows.map(row => {
-                // חישוב אחוז משרה בפועל לפי השיטה הנבחרת (עבור CSV)
-                let rowCalcPercent = null;
-                if (window.globalCalcMethod === 'actual_time') {
-                    const rowTotalDaysAll = row.employees.reduce((sum, emp) => sum + emp.empTotalDaysAll, 0);
-                    rowCalcPercent = rowTotalDaysAll > 0 ? (row.totalDays / rowTotalDaysAll) * 100 : null;
-                } else {
-                    rowCalcPercent = row.totalTargetDays > 0 && row.plannedPercent != null
-                        ? (row.totalDays * row.plannedPercent) / row.totalTargetDays
-                        : null;
-                }
+                let plannedPctSum = 0;
+                let plannedPctHasValue = false;
+                let actualPctSum = 0;
+                let actualPctHasValue = false;
+
+                (row.employees || []).forEach(emp => {
+                    if (emp.isSeminar) return;
+
+                    if (emp.activityPercent != null) {
+                        plannedPctSum += roundToSingleDecimal(emp.activityPercent);
+                        plannedPctHasValue = true;
+                    }
+
+                    let empCalcPercent = null;
+                    if (window.globalCalcMethod === 'actual_time') {
+                        empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                    } else {
+                        empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null)
+                            ? (emp.actualDays * emp.activityPercent) / emp.targetDays
+                            : null;
+                    }
+
+                    if (empCalcPercent != null) {
+                        actualPctSum += roundToSingleDecimal(empCalcPercent);
+                        actualPctHasValue = true;
+                    }
+                });
+
                 return {
                     name: row.name,
                     actualDays: row.totalDays.toFixed(1),
                     targetDays: row.totalTargetDays != null && row.totalTargetDays > 0 ? row.totalTargetDays.toFixed(1) : 'N/A',
-                    plannedPct: row.plannedPercent != null ? row.plannedPercent.toFixed(1) + '%' : 'N/A',
-                    actualPct: rowCalcPercent != null ? roundToSingleDecimal(rowCalcPercent).toFixed(1) + '%' : 'N/A'
+                    plannedPct: !row.isSeminar && plannedPctHasValue ? roundToSingleDecimal(plannedPctSum).toFixed(1) + '%' : 'N/A',
+                    actualPct: !row.isSeminar && actualPctHasValue ? roundToSingleDecimal(actualPctSum).toFixed(1) + '%' : 'N/A'
                 };
             });
 
