@@ -644,6 +644,30 @@
         return settings.allowedEmployees.includes(userId);
     }
 
+    function isDateInBackdateOverrideWindow(date) {
+        const settings = getBackdateOverrideSettings();
+        if (!settings.enabled || !currentUser || !isUserAllowedForBackdate(currentUser.uid)) {
+            return false;
+        }
+
+        const dateOnly = new Date(date);
+        dateOnly.setHours(0, 0, 0, 0);
+
+        if (settings.minDate) {
+            const min = new Date(settings.minDate);
+            min.setHours(0, 0, 0, 0);
+            if (dateOnly < min) return false;
+        }
+
+        if (settings.maxDate) {
+            const max = new Date(settings.maxDate);
+            max.setHours(23, 59, 59, 999);
+            if (dateOnly > max) return false;
+        }
+
+        return true;
+    }
+
     // ---------- Report Validation Functions ----------
 
     function isInCurrentWeek(date) {
@@ -1034,7 +1058,7 @@
 
         const [year, month, day] = selectedDateString.split('-').map(Number);
         const dateObj = new Date(year, month - 1, day);
-        const isAllowed = isWeeklyReportAllowedForDate(dateObj);
+        const isAllowed = isWeeklyReportAllowedForDate(dateObj) || isDateInBackdateOverrideWindow(dateObj);
 
         if (isAllowed) {
             weeklyToggle.style.opacity = '1';
@@ -1090,7 +1114,7 @@
 
         // --- בדיקה חדשה עבור דיווח שבועי ---
         if (isWeekly) {
-            if (!isWeeklyReportAllowedForDate(selectedDate)) {
+            if (!isWeeklyReportAllowedForDate(selectedDate) && !isDateInBackdateOverrideWindow(selectedDate)) {
                  showError('דיווח שבועי אינו מורשה עבור התאריך שנבחר (ניתן לדווח שבועי רק על השבוע שהסתיים זה עתה)');
                  return;
             }
@@ -2833,7 +2857,7 @@
                 // בדיקה אם התאריך החדש חוקי לדיווח שבועי
                 const [year, month, day] = reportDate.split('-').map(Number);
                 const selectedDate = new Date(year, month - 1, day);
-                const isAllowed = isWeeklyReportAllowedForDate(selectedDate);
+                const isAllowed = isWeeklyReportAllowedForDate(selectedDate) || isDateInBackdateOverrideWindow(selectedDate);
 
                 if (isWeeklyActive) {
                     if (!isAllowed) {
