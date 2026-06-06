@@ -3011,7 +3011,7 @@
         const CATEGORIZATIONS_DB_PATH = 'managerSelectionPreferences';
 
         // משתנה גלובלי לשיטת החישוב
-        window.globalCalcMethod = 'budget';
+        window.globalCalcMethod = 'actual_time';
 
         // פונקציה להחזרת כותרת עם גלגל שיניים
         window.getActualPctHeaderHtml = function() {
@@ -6430,9 +6430,19 @@
 
         async function saveBackdateSettingsToDB(settings) {
             try {
-                const { db, ref, set } = window.firebaseApp;
-                await set(ref(db, BACKDATE_SETTINGS_PATH), settings);
-                console.log('Backdate settings saved:', settings);
+                const { db, ref, get, set } = window.firebaseApp;
+                const settingsRef = ref(db, BACKDATE_SETTINGS_PATH);
+                const snapshot = await get(settingsRef);
+                const currentSettings = snapshot.exists() ? snapshot.val() : {};
+                const updatedSettings = {
+                    ...currentSettings,
+                    ...settings,
+                    calcMethod: settings.calcMethod ?? currentSettings.calcMethod ?? window.globalCalcMethod ?? 'actual_time'
+                };
+
+                await set(settingsRef, updatedSettings);
+                window.globalCalcMethod = updatedSettings.calcMethod;
+                console.log('Backdate settings saved:', updatedSettings);
                 return true;
             } catch (error) {
                 console.error('Error saving backdate settings:', error);
