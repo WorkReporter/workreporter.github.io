@@ -204,6 +204,13 @@
     <script>
         const HOURS_PER_DAY = 8;
 
+        function calculateActualPercentByHours(researcherHours, totalHours) {
+            const mine = Number(researcherHours) || 0;
+            const total = Number(totalHours) || 0;
+            if (total <= 0) return null;
+            return (mine / total) * 100;
+        }
+
         function roundToSingleDecimal(value) {
             return Math.round(Number(value || 0) * 10) / 10;
         }
@@ -239,16 +246,28 @@
             return { text: 'בדיוק על היעד', className: 'exact' };
         }
 
-        function calculateEmployeeActualPercent(emp, globalCalcMethod) {
+        function calculateEmployeeActualPercent(emp, globalCalcMethod, includeCategorized, includeRelative) {
             if (globalCalcMethod === 'actual_time') {
-                return emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                if (includeCategorized && includeRelative && emp.mappedTotalHours != null) {
+                    return calculateActualPercentByHours(
+                        emp.fullyMappedHoursForResearcher != null
+                            ? emp.fullyMappedHoursForResearcher
+                            : emp.researcherHours,
+                        emp.mappedTotalHours
+                    );
+                }
+                const fallbackTotalHours = Number(emp.empTotalDaysAll || 0) * HOURS_PER_DAY;
+                return calculateActualPercentByHours(
+                    emp.researcherHours,
+                    fallbackTotalHours
+                );
             }
             return (emp.targetDays > 0 && emp.activityPercent != null)
                 ? (emp.actualDays * emp.activityPercent) / emp.targetDays
                 : null;
         }
 
-        function calculateResearcherPercentTotals(row, globalCalcMethod) {
+        function calculateResearcherPercentTotals(row, globalCalcMethod, includeCategorized, includeRelative) {
             let plannedPctSum = 0;
             let plannedPctHasValue = false;
             let actualPctSum = 0;
@@ -262,7 +281,7 @@
                     plannedPctHasValue = true;
                 }
 
-                const empActualPercent = calculateEmployeeActualPercent(emp, globalCalcMethod);
+                const empActualPercent = calculateEmployeeActualPercent(emp, globalCalcMethod, includeCategorized, includeRelative);
                 if (empActualPercent != null) {
                     actualPctSum += roundToSingleDecimal(empActualPercent);
                     actualPctHasValue = true;
@@ -281,6 +300,8 @@
 
         function renderSingleReport(payload) {
             const { reportData, globalCalcMethod } = payload;
+            const includeCategorized = !!reportData.includeCategorized;
+            const includeRelative = !!reportData.includeRelative;
             const results = reportData.results || [];
             const totalActualHours = Number(reportData.totalActualHours || 0);
             const totalTargetDays = Number(reportData.totalTargetDays || 0);
@@ -326,7 +347,17 @@
                             // חישוב אחוז משרה בפועל לפי השיטה הנבחרת
                             let calcPercent = null;
                             if (globalCalcMethod === 'actual_time') {
-                                calcPercent = row.empTotalDaysAll > 0 ? (row.actualDays / row.empTotalDaysAll) * 100 : null;
+                                if (includeCategorized && includeRelative && row.mappedTotalHours != null) {
+                                    calcPercent = calculateActualPercentByHours(
+                                        row.fullyMappedHoursForResearcher != null
+                                            ? row.fullyMappedHoursForResearcher
+                                            : row.researcherHours,
+                                        row.mappedTotalHours
+                                    );
+                                } else {
+                                    const fallbackTotalHours = Number(row.empTotalDaysAll || 0) * HOURS_PER_DAY;
+                                    calcPercent = calculateActualPercentByHours(row.researcherHours, fallbackTotalHours);
+                                }
                             } else {
                                 calcPercent = (row.targetDays > 0 && row.activityPercent != null) ? (row.actualDays * row.activityPercent) / row.targetDays : null;
                             }
@@ -354,6 +385,8 @@
 
         function renderAllReport(payload) {
             const { reportData, globalCalcMethod } = payload;
+            const includeCategorized = !!reportData.includeCategorized;
+            const includeRelative = !!reportData.includeRelative;
             const summaryRows = reportData.summaryRows || [];
             const totalActualHours = Number(reportData.totalActualHours || 0);
             const totalTargetDays = Number(reportData.totalTargetDays || 0);
@@ -394,7 +427,7 @@
                             const targetLabel = row.totalTargetDays != null && row.totalTargetDays > 0
                                 ? row.totalTargetDays.toFixed(1)
                                 : 'N/A';
-                            const { plannedPct, actualPct } = calculateResearcherPercentTotals(row, globalCalcMethod);
+                            const { plannedPct, actualPct } = calculateResearcherPercentTotals(row, globalCalcMethod, includeCategorized, includeRelative);
                             
                             const status = row.isSeminar
                                 ? buildStatus(row.totalDays, row.totalTargetDays, `${formatHours(row.totalHours)} שעות`)
@@ -435,7 +468,7 @@
                                     : 'N/A';
                                 const plannedPct = emp.activityPercent != null ? `${emp.activityPercent.toFixed(1)}%` : 'N/A';
                                 
-                                const empCalcPercent = calculateEmployeeActualPercent(emp, globalCalcMethod);
+                                const empCalcPercent = calculateEmployeeActualPercent(emp, globalCalcMethod, includeCategorized, includeRelative);
                                 const actualPct = empCalcPercent != null ? `${roundToSingleDecimal(empCalcPercent).toFixed(1)}%` : 'N/A';
                                 
                                 const status = emp.isSeminar
@@ -478,6 +511,7 @@
             const endDate = new Date(payload.endDate);
             const flags = [];
             if (payload.reportData?.includeCategorized) flags.push('כולל קיטלוגים');
+            if (payload.reportData?.includeRelative) flags.push('כולל חלוקה יחסית');
 
             const flagsText = flags.length ? ` • ${flags.join(' • ')}` : '';
             document.getElementById('report-subtitle').textContent = `לתקופה ${startDate.toLocaleDateString('he-IL')} - ${endDate.toLocaleDateString('he-IL')}${flagsText}`;

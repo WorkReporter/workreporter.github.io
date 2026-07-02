@@ -3104,6 +3104,38 @@
             return Math.round(Number(value || 0) * 10) / 10;
         }
 
+        function toHoursMap(value) {
+            if (value instanceof Map) return value;
+            if (value && typeof value === 'object') return new Map(Object.entries(value));
+            return new Map();
+        }
+
+        function sumHoursFromMap(hoursMap) {
+            let total = 0;
+            toHoursMap(hoursMap).forEach(hours => {
+                total += Number(hours) || 0;
+            });
+            return total;
+        }
+
+        function getHoursFromMap(hoursMap, name) {
+            return Number(toHoursMap(hoursMap).get(name) || 0);
+        }
+
+        function calculateActualPercentByHours(researcherHours, totalHours) {
+            const mine = Number(researcherHours) || 0;
+            const total = Number(totalHours) || 0;
+            if (total <= 0) return null;
+            return (mine / total) * 100;
+        }
+
+        function actualPercentFromMap(mappedCategories, researcherName) {
+            return calculateActualPercentByHours(
+                getHoursFromMap(mappedCategories, researcherName),
+                sumHoursFromMap(mappedCategories)
+            );
+        }
+
         function parseOptionalNumber(value) {
             if (value === null || value === undefined || value === '') return null;
             const parsed = Number(value);
@@ -3292,11 +3324,13 @@
             const totals = {
                 plannedDaysComparable: 0,
                 actualDaysComparable: 0,
-                actualDaysAll: 0
+                actualDaysAll: 0,
+                actualHoursAll: 0
             };
 
             (rows || []).forEach(row => {
                 totals.actualDaysAll += Number(row.actualDays || 0);
+                totals.actualHoursAll += Number(row.actualHours || 0);
                 if (row.plannedForPeriod != null) {
                     totals.plannedDaysComparable += Number(row.plannedForPeriod || 0);
                     totals.actualDaysComparable += Number(row.actualDays || 0);
@@ -3306,6 +3340,7 @@
             totals.plannedDaysComparable = roundToSingleDecimal(totals.plannedDaysComparable);
             totals.actualDaysComparable = roundToSingleDecimal(totals.actualDaysComparable);
             totals.actualDaysAll = roundToSingleDecimal(totals.actualDaysAll);
+            totals.actualHoursAll = Number(totals.actualHoursAll || 0);
             const includeAllInTotals = options.includeAllInTotals === true;
             totals.actualDaysTotal = includeAllInTotals ? totals.actualDaysAll : totals.actualDaysComparable;
             totals.diffTotal = roundToSingleDecimal(totals.actualDaysTotal - totals.plannedDaysComparable);
@@ -3375,13 +3410,22 @@
                 
                 // חישוב אחוז משרה בפועל לפי השיטה הנבחרת
                 let calcPercent = null;
+
                 if (window.globalCalcMethod === 'actual_time') {
-                    // נוסחה: ימים בפועל לחוקר ÷ סך כל הימים שבוצעו (כולל סמינרים/אחרות)
-                    calcPercent = totals.actualDaysAll > 0 ? (row.actualDays / totals.actualDaysAll) * 100 : null;
+                    const totalHoursForPercent =
+                        options.totalHoursForPercent != null
+                            ? Number(options.totalHoursForPercent)
+                            : Number(totals.actualHoursAll || 0);
+
+                    calcPercent = calculateActualPercentByHours(
+                        row.actualHours,
+                        totalHoursForPercent
+                    );
                 } else {
-                    // נוסחה: (ימים בפועל × אחוז מיועד) ÷ יעד ימים
-                    calcPercent = (row.plannedForPeriod > 0 && row.plannedPercent != null) 
-                        ? (row.actualDays * row.plannedPercent) / row.plannedForPeriod 
+                    const actualDaysRaw = (Number(row.actualHours) || 0) / HOURS_PER_DAY;
+
+                    calcPercent = (row.plannedForPeriod > 0 && row.plannedPercent != null)
+                        ? (actualDaysRaw * row.plannedPercent) / row.plannedForPeriod
                         : null;
                 }
                 const actualPercentLabel = calcPercent != null ? `${roundToSingleDecimal(calcPercent).toFixed(1)}%` : 'N/A';
@@ -4584,7 +4628,11 @@
                 data.plannedComparisonMapped,
                 data.coveredHalfYearsCount,
                 'comparison-mapped',
-                { includePercentColumns: true, includeAllInTotals: true }
+                {
+                    includePercentColumns: true,
+                    includeAllInTotals: true,
+                    totalHoursForPercent: sumHoursFromMap(data.categories)
+                }
             );
 
             html += `
@@ -5002,50 +5050,23 @@
 
         function computeRelativeAllocations(allEntries, catMap) {
             const categories = new Map();
-            const relativeTasks = [];
-            const safeCatMap = catMap instanceof Map ? catMap : new Map();
-
-            (allEntries || []).forEach(entry => {
-                const catValue = safeCatMap.get(entry.stableId);
-                const isSeminar = isSeminarEntry(entry);
-
-                if (catValue === 'relative') {
-                    relativeTasks.push(entry);
-                    return;
-                }
-
-                if (catValue === 'active') {
-                    const activeName = safeCatMap.get(entry.stableId + '_activeResearcher');
-                    if (activeName) {
-                        addHoursToMap(categories, activeName, entry.hours);
-                    } else {
-                        addHoursToMap(categories, 'חוקר פעיל (לא נבחר)', entry.hours);
-                    }
-                    return;
-                }
-
-                if (catValue === 'seminar' || isSeminar) {
-                    addHoursToMap(categories, 'מכון - סמינר/קורס/הכשרה', entry.hours);
-                    return;
-                }
-
-                if (catValue === 'custom') {
-                    const customText = safeCatMap.get(entry.stableId + '_custom');
-                    const label = customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
-                    addHoursToMap(categories, label, entry.hours);
-                    return;
-                }
-
-                if (entry.researcher && entry.researcher !== 'משימות אחרות') {
-                    addHoursToMap(categories, entry.researcher, entry.hours);
-                }
-            });
-
             const allocations = new Map();
             const details = [];
+
+            const fixedTasks = [];
+            const relativeTasks = [];
+
+            const safeCatMap = catMap instanceof Map ? catMap : new Map();
+
             const DISTRIBUTION_CONFIG = {
                 includeSeminarInRelative: false,
                 includeCustomChargeInRelative: false
+            };
+
+            const addHours = (map, key, hours) => {
+                if (!key) return;
+                const h = Number(hours) || 0;
+                map.set(key, (Number(map.get(key)) || 0) + h);
             };
 
             const isEligibleForDistribution = (name) => {
@@ -5054,91 +5075,227 @@
                 if (name === 'לא מקוטלג') return false;
                 if (name.includes('חלוקה יחסית')) return false;
                 if (name.includes('חלוקה שווה')) return false;
+
                 if (name === 'מכון - סמינר/קורס/הכשרה') {
                     return DISTRIBUTION_CONFIG.includeSeminarInRelative;
                 }
+
                 if (name.startsWith('חיוב חדש')) {
                     return DISTRIBUTION_CONFIG.includeCustomChargeInRelative;
                 }
+
                 return true;
             };
 
-            relativeTasks.forEach(task => {
-                const taskHours = Number(task.hours) || 0;
-                if (taskHours <= 0) return;
+            const classifyEntry = (entry) => {
+                const researcherName = entry?.researcher || '';
+                const catValue = safeCatMap.get(entry.stableId);
 
-                const taskName = task.detail || task.researcher || task.name || 'משימה';
+                const isOtherTask = researcherName === 'משימות אחרות';
+                const isSeminar = isSeminarEntry(entry);
 
-                const currentResearchers = Array.from(categories.keys())
-                    .filter(r => isEligibleForDistribution(r));
-
-                if (currentResearchers.length === 0) {
-                    details.push({
-                        taskName,
-                        taskHours,
-                        totalBase: 0,
-                        method: 'none',
-                        items: [],
-                        note: 'חלוקה יחסית (ללא זכאים)'
-                    });
+                // דיווח ישיר לחוקר — נכנס כמו שהוא
+                if (!isOtherTask && !isSeminar) {
+                    if (researcherName) {
+                        addHours(categories, researcherName, entry.hours);
+                    }
                     return;
                 }
 
-                const weights = currentResearchers.map(name => ({ name, base: categories.get(name) || 0 }));
-                const totalBase = weights.reduce((sum, w) => sum + w.base, 0);
+                // משימות אחרות / סמינרים עוברים דרך הקיטלוג
+                const defaultCategorization = isSeminar ? 'seminar' : null;
+                const categorization = catValue || defaultCategorization;
 
-                if (totalBase > 0) {
-                    const detail = {
-                        taskName,
-                        taskHours,
-                        totalBase,
-                        method: 'proportional',
-                        items: [],
-                        note: 'חלוקה יחסית לפי בסיס מעודכן'
-                    };
-                    let remaining = taskHours;
-                    weights.forEach((w, idx) => {
-                        const raw = taskHours * (w.base / totalBase);
-                        const add = (idx === weights.length - 1) ? remaining : raw;
-                        remaining -= add;
-                        addHoursToMap(categories, w.name, add);
-                        addHoursToMap(allocations, w.name, add);
-                        detail.items.push({
-                            researcher: w.name,
-                            baseHours: w.base,
-                            weight: (w.base / totalBase),
-                            allocated: add
-                        });
-                    });
-                    details.push(detail);
+                if (categorization === 'relative' || categorization === 'equal') {
+                    relativeTasks.push({ entry, categorization });
                 } else {
-                    const detail = {
-                        taskName,
-                        taskHours,
-                        totalBase: 0,
-                        method: 'equal',
-                        items: [],
-                        note: 'חלוקה יחסית (אין בסיס - בוצעה חלוקה שווה)'
-                    };
-                    const portion = taskHours / currentResearchers.length;
-                    let remaining = taskHours;
-                    currentResearchers.forEach((name, idx) => {
-                        const add = (idx === currentResearchers.length - 1) ? remaining : portion;
-                        remaining -= add;
-                        addHoursToMap(categories, name, add);
-                        addHoursToMap(allocations, name, add);
-                        detail.items.push({
-                            researcher: name,
-                            baseHours: 0,
-                            weight: (1 / currentResearchers.length),
-                            allocated: add
-                        });
-                    });
-                    details.push(detail);
+                    fixedTasks.push({ entry, categorization });
                 }
-            });
+            };
 
-            return { allocations, details };
+            const processTask = ({ entry, categorization }) => {
+                const key = entry.stableId;
+                const taskHours = Number(entry.hours) || 0;
+                const taskName = entry.detail || entry.researcher || 'משימה';
+
+                const customText = safeCatMap.get(`${key}_custom`);
+                const chosenActive = safeCatMap.get(`${key}_activeResearcher`);
+
+                switch (categorization) {
+                    case 'active': {
+                        addHours(categories, chosenActive || 'חוקר פעיל (לא נבחר)', taskHours);
+                        break;
+                    }
+
+                    case 'seminar': {
+                        addHours(categories, 'מכון - סמינר/קורס/הכשרה', taskHours);
+                        break;
+                    }
+
+                    case 'custom': {
+                        const displayName = customText ? `חיוב חדש - ${customText}` : 'חיוב חדש';
+                        addHours(categories, displayName, taskHours);
+                        break;
+                    }
+
+                    case 'equal': {
+                        const eligibleResearchers = Array.from(categories.keys())
+                            .filter(name => (Number(categories.get(name)) || 0) > 0)
+                            .filter(isEligibleForDistribution);
+
+                        if (eligibleResearchers.length === 0) {
+                            addHours(categories, 'חלוקה שווה (אין זכאים לחלוקה)', taskHours);
+                            details.push({
+                                taskName,
+                                taskHours,
+                                totalBase: 0,
+                                method: 'none',
+                                items: [],
+                                note: 'חלוקה שווה (אין זכאים לחלוקה)'
+                            });
+                            break;
+                        }
+
+                        const detail = {
+                            taskName,
+                            taskHours,
+                            totalBase: 0,
+                            method: 'equal',
+                            items: [],
+                            note: 'חלוקה שווה בין זכאים'
+                        };
+
+                        let remaining = taskHours;
+                        const portion = taskHours / eligibleResearchers.length;
+
+                        eligibleResearchers.forEach((name, idx) => {
+                            const add = idx === eligibleResearchers.length - 1 ? remaining : portion;
+                            remaining -= add;
+
+                            addHours(categories, name, add);
+                            addHours(allocations, name, add);
+
+                            detail.items.push({
+                                researcher: name,
+                                baseHours: 0,
+                                weight: 1 / eligibleResearchers.length,
+                                allocated: add
+                            });
+                        });
+
+                        details.push(detail);
+                        break;
+                    }
+
+                    case 'relative': {
+                        const eligibleResearchers = Array.from(categories.keys())
+                            .filter(isEligibleForDistribution);
+
+                        if (eligibleResearchers.length === 0) {
+                            addHours(categories, 'חלוקה יחסית (ללא זכאים)', taskHours);
+                            details.push({
+                                taskName,
+                                taskHours,
+                                totalBase: 0,
+                                method: 'none',
+                                items: [],
+                                note: 'חלוקה יחסית (ללא זכאים)'
+                            });
+                            break;
+                        }
+
+                        const weights = eligibleResearchers.map(name => ({
+                            name,
+                            base: Number(categories.get(name)) || 0
+                        }));
+
+                        const totalBase = weights.reduce((sum, w) => sum + w.base, 0);
+
+                        if (totalBase > 0) {
+                            const detail = {
+                                taskName,
+                                taskHours,
+                                totalBase,
+                                method: 'proportional',
+                                items: [],
+                                note: 'חלוקה יחסית לפי בסיס מעודכן'
+                            };
+
+                            let remaining = taskHours;
+
+                            weights.forEach((w, idx) => {
+                                const add = idx === weights.length - 1
+                                    ? remaining
+                                    : taskHours * (w.base / totalBase);
+
+                                remaining -= add;
+
+                                addHours(categories, w.name, add);
+                                addHours(allocations, w.name, add);
+
+                                detail.items.push({
+                                    researcher: w.name,
+                                    baseHours: w.base,
+                                    weight: w.base / totalBase,
+                                    allocated: add
+                                });
+                            });
+
+                            details.push(detail);
+                        } else {
+                            const detail = {
+                                taskName,
+                                taskHours,
+                                totalBase: 0,
+                                method: 'equal',
+                                items: [],
+                                note: 'חלוקה יחסית ללא בסיס — בוצעה חלוקה שווה'
+                            };
+
+                            let remaining = taskHours;
+                            const portion = taskHours / eligibleResearchers.length;
+
+                            eligibleResearchers.forEach((name, idx) => {
+                                const add = idx === eligibleResearchers.length - 1 ? remaining : portion;
+                                remaining -= add;
+
+                                addHours(categories, name, add);
+                                addHours(allocations, name, add);
+
+                                detail.items.push({
+                                    researcher: name,
+                                    baseHours: 0,
+                                    weight: 1 / eligibleResearchers.length,
+                                    allocated: add
+                                });
+                            });
+
+                            details.push(detail);
+                        }
+
+                        break;
+                    }
+
+                    default: {
+                        // חשוב: משימות אחרות לא מקוטלגות לא נעלמות מהמכנה
+                        addHours(categories, 'לא מקוטלג', taskHours);
+                        break;
+                    }
+                }
+            };
+
+            (allEntries || []).forEach(classifyEntry);
+
+            // אותו סדר כמו בדוח העובד: קודם fixed, אחר כך relative/equal
+            fixedTasks.forEach(processTask);
+            relativeTasks.forEach(processTask);
+
+            return {
+                allocations,
+                details,
+                categories,
+                totalMappedHours: sumHoursFromMap(categories)
+            };
         }
 
         function buildEmployeeTargetMap(emp, halfYearKeys, halfYearsCount) {
@@ -5257,6 +5414,18 @@
                     const allEntries = collectReportEntries(reports);
                     const entriesIndex = buildEntriesIndex(allEntries);
 
+                    // תמיד טוען קיטלוג כדי לבנות מפה ממופה מלאה
+                    let empCatMap = new Map();
+                    if (AppState.currentUser) {
+                        empCatMap = await loadEmployeeCategorizations(emp.id);
+                    }
+
+                    const mappedResult = computeRelativeAllocations(allEntries, empCatMap);
+                    const mappedCategories = mappedResult.categories || new Map();
+                    const mappedTotalHours = mappedResult.totalMappedHours != null
+                        ? Number(mappedResult.totalMappedHours)
+                        : sumHoursFromMap(mappedCategories);
+
                     allEntries.forEach(entry => {
                         const isSeminar = isSeminarEntry(entry);
                         if (isSeminarMode) {
@@ -5271,15 +5440,10 @@
                     });
 
                     // Load categorizations for this employee (when checkbox is checked)
-                    let empCatMap = new Map();
                     let categorizedItems = []; // {taskName, hours, type} for display
                     let categorizedHoursForResearcher = 0;
                     let relativeHoursForResearcher = 0;
                     let relativeDetails = [];
-
-                    if ((includeCategorized || includeRelative) && AppState.currentUser) {
-                        empCatMap = await loadEmployeeCategorizations(emp.id);
-                    }
 
                     if (includeCategorized && empCatMap.size > 0) {
                         // Match categorizations to entries in reports
@@ -5305,12 +5469,17 @@
                     }
 
                     if (includeRelative && empCatMap.size > 0) {
-                        const relativeResult = computeRelativeAllocations(allEntries, empCatMap);
-                        relativeHoursForResearcher = Number(relativeResult.allocations.get(researcherName) || 0);
-                        relativeDetails = relativeResult.details || [];
+                        relativeHoursForResearcher = Number(mappedResult.allocations.get(researcherName) || 0);
+                        relativeDetails = mappedResult.details || [];
                     }
 
-                    const displayHours = researcherHours + categorizedHoursForResearcher + relativeHoursForResearcher;
+                    const fullyMappedHoursForResearcher = isSeminarMode
+                        ? getHoursFromMap(mappedCategories, SEMINAR_ENTRY)
+                        : getHoursFromMap(mappedCategories, researcherName);
+
+                    const displayHours = (includeCategorized && includeRelative)
+                        ? fullyMappedHoursForResearcher
+                        : researcherHours + categorizedHoursForResearcher + relativeHoursForResearcher;
                     const displayDays = roundToSingleDecimal(displayHours / HOURS_PER_DAY);
 
                     if (displayHours <= 0 && seminarHours <= 0) continue;
@@ -5368,7 +5537,12 @@
                         activityPercent,
                         seminarHours,
                         seminarDays: roundToSingleDecimal(seminarHours / HOURS_PER_DAY),
-                        empTotalDaysAll: empTotalDaysAll
+                        empTotalDaysAll: empTotalDaysAll,
+
+                        // חדש
+                        mappedCategories: Array.from(mappedCategories.entries()),
+                        mappedTotalHours,
+                        fullyMappedHoursForResearcher
                     });
 
                     if (includeRelative && relativeDetails.length > 0) {
@@ -5447,9 +5621,27 @@
                 // חישוב אחוז משרה בפועל לפי השיטה הנבחרת
                 let calcPercent = null;
                 if (window.globalCalcMethod === 'actual_time') {
-                    calcPercent = r.empTotalDaysAll > 0 ? (r.actualDays / r.empTotalDaysAll) * 100 : null;
+                    if (data.includeCategorized && data.includeRelative && r.mappedTotalHours != null) {
+                        calcPercent = calculateActualPercentByHours(
+                            r.fullyMappedHoursForResearcher != null
+                                ? r.fullyMappedHoursForResearcher
+                                : r.researcherHours,
+                            r.mappedTotalHours
+                        );
+                    } else {
+                        const fallbackTotalHours = Number(r.empTotalDaysAll || 0) * HOURS_PER_DAY;
+
+                        calcPercent = calculateActualPercentByHours(
+                            r.researcherHours,
+                            fallbackTotalHours
+                        );
+                    }
                 } else {
-                    calcPercent = (r.targetDays > 0 && r.activityPercent != null) ? (r.actualDays * r.activityPercent) / r.targetDays : null;
+                    const actualDaysRaw = (Number(r.researcherHours) || 0) / HOURS_PER_DAY;
+
+                    calcPercent = (r.targetDays > 0 && r.activityPercent != null)
+                        ? (actualDaysRaw * r.activityPercent) / r.targetDays
+                        : null;
                 }
                 const actualPctLabel = calcPercent != null ? `${roundToSingleDecimal(calcPercent).toFixed(1)}%` : 'N/A';
                 let status = 'N/A', statusClass = 'na';
@@ -5643,6 +5835,13 @@
                         empCatMap = await loadEmployeeCategorizations(emp.id);
                     }
 
+                    // חישוב מפה ממופה מלאה לצורך אחוזים מדויקים
+                    const mappedResult = computeRelativeAllocations(allEntries, empCatMap);
+                    const mappedCategories = mappedResult.categories || new Map();
+                    const mappedTotalHours = mappedResult.totalMappedHours != null
+                        ? Number(mappedResult.totalMappedHours)
+                        : sumHoursFromMap(mappedCategories);
+
                     const hoursByResearcher = new Map();
 
                     allEntries.forEach(entry => {
@@ -5740,7 +5939,10 @@
                             activityPercent,
                             actualPercent,
                             isSeminar,
-                            empTotalDaysAll: empTotalDaysAll
+                            empTotalDaysAll: empTotalDaysAll,
+                            researcherHours: actualHours,
+                            mappedTotalHours,
+                            fullyMappedHoursForResearcher: actualHours
                         });
                     });
                 }
@@ -5852,7 +6054,10 @@
 
                     let empCalcPercent = null;
                     if (window.globalCalcMethod === 'actual_time') {
-                        empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                        empCalcPercent = calculateActualPercentByHours(
+                            emp.fullyMappedHoursForResearcher != null ? emp.fullyMappedHoursForResearcher : emp.researcherHours,
+                            emp.mappedTotalHours != null ? emp.mappedTotalHours : Number(emp.empTotalDaysAll || 0) * HOURS_PER_DAY
+                        );
                     } else {
                         empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null)
                             ? (emp.actualDays * emp.activityPercent) / emp.targetDays
@@ -5915,7 +6120,10 @@
                                             // חישוב אחוז משרה בפועל לפי השיטה הנבחרת
                                             let empCalcPercent = null;
                                             if (window.globalCalcMethod === 'actual_time') {
-                                                empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                                                empCalcPercent = calculateActualPercentByHours(
+                                                    emp.fullyMappedHoursForResearcher != null ? emp.fullyMappedHoursForResearcher : emp.researcherHours,
+                                                    emp.mappedTotalHours != null ? emp.mappedTotalHours : Number(emp.empTotalDaysAll || 0) * HOURS_PER_DAY
+                                                );
                                             } else {
                                                 empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null) ? (emp.actualDays * emp.activityPercent) / emp.targetDays : null;
                                             }
@@ -6018,15 +6226,27 @@
             const startDisplay = AppState.researcherStartDate.toLocaleDateString('he-IL');
             const endDisplay = AppState.researcherEndDate.toLocaleDateString('he-IL');
             let csv = `דו"ח לפי חוקר: ${data.researcherName}\nתקופה: ${startDisplay} - ${endDisplay}\n\n`;
-            const rows = data.results.map(r => ({
-                name: r.empName,
-                actualDays: r.actualDays.toFixed(1),
-                targetDays: r.targetDays != null ? r.targetDays.toFixed(1) : 'N/A',
-                plannedPct: r.activityPercent != null ? r.activityPercent.toFixed(1) + '%' : 'N/A',
-                actualPct: r.targetDays != null && r.targetDays > 0 && r.activityPercent != null
-                    ? roundToSingleDecimal((r.actualDays * r.activityPercent) / r.targetDays).toFixed(1) + '%'
-                    : 'N/A'
-            }));
+            const rows = data.results.map(r => {
+                let actualPctValue = 'N/A';
+                if (window.globalCalcMethod === 'actual_time') {
+                    const pct = calculateActualPercentByHours(
+                        r.fullyMappedHoursForResearcher != null ? r.fullyMappedHoursForResearcher : r.researcherHours,
+                        r.mappedTotalHours != null ? r.mappedTotalHours : Number(r.empTotalDaysAll || 0) * HOURS_PER_DAY
+                    );
+                    if (pct != null) actualPctValue = roundToSingleDecimal(pct).toFixed(1) + '%';
+                } else {
+                    if (r.targetDays != null && r.targetDays > 0 && r.activityPercent != null) {
+                        actualPctValue = roundToSingleDecimal((r.actualDays * r.activityPercent) / r.targetDays).toFixed(1) + '%';
+                    }
+                }
+                return {
+                    name: r.empName,
+                    actualDays: r.actualDays.toFixed(1),
+                    targetDays: r.targetDays != null ? r.targetDays.toFixed(1) : 'N/A',
+                    plannedPct: r.activityPercent != null ? r.activityPercent.toFixed(1) + '%' : 'N/A',
+                    actualPct: actualPctValue
+                };
+            });
             const cols = [
                 { key: 'name', header: 'עובד/ת' },
                 { key: 'actualDays', header: 'ימים בפועל' },
@@ -6062,7 +6282,10 @@
 
                     let empCalcPercent = null;
                     if (window.globalCalcMethod === 'actual_time') {
-                        empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                        empCalcPercent = calculateActualPercentByHours(
+                            emp.fullyMappedHoursForResearcher != null ? emp.fullyMappedHoursForResearcher : emp.researcherHours,
+                            emp.mappedTotalHours != null ? emp.mappedTotalHours : Number(emp.empTotalDaysAll || 0) * HOURS_PER_DAY
+                        );
                     } else {
                         empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null)
                             ? (emp.actualDays * emp.activityPercent) / emp.targetDays
@@ -6108,7 +6331,10 @@
                     // חישוב אחוז משרה בפועל לפי השיטה הנבחרת (עבור detail rows ב-CSV)
                     let empCalcPercent = null;
                     if (window.globalCalcMethod === 'actual_time') {
-                        empCalcPercent = emp.empTotalDaysAll > 0 ? (emp.actualDays / emp.empTotalDaysAll) * 100 : null;
+                        empCalcPercent = calculateActualPercentByHours(
+                            emp.fullyMappedHoursForResearcher != null ? emp.fullyMappedHoursForResearcher : emp.researcherHours,
+                            emp.mappedTotalHours != null ? emp.mappedTotalHours : Number(emp.empTotalDaysAll || 0) * HOURS_PER_DAY
+                        );
                     } else {
                         empCalcPercent = (emp.targetDays > 0 && emp.activityPercent != null) ? (emp.actualDays * emp.activityPercent) / emp.targetDays : null;
                     }
