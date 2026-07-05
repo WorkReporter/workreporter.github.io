@@ -9,6 +9,18 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1e3a8a">
     <title>מערכת דיווח שעות - ניהול</title>
+    <script>
+        (function () {
+            var CURRENT_CLIENT_VERSION = '20260705-2';
+            var params = new URLSearchParams(window.location.search);
+            var currentVersion = params.get('v');
+            if (currentVersion && currentVersion !== CURRENT_CLIENT_VERSION) {
+                params.set('v', CURRENT_CLIENT_VERSION);
+                var nextUrl = window.location.pathname + '?' + params.toString() + window.location.hash;
+                window.location.replace(nextUrl);
+            }
+        })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -2215,6 +2227,111 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
         }
 
+        .israeli-date-picker {
+            position: relative;
+            width: 100%;
+        }
+
+        .israeli-date-picker .israeli-date-native {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+            inset: auto 0 0 auto;
+        }
+
+        .israeli-date-display {
+            width: 100%;
+            min-height: 46px;
+            box-sizing: border-box;
+            padding: 0.75rem 2.65rem 0.75rem 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #0f172a;
+            direction: ltr;
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.2;
+            appearance: none;
+        }
+
+        .israeli-date-display::placeholder {
+            color: #94a3b8;
+            opacity: 1;
+            text-transform: lowercase;
+        }
+
+        .israeli-date-open {
+            position: absolute;
+            top: 50%;
+            right: 0.45rem;
+            transform: translateY(-50%);
+            width: 2rem;
+            height: 2rem;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: #64748b;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .israeli-date-open:hover,
+        .israeli-date-open:focus-visible {
+            background: #f1f5f9;
+            color: #2563eb;
+            outline: none;
+        }
+
+        .israeli-date-open .material-symbols-outlined {
+            font-size: 20px;
+        }
+
+        .calendar-date-field .israeli-date-display {
+            min-height: 50px;
+            padding-top: 0.85rem;
+            padding-bottom: 0.85rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .researcher-date-form .date-field .israeli-date-display {
+            border-radius: 10px;
+        }
+
+        .israeli-date-display.is-empty {
+            color: #0f172a;
+            font-weight: 500;
+        }
+
+        .israeli-date-display.is-invalid {
+            border-color: #ef4444;
+        }
+
+        .israeli-date-picker:focus-within .israeli-date-display {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+
+        .israeli-date-picker:focus-within .israeli-date-display.is-invalid {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+        }
+
+        .researcher-note {
+            font-size: 0.85rem;
+            color: #64748b;
+            text-align: center;
+            padding: 0.5rem;
+            line-height: 1.5;
+        }
+
         /* ---- Researchers Search ---- */
         .researchers-search-wrap {
             max-width: 420px;
@@ -2638,21 +2755,14 @@
                 <div class="date-row">
                     <div class="date-field">
                         <label for="researcher-start-date">מתאריך</label>
-                        <input type="date" id="researcher-start-date">
+                        <input type="date" id="researcher-start-date" lang="he-IL">
                     </div>
                     <div class="date-field">
                         <label for="researcher-end-date">עד תאריך</label>
-                        <input type="date" id="researcher-end-date">
+                        <input type="date" id="researcher-end-date" lang="he-IL">
                     </div>
                 </div>
-                <label class="researcher-checkbox-label" id="include-categorized-wrap">
-                    <input type="checkbox" id="include-categorized-hours" checked>
-                    <span>לכלול שעות שקוטלגו אצל העובדים תחת החוקר <span style="color:#94a3b8; font-size:0.8rem;">(לא כולל חלוקה יחסית)</span></span>
-                </label>
-                <label class="researcher-checkbox-label" id="include-relative-wrap">
-                    <input type="checkbox" id="include-relative-hours" checked>
-                    <span>לכלול שעות חלוקה יחסית</span>
-                </label>
+                <div class="researcher-note">* כולל שעות שקוטלגו תחת החוקרים וכולל שעות חלוקה יחסית.</div>
                 <button class="generate-report-btn" id="generate-researcher-report-btn" onclick="generateResearcherReportAction()" disabled>
                     הפקת דו"ח לפי חוקר
                 </button>
@@ -2689,11 +2799,11 @@
             <div class="calendar-date-range-fields">
                 <div class="calendar-date-field">
                     <label for="calendar-start-date">מתאריך</label>
-                    <input type="date" id="calendar-start-date" onchange="updateCalendarDatesFromInputs()">
+                    <input type="date" id="calendar-start-date" lang="he-IL" onchange="updateCalendarDatesFromInputs()">
                 </div>
                 <div class="calendar-date-field">
                     <label for="calendar-end-date">עד תאריך</label>
-                    <input type="date" id="calendar-end-date" onchange="updateCalendarDatesFromInputs()">
+                    <input type="date" id="calendar-end-date" lang="he-IL" onchange="updateCalendarDatesFromInputs()">
                 </div>
             </div>
             <div class="date-selection-info" id="date-selection">
@@ -3324,9 +3434,9 @@
                 return `
                     <tr id="${sectionId}-row-${idx}-main" class="row-main">
                         <td data-label="חוקר/קטגוריה" style="font-weight:600;">${row.name}</td>
-                        <td data-label="בפועל (ימים)" style="text-align:center;">${row.actualDays.toFixed(1)} ימים</td>
                         <td data-label="יעד לתקופה" style="text-align:center;">${plannedLabel}</td>
                         ${includePercentColumns ? `<td data-label="אחוז משרה מיועד" style="text-align:center;">${plannedPercentLabel}</td>` : ''}
+                        <td data-label="בפועל (ימים)" style="text-align:center;">${row.actualDays.toFixed(1)} ימים</td>
                         ${includePercentColumns ? `<td data-label="אחוז משרה בפועל" style="text-align:center;">${actualPercentLabel}</td>` : ''}
                         <td data-label="פעולות" class="col-action" style="text-align:center;"><button id="${sectionId}-row-${idx}-btn" class="row-toggle-btn" onclick="toggleComparisonRow('${sectionId}', ${idx})">פרטים</button></td>
                     </tr>
@@ -3361,9 +3471,9 @@
                             <thead>
                                 <tr>
                                     <th>חוקר/קטגוריה</th>
-                                    <th>בפועל (ימים)</th>
                                     <th>יעד לתקופה</th>
                                     ${includePercentColumns ? '<th>אחוז משרה מיועד</th>' : ''}
+                                    <th>בפועל (ימים)</th>
                                     ${includePercentColumns ? `<th>${ACTUAL_PCT_HEADER_HTML}</th>` : ''}
                                     <th class="col-action">פעולות</th>
                                 </tr>
@@ -3374,9 +3484,9 @@
                             <tfoot>
                                 <tr>
                                     <td data-label="סיכום" style="font-weight:700;">${includeAllInTotals ? 'סה"כ' : 'סה"כ*'}</td>
-                                    <td data-label="בפועל (ימים)" style="text-align:center; font-weight:700;">${totals.actualDaysTotal.toFixed(1)}</td>
                                     <td data-label="יעד לתקופה" style="text-align:center; font-weight:700;">${totals.plannedDaysComparable.toFixed(1)}</td>
                                     ${includePercentColumns ? '<td data-label="אחוז משרה מיועד" style="text-align:center;">—</td>' : ''}
+                                    <td data-label="בפועל (ימים)" style="text-align:center; font-weight:700;">${totals.actualDaysTotal.toFixed(1)}</td>
                                     ${includePercentColumns ? '<td data-label="אחוז משרה בפועל" style="text-align:center;">—</td>' : ''}
                                     <td data-label="הערה" class="col-action" style="text-align:center;">—</td>
                                 </tr>
@@ -3388,13 +3498,184 @@
                 </div>`;
         }
 
-        // Helper to format a YYYY-MM-DD string as dd-mm-yyyy for display
+        // Helper to format a YYYY-MM-DD string as dd/mm/yyyy for display
         function formatDisplayDate(dateStr) {
             if (!dateStr || typeof dateStr !== 'string') return '';
-            const parts = dateStr.split('-');
+            const parts = dateStr.split('T')[0].split('-');
             if (parts.length !== 3) return dateStr;
             const [y, m, d] = parts;
-            return `${d.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
+            return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+        }
+
+        function parseIsraeliDisplayDate(value) {
+            const cleanValue = String(value || '').trim();
+            if (!cleanValue) return '';
+
+            const match = cleanValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (!match) return null;
+
+            const day = Number(match[1]);
+            const month = Number(match[2]);
+            const year = Number(match[3]);
+            const date = new Date(year, month - 1, day);
+            const isValid = date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+            if (!isValid) return null;
+
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+
+        function getIsraeliDateDisplay(input) {
+            const picker = input ? input.closest('.israeli-date-picker') : null;
+            return picker ? picker.querySelector('.israeli-date-display') : null;
+        }
+
+        function syncIsraeliDateInput(input, options = {}) {
+            if (!input) return;
+            const display = getIsraeliDateDisplay(input);
+            if (!display) return;
+            if (!options.force && document.activeElement === display) return;
+
+            const displayValue = formatDisplayDate(input.value);
+            display.value = displayValue;
+            display.placeholder = 'dd/mm/yyyy';
+            display.classList.toggle('is-empty', !displayValue);
+            display.classList.remove('is-invalid');
+        }
+
+        function syncIsraeliDateInputs(root = document) {
+            root.querySelectorAll('.israeli-date-native').forEach(syncIsraeliDateInput);
+        }
+
+        function dispatchNativeDateEvents(input) {
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        function commitIsraeliDateDisplay(display, input) {
+            const parsedValue = parseIsraeliDisplayDate(display.value);
+            if (parsedValue === null) {
+                display.classList.add('is-invalid');
+                return false;
+            }
+
+            display.classList.remove('is-invalid');
+            display.classList.toggle('is-empty', !parsedValue);
+            if (input.value !== parsedValue) {
+                input.value = parsedValue;
+                dispatchNativeDateEvents(input);
+            }
+            return true;
+        }
+
+        function selectIsraeliDatePart(display) {
+            if (!display || !display.value) return;
+            const position = display.selectionStart ?? 0;
+            let start = 0;
+            let end = 2;
+
+            if (position > 2 && position <= 5) {
+                start = 3;
+                end = 5;
+            } else if (position > 5) {
+                start = 6;
+                end = display.value.length;
+            }
+
+            requestAnimationFrame(() => {
+                display.setSelectionRange(start, Math.min(end, display.value.length));
+            });
+        }
+
+        function openIsraeliNativePicker(input) {
+            if (!input) return;
+            if (typeof input.showPicker === 'function') {
+                try {
+                    input.showPicker();
+                    return;
+                } catch (error) {
+                    // Some browsers only allow showPicker during direct user interaction.
+                }
+            }
+            input.focus();
+            input.click();
+        }
+
+        function initializeIsraeliDateInputs(root = document) {
+            root.querySelectorAll('input[type="date"]').forEach(input => {
+                if (input.dataset.israeliDateReady === 'true') {
+                    syncIsraeliDateInput(input);
+                    return;
+                }
+
+                input.dataset.israeliDateReady = 'true';
+                input.classList.add('israeli-date-native');
+                input.lang = 'he-IL';
+                input.dir = 'ltr';
+                input.tabIndex = -1;
+                input.setAttribute('aria-hidden', 'true');
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'israeli-date-picker';
+                input.parentNode.insertBefore(wrapper, input);
+                wrapper.appendChild(input);
+
+                const display = document.createElement('input');
+                display.type = 'text';
+                display.className = 'israeli-date-display';
+                display.inputMode = 'numeric';
+                display.autocomplete = 'off';
+                display.placeholder = 'dd/mm/yyyy';
+                display.setAttribute('aria-label', 'תאריך בפורמט יום/חודש/שנה');
+                wrapper.appendChild(display);
+
+                const pickerButton = document.createElement('button');
+                pickerButton.type = 'button';
+                pickerButton.className = 'israeli-date-open';
+                pickerButton.setAttribute('aria-label', 'פתיחת לוח שנה');
+                pickerButton.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>';
+                wrapper.appendChild(pickerButton);
+
+                const label = input.id ? document.querySelector(`label[for="${input.id}"]`) : null;
+                if (label) {
+                    label.addEventListener('click', event => {
+                        event.preventDefault();
+                        display.focus();
+                        selectIsraeliDatePart(display);
+                    });
+                }
+
+                display.addEventListener('click', () => selectIsraeliDatePart(display));
+                display.addEventListener('focus', () => selectIsraeliDatePart(display));
+                display.addEventListener('input', () => commitIsraeliDateDisplay(display, input));
+                display.addEventListener('change', () => commitIsraeliDateDisplay(display, input));
+                display.addEventListener('blur', () => {
+                    commitIsraeliDateDisplay(display, input);
+                    syncIsraeliDateInput(input, { force: true });
+                });
+                display.addEventListener('keydown', event => {
+                    if (event.key === 'Enter') {
+                        commitIsraeliDateDisplay(display, input);
+                        syncIsraeliDateInput(input, { force: true });
+                        display.select();
+                    } else if (event.key === 'Escape') {
+                        syncIsraeliDateInput(input, { force: true });
+                        selectIsraeliDatePart(display);
+                    } else if (event.key === 'ArrowDown' && event.altKey) {
+                        event.preventDefault();
+                        openIsraeliNativePicker(input);
+                    }
+                });
+
+                pickerButton.addEventListener('click', () => openIsraeliNativePicker(input));
+                input.addEventListener('input', () => {
+                    if (document.activeElement !== display) syncIsraeliDateInput(input);
+                });
+                input.addEventListener('change', () => {
+                    if (document.activeElement !== display) syncIsraeliDateInput(input);
+                });
+                input.addEventListener('blur', () => syncIsraeliDateInput(input));
+                syncIsraeliDateInput(input);
+            });
         }
 
         function getCacheKey() {
@@ -3687,12 +3968,10 @@
             const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             const startInput = document.getElementById('researcher-start-date');
             const endInput = document.getElementById('researcher-end-date');
-            const includeCategorizedCheckbox = document.getElementById('include-categorized-hours');
-            const includeRelativeCheckbox = document.getElementById('include-relative-hours');
             if (!startInput.value) startInput.value = toLocalDateStr(firstOfMonth);
             if (!endInput.value) endInput.value = toLocalDateStr(today);
-            if (includeCategorizedCheckbox) includeCategorizedCheckbox.checked = true;
-            if (includeRelativeCheckbox) includeRelativeCheckbox.checked = true;
+            syncIsraeliDateInput(startInput);
+            syncIsraeliDateInput(endInput);
             updateResearcherReportButton();
             startInput.onchange = updateResearcherReportButton;
             endInput.onchange = updateResearcherReportButton;
@@ -3888,8 +4167,14 @@
         function syncCalendarDateInputs() {
             const startInput = document.getElementById('calendar-start-date');
             const endInput = document.getElementById('calendar-end-date');
-            if (startInput) startInput.value = AppState.selectedStartDate ? toLocalDateStr(AppState.selectedStartDate) : '';
-            if (endInput) endInput.value = AppState.selectedEndDate ? toLocalDateStr(AppState.selectedEndDate) : '';
+            if (startInput) {
+                startInput.value = AppState.selectedStartDate ? toLocalDateStr(AppState.selectedStartDate) : '';
+                syncIsraeliDateInput(startInput);
+            }
+            if (endInput) {
+                endInput.value = AppState.selectedEndDate ? toLocalDateStr(AppState.selectedEndDate) : '';
+                syncIsraeliDateInput(endInput);
+            }
         }
 
         function updateCalendarDatesFromInputs() {
@@ -3906,6 +4191,9 @@
                 AppState.selectedStartDate = startDate;
                 AppState.selectedEndDate = endDate;
             }
+
+            syncIsraeliDateInput(startInput);
+            syncIsraeliDateInput(endInput);
 
             if (startDate) {
                 AppState.currentMonth = startDate.getMonth();
@@ -4107,7 +4395,7 @@
             const savedCustomText = AppState.categorizations.get(`${firstId}_custom`) || '';
             const savedActiveResearcher = AppState.categorizations.get(`${firstId}_activeResearcher`) || '';
 
-            // Format report date for display (dd-mm-yyyy) if available
+            // Format report date for display (dd/mm/yyyy) if available
             const displayDate = task.date ? formatDisplayDate(task.date) : '';
 
             const buttonType = isOtherTask ? 'relative' : 'equal';
@@ -4760,7 +5048,7 @@
             };
 
             sessionStorage.setItem('researcherPdfReportData', JSON.stringify(payload));
-            const url = `researcher_pdf_report.html?v=20260702-2`;
+            const url = `researcher_pdf_report.html?v=20260705-2`;
             window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
         };
 
@@ -5245,17 +5533,13 @@
             AppState.researcherStartDate = startDate;
             AppState.researcherEndDate = endDate;
 
-            const includeCategorized = document.getElementById('include-categorized-hours')?.checked;
-            const includeRelative = document.getElementById('include-relative-hours')?.checked;
-            const flags = [];
-            if (includeCategorized) flags.push('כולל קיטלוגים');
-            if (includeRelative) flags.push('כולל חלוקה יחסית');
-            const flagsText = flags.length ? ` • ${flags.join(' • ')}` : '';
+            const includeCategorized = true;
+            const includeRelative = true;
 
             document.getElementById('researcher-report-title').textContent = `${researcherName} - דו"ח לפי חוקר`;
             const startDisplay = startDate.toLocaleDateString('he-IL');
             const endDisplay = endDate.toLocaleDateString('he-IL');
-            document.getElementById('researcher-report-subtitle').textContent = `לתקופה ${startDisplay} - ${endDisplay}${flagsText}`;
+            document.getElementById('researcher-report-subtitle').textContent = `לתקופה ${startDisplay} - ${endDisplay}`;
             document.getElementById('researcher-report-content').innerHTML = '<div class="loading">טוען נתונים מכל העובדים...</div>';
             document.getElementById('researcher-csv-btn').style.display = 'none';
             document.getElementById('researcher-pdf-btn').style.display = 'none';
@@ -5354,9 +5638,11 @@
                     const displayHours = (includeCategorized && includeRelative)
                         ? fullyMappedHoursForResearcher
                         : researcherHours + categorizedHoursForResearcher + relativeHoursForResearcher;
+
+                    const effectiveSeminarHours = getHoursFromMap(mappedCategories, SEMINAR_ENTRY);
                     const displayDays = roundToSingleDecimal(displayHours / HOURS_PER_DAY);
 
-                    if (displayHours <= 0 && seminarHours <= 0) continue;
+                    if (displayHours <= 0 && effectiveSeminarHours <= 0) continue;
 
                     // Get settings for this employee regarding this researcher
                     const settingsByHY = emp.researcherSettingsByHalfYear;
@@ -5390,9 +5676,9 @@
                         }
                     }
 
-                    totalActualHours += (researcherHours + categorizedHoursForResearcher + relativeHoursForResearcher);
+                    totalActualHours += displayHours;
                     if (targetDays != null) totalTargetDays += targetDays;
-                    totalSeminarHours += seminarHours;
+                    totalSeminarHours += effectiveSeminarHours;
 
                     // חישוב סך הימים של העובד לשימוש בנוסחה actual_time
                     const empTotalHoursAll = allEntries.reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
@@ -5409,8 +5695,8 @@
                         relativeDetails,
                         targetDays,
                         activityPercent,
-                        seminarHours,
-                        seminarDays: roundToSingleDecimal(seminarHours / HOURS_PER_DAY),
+                        seminarHours: effectiveSeminarHours,
+                        seminarDays: roundToSingleDecimal(effectiveSeminarHours / HOURS_PER_DAY),
                         empTotalDaysAll: empTotalDaysAll,
 
                         // חדש
@@ -5481,10 +5767,10 @@
             <div class="comparison-table-wrap"><table class="stats-table" style="margin-bottom:0;">
                 <thead><tr>
                     <th>עובד/ת</th>
-                    <th style="text-align:center">ימים בפועל</th>
-                    ${actualPctHeader}
                     ${targetHeader}
                     ${pctHeader}
+                    <th style="text-align:center">ימים בפועל</th>
+                    ${actualPctHeader}
                     <th class="col-status" style="text-align:center">סטטוס</th>
                 </tr></thead><tbody>`;
 
@@ -5521,15 +5807,42 @@
                 }
                 html += `<tr>
                     <td data-label="עובד/ת" style="font-weight:600">${r.empName}</td>
-                    <td data-label="ימים בפועל" style="text-align:center">${r.actualDays.toFixed(1)}</td>
-                    ${!isSeminarMode ? `<td data-label="אחוז משרה בפועל" style="text-align:center">${actualPctLabel}</td>` : ''}
                     ${!isSeminarMode ? `<td data-label="יעד לתקופה" style="text-align:center">${targetLabel}</td>` : ''}
                     ${!isSeminarMode ? `<td data-label="אחוז משרה מיועד" style="text-align:center">${pctLabel}</td>` : ''}
+                    <td data-label="ימים בפועל" style="text-align:center">${r.actualDays.toFixed(1)}</td>
+                    ${!isSeminarMode ? `<td data-label="אחוז משרה בפועל" style="text-align:center">${actualPctLabel}</td>` : ''}
                     <td data-label="סטטוס" class="col-status" style="text-align:center"><span class="status-chip ${statusClass}">${status}</span></td>
                 </tr>`;
             });
 
-            // Per-employee categorizations section (only in researcher mode, only when checkbox was checked)
+            // Add seminar summary row if not in seminar mode and there are seminar hours
+            if (!isSeminarMode && totalSeminarHours > 0) {
+                // Calculate seminar actual percent: sum of (seminarHours/totalHours) per employee
+                let seminarActualPctSum = 0;
+                let seminarActualPctHasValue = false;
+                results.forEach(r => {
+                    if (r.seminarHours > 0) {
+                        const empTotalHours = r.mappedTotalHours != null ? r.mappedTotalHours : Number(r.empTotalDaysAll || 0) * HOURS_PER_DAY;
+                        if (empTotalHours > 0) {
+                            const pct = (r.seminarHours / empTotalHours) * 100;
+                            seminarActualPctSum += roundToSingleDecimal(pct);
+                            seminarActualPctHasValue = true;
+                        }
+                    }
+                });
+                const seminarActualPctLabel = seminarActualPctHasValue ? `${roundToSingleDecimal(seminarActualPctSum).toFixed(1)}%` : 'N/A';
+
+                html += `<tr style="background:#f0fdf4; border-top: 2px solid #86efac;">
+                    <td data-label="עובד/ת" style="font-weight:600; color:#059669;">מכון - סמינר/קורס/הכשרה</td>
+                    <td data-label="יעד לתקופה" style="text-align:center">N/A</td>
+                    <td data-label="אחוז משרה מיועד" style="text-align:center">N/A</td>
+                    <td data-label="ימים בפועל" style="text-align:center">${totalSeminarDays.toFixed(1)}</td>
+                    <td data-label="אחוז משרה בפועל" style="text-align:center">${seminarActualPctLabel}</td>
+                    <td data-label="סטטוס" class="col-status" style="text-align:center"><span class="status-chip">${formatHours(totalSeminarHours)} שעות</span></td>
+                </tr>`;
+            }
+
+            // Per-employee categorizations section
             html += `</tbody></table></div></div>`;
 
             if (includeCategorized) {
@@ -5637,15 +5950,11 @@
 
             const startDisplay = startDate.toLocaleDateString('he-IL');
             const endDisplay = endDate.toLocaleDateString('he-IL');
-            const includeCategorized = document.getElementById('include-categorized-hours')?.checked;
-            const includeRelative = document.getElementById('include-relative-hours')?.checked;
-            const flags = [];
-            if (includeCategorized) flags.push('כולל קיטלוגים');
-            if (includeRelative) flags.push('כולל חלוקה יחסית');
-            const flagsText = flags.length ? ` • ${flags.join(' • ')}` : '';
+            const includeCategorized = true;
+            const includeRelative = true;
 
             document.getElementById('researcher-report-title').textContent = 'דו"ח לכל החוקרים';
-            document.getElementById('researcher-report-subtitle').textContent = `לתקופה ${startDisplay} - ${endDisplay}${flagsText}`;
+            document.getElementById('researcher-report-subtitle').textContent = `לתקופה ${startDisplay} - ${endDisplay}`;
             document.getElementById('researcher-report-content').innerHTML = '<div class="loading">טוען נתונים מכל העובדים...</div>';
             document.getElementById('researcher-csv-btn').style.display = 'none';
             document.getElementById('researcher-pdf-btn').style.display = 'none';
@@ -5709,47 +6018,22 @@
 
                     const hoursByResearcher = new Map();
 
-                    allEntries.forEach(entry => {
-                        if (isSeminarEntry(entry)) {
-                            addHoursToMap(hoursByResearcher, SEMINAR_ENTRY, entry.hours);
-                            return;
-                        }
-                        if (entry.researcher && entry.researcher !== 'משימות אחרות') {
-                            addHoursToMap(hoursByResearcher, entry.researcher, entry.hours);
-                        }
+                    // IMPORTANT:
+                    // Manager categorization is the source of truth and overrides the original entry type.
+                    // Example: an entry originally reported as seminar/course/training but categorized as
+                    // active/relative/equal/custom must not remain under the institute category as well.
+                    // computeRelativeAllocations already applies the same final mapping logic used by the
+                    // employee report, so mappedCategories is used here as the single source of truth.
+                    mappedCategories.forEach((hours, name) => {
+                        if (!name) return;
+                        addHoursToMap(hoursByResearcher, name, hours);
                     });
 
-                    if (includeCategorized && empCatMap.size > 0) {
-                        empCatMap.forEach((catValue, catKey) => {
-                            if (catKey.endsWith('_custom') || catKey.endsWith('_activeResearcher')) return;
-                            if (catValue !== 'active' && catValue !== 'seminar') return;
-
-                            const matchingEntry = findEntryForCatKey(catKey, entriesIndex, allEntries);
-                            if (!matchingEntry) return;
-
-                            if (catValue === 'seminar') {
-                                addHoursToMap(hoursByResearcher, SEMINAR_ENTRY, matchingEntry.hours);
-                                return;
-                            }
-
-                            const activeName = empCatMap.get(catKey + '_activeResearcher');
-                            if (activeName) {
-                                addHoursToMap(hoursByResearcher, activeName, matchingEntry.hours);
-                            }
+                    if (includeRelative && mappedResult.details && mappedResult.details.length > 0) {
+                        relativeCalculations.push({
+                            empName: `${emp.firstName} ${emp.lastName}`,
+                            details: mappedResult.details
                         });
-                    }
-
-                    if (includeRelative && empCatMap.size > 0) {
-                        const relativeResult = computeRelativeAllocations(allEntries, empCatMap);
-                        relativeResult.allocations.forEach((hours, name) => {
-                            addHoursToMap(hoursByResearcher, name, hours);
-                        });
-                        if (relativeResult.details && relativeResult.details.length > 0) {
-                            relativeCalculations.push({
-                                empName: `${emp.firstName} ${emp.lastName}`,
-                                details: relativeResult.details
-                            });
-                        }
                     }
 
                     // חדש: מוסיף גם חוקרים שיש להם יעד אצל העובד,
@@ -5884,10 +6168,10 @@
                 </colgroup>
                 <thead><tr>
                     <th>חוקר/ת</th>
-                    <th style="text-align:center">ימים בפועל</th>
-                    <th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>
                     <th style="text-align:center">יעד לתקופה</th>
                     <th style="text-align:center">אחוז משרה מיועד</th>
+                    <th style="text-align:center">ימים בפועל</th>
+                    <th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>
                     <th class="col-action" style="text-align:center">פירוט</th>
                 </tr></thead><tbody>`;
 
@@ -5902,6 +6186,18 @@
                 let actualPctHasValue = false;
 
                 row.employees.forEach(emp => {
+                    if (row.isSeminar) {
+                        // For seminar rows, calculate actual pct as seminarHours/totalHours
+                        if (emp.actualHours > 0) {
+                            const empTotalHours = emp.mappedTotalHours != null ? emp.mappedTotalHours : Number(emp.empTotalDaysAll || 0) * HOURS_PER_DAY;
+                            if (empTotalHours > 0) {
+                                const pct = (emp.actualHours / empTotalHours) * 100;
+                                actualPctSum += roundToSingleDecimal(pct);
+                                actualPctHasValue = true;
+                            }
+                        }
+                        return;
+                    }
                     if (emp.isSeminar) return;
 
                     if (emp.activityPercent != null) {
@@ -5923,17 +6219,17 @@
                 const plannedPctLabel = !row.isSeminar && plannedPctHasValue
                     ? `${roundToSingleDecimal(plannedPctSum).toFixed(1)}%`
                     : 'N/A';
-                const actualPctLabel = !row.isSeminar && actualPctHasValue
+                const actualPctLabel = actualPctHasValue
                     ? `${roundToSingleDecimal(actualPctSum).toFixed(1)}%`
                     : 'N/A';
 
                 html += `
                     <tr id="all-researchers-row-${idx}-main" class="row-main">
                         <td data-label="חוקר/ת" style="font-weight:600">${row.name}</td>
-                        <td data-label="ימים בפועל" style="text-align:center">${row.totalDays.toFixed(1)}</td>
-                        <td data-label="אחוז משרה בפועל" style="text-align:center">${row.isSeminar ? 'N/A' : actualPctLabel}</td>
                         <td data-label="יעד לתקופה" style="text-align:center">${targetLabel}</td>
                         <td data-label="אחוז משרה מיועד" style="text-align:center">${row.isSeminar ? 'N/A' : plannedPctLabel}</td>
+                        <td data-label="ימים בפועל" style="text-align:center">${row.totalDays.toFixed(1)}</td>
+                        <td data-label="אחוז משרה בפועל" style="text-align:center">${actualPctLabel}</td>
                         <td data-label="פירוט" class="col-action" style="text-align:center;"><button id="all-researchers-row-${idx}-btn" class="row-toggle-btn" onclick="toggleComparisonRow('all-researchers', ${idx})">פרטים</button></td>
                     </tr>
                     <tr id="all-researchers-row-${idx}-detail" class="row-detail">
@@ -5951,10 +6247,10 @@
                                     <thead>
                                         <tr>
                                             <th>עובד/ת</th>
-                                            <th style="text-align:center">ימים בפועל</th>
-                                            <th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>
                                             <th style="text-align:center">יעד לתקופה</th>
                                             <th style="text-align:center">אחוז משרה מיועד</th>
+                                            <th style="text-align:center">ימים בפועל</th>
+                                            <th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>
                                             <th class="col-status" style="text-align:center">סטטוס</th>
                                         </tr>
                                     </thead>
@@ -5967,10 +6263,19 @@
                                                 ? `${emp.activityPercent.toFixed(1)}%`
                                                 : 'N/A';
                                             
-                                            const empCalcPercent = calculateActualPercentByHours(
-                                                emp.fullyMappedHoursForResearcher != null ? emp.fullyMappedHoursForResearcher : emp.researcherHours,
-                                                emp.mappedTotalHours != null ? emp.mappedTotalHours : Number(emp.empTotalDaysAll || 0) * HOURS_PER_DAY
-                                            );
+                                            let empCalcPercent = null;
+                                            if (emp.isSeminar) {
+                                                // For seminar employees, calculate as actualHours/totalHours
+                                                const empTotalHours = emp.mappedTotalHours != null ? emp.mappedTotalHours : Number(emp.empTotalDaysAll || 0) * HOURS_PER_DAY;
+                                                if (emp.actualHours > 0 && empTotalHours > 0) {
+                                                    empCalcPercent = (emp.actualHours / empTotalHours) * 100;
+                                                }
+                                            } else {
+                                                empCalcPercent = calculateActualPercentByHours(
+                                                    emp.fullyMappedHoursForResearcher != null ? emp.fullyMappedHoursForResearcher : emp.researcherHours,
+                                                    emp.mappedTotalHours != null ? emp.mappedTotalHours : Number(emp.empTotalDaysAll || 0) * HOURS_PER_DAY
+                                                );
+                                            }
                                             const empActualPct = empCalcPercent != null ? `${roundToSingleDecimal(empCalcPercent).toFixed(1)}%` : 'N/A';
 
                                             let empStatus = 'N/A';
@@ -5988,10 +6293,10 @@
                                             return `
                                                 <tr>
                                                     <td data-label="עובד/ת" style="font-weight:600">${emp.empName}</td>
-                                                    <td data-label="ימים בפועל" style="text-align:center">${emp.actualDays.toFixed(1)}</td>
-                                                    <td data-label="אחוז משרה בפועל" style="text-align:center">${emp.isSeminar ? 'N/A' : empActualPct}</td>
                                                     <td data-label="יעד לתקופה" style="text-align:center">${empTarget}</td>
                                                     <td data-label="אחוז משרה מיועד" style="text-align:center">${emp.isSeminar ? 'N/A' : empPlannedPct}</td>
+                                                    <td data-label="ימים בפועל" style="text-align:center">${emp.actualDays.toFixed(1)}</td>
+                                                    <td data-label="אחוז משרה בפועל" style="text-align:center">${empActualPct}</td>
                                                     <td data-label="סטטוס" class="col-status" style="text-align:center"><span class="status-chip ${empStatusClass}">${empStatus}</span></td>
                                                 </tr>`;
                                         }).join('')}
@@ -6087,9 +6392,9 @@
             });
             const cols = [
                 { key: 'name', header: 'עובד/ת' },
-                { key: 'actualDays', header: 'ימים בפועל' },
                 { key: 'targetDays', header: 'יעד לתקופה' },
                 { key: 'plannedPct', header: 'אחוז משרה מיועד' },
+                { key: 'actualDays', header: 'ימים בפועל' },
                 { key: 'actualPct', header: 'אחוז משרה בפועל' }
             ];
             csv += toCsv(rows, cols);
@@ -6140,9 +6445,9 @@
 
             const summaryCols = [
                 { key: 'name', header: 'חוקר/ת' },
-                { key: 'actualDays', header: 'ימים בפועל' },
                 { key: 'targetDays', header: 'יעד לתקופה' },
                 { key: 'plannedPct', header: 'אחוז משרה מיועד' },
+                { key: 'actualDays', header: 'ימים בפועל' },
                 { key: 'actualPct', header: 'אחוז משרה בפועל' }
             ];
 
@@ -6151,9 +6456,9 @@
 
             const detailCols = [
                 { key: 'name', header: 'עובד/ת' },
-                { key: 'actualDays', header: 'ימים בפועל' },
                 { key: 'targetDays', header: 'יעד לתקופה' },
                 { key: 'plannedPct', header: 'אחוז משרה מיועד' },
+                { key: 'actualDays', header: 'ימים בפועל' },
                 { key: 'actualPct', header: 'אחוז משרה בפועל' }
             ];
 
@@ -6182,6 +6487,8 @@
 
 
         document.addEventListener('DOMContentLoaded', () => {
+            initializeIsraeliDateInputs();
+
             // ---- Instant UI restore from cache (eliminates re-auth flash) ----
             const cachedManagerName = sessionStorage.getItem('mgr_dashboard_name');
             if (cachedManagerName) {
@@ -6555,6 +6862,7 @@
             } else {
                 preview.textContent = '';
             }
+            syncIsraeliDateInput(input);
         };
 
         function renderBackdateEmployeesList(settings) {

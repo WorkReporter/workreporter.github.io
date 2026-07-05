@@ -247,6 +247,13 @@
         }
 
         function calculateEmployeeActualPercent(emp, includeCategorized, includeRelative) {
+            if (emp.isSeminar) {
+                const empTotalHours = emp.mappedTotalHours != null ? emp.mappedTotalHours : Number(emp.empTotalDaysAll || 0) * HOURS_PER_DAY;
+                if (emp.actualHours > 0 && empTotalHours > 0) {
+                    return (emp.actualHours / empTotalHours) * 100;
+                }
+                return null;
+            }
             if (includeCategorized && includeRelative && emp.mappedTotalHours != null) {
                 return calculateActualPercentByHours(
                     emp.fullyMappedHoursForResearcher != null
@@ -269,6 +276,17 @@
             let actualPctHasValue = false;
 
             (row.employees || []).forEach(emp => {
+                if (row.isSeminar) {
+                    if (emp.actualHours > 0) {
+                        const empTotalHours = emp.mappedTotalHours != null ? emp.mappedTotalHours : Number(emp.empTotalDaysAll || 0) * HOURS_PER_DAY;
+                        if (empTotalHours > 0) {
+                            const pct = (emp.actualHours / empTotalHours) * 100;
+                            actualPctSum += roundToSingleDecimal(pct);
+                            actualPctHasValue = true;
+                        }
+                    }
+                    return;
+                }
                 if (emp.isSeminar) return;
 
                 if (emp.activityPercent != null) {
@@ -287,7 +305,7 @@
                 plannedPct: !row.isSeminar && plannedPctHasValue
                     ? `${roundToSingleDecimal(plannedPctSum).toFixed(1)}%`
                     : 'N/A',
-                actualPct: !row.isSeminar && actualPctHasValue
+                actualPct: actualPctHasValue
                     ? `${roundToSingleDecimal(actualPctSum).toFixed(1)}%`
                     : 'N/A'
             };
@@ -322,14 +340,43 @@
                 html += `<div class="section-note">מחציות מכוסות: ${halfYearLabel}</div>`;
             }
 
+            // Calculate seminar row if needed
+            let seminarRowHtml = '';
+            const totalSeminarHours = Number(reportData.totalSeminarHours || 0);
+            if (!isSeminarMode && totalSeminarHours > 0) {
+                const totalSeminarDays = roundToSingleDecimal(totalSeminarHours / HOURS_PER_DAY);
+                let seminarActualPctSum = 0;
+                let seminarActualPctHasValue = false;
+                results.forEach(r => {
+                    if (r.seminarHours > 0) {
+                        const empTotalHours = r.mappedTotalHours != null ? r.mappedTotalHours : Number(r.empTotalDaysAll || 0) * HOURS_PER_DAY;
+                        if (empTotalHours > 0) {
+                            const pct = (r.seminarHours / empTotalHours) * 100;
+                            seminarActualPctSum += roundToSingleDecimal(pct);
+                            seminarActualPctHasValue = true;
+                        }
+                    }
+                });
+                const seminarActualPctLabel = seminarActualPctHasValue ? `${roundToSingleDecimal(seminarActualPctSum).toFixed(1)}%` : 'N/A';
+
+                seminarRowHtml = `<tr style="background:#f0fdf4; border-top: 2px solid #86efac;">
+                    <td style="font-weight:600; color:#059669; text-align:right;">מכון - סמינר/קורס/הכשרה</td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                    <td>${totalSeminarDays.toFixed(1)}</td>
+                    <td>${seminarActualPctLabel}</td>
+                    <td><span class="status-chip" style="background:#059669;">${formatHours(totalSeminarHours)} שעות</span></td>
+                </tr>`;
+            }
+
             html += `<div class="section"><div class="section-title">פירוט לפי עובדים</div>
                 <table>
                     <thead>
                         <tr>
                             <th>עובד/ת</th>
-                            <th>ימים בפועל</th>
                             <th>יעד לתקופה</th>
                             <th>אחוז משרה מיועד</th>
+                            <th>ימים בפועל</th>
                             <th>אחוז משרה בפועל</th>
                             <th>סטטוס</th>
                         </tr>
@@ -337,7 +384,8 @@
                     <tbody>
                         ${results.map(row => {
                             const targetLabel = row.targetDays != null ? row.targetDays.toFixed(1) : 'N/A';
-                            const plannedPct = row.activityPercent != null ? `${row.activityPercent.toFixed(1)}%` : 'N/A';                            let calcPercent = null;
+                            const plannedPct = row.activityPercent != null ? `${row.activityPercent.toFixed(1)}%` : 'N/A';
+                            let calcPercent = null;
                             if (includeCategorized && includeRelative && row.mappedTotalHours != null) {
                                 calcPercent = calculateActualPercentByHours(
                                     row.fullyMappedHoursForResearcher != null
@@ -357,13 +405,14 @@
                             return `
                                 <tr>
                                     <td>${escapeHtml(row.empName)}</td>
-                                    <td>${row.actualDays.toFixed(1)}</td>
                                     <td>${targetLabel}</td>
                                     <td>${plannedPct}</td>
+                                    <td>${row.actualDays.toFixed(1)}</td>
                                     <td>${actualPct}</td>
                                     <td><span class="status-chip ${status.className}">${escapeHtml(status.text)}</span></td>
                                 </tr>`;
                         }).join('')}
+                        ${seminarRowHtml}
                     </tbody>
                 </table>
             </div>`;
@@ -403,9 +452,9 @@
                     <thead>
                         <tr>
                             <th>חוקר/ת</th>
-                            <th>ימים בפועל</th>
                             <th>יעד לתקופה</th>
                             <th>אחוז משרה מיועד</th>
+                            <th>ימים בפועל</th>
                             <th>אחוז משרה בפועל</th>
                             <th>סטטוס</th>
                         </tr>
@@ -423,10 +472,10 @@
                             return `
                                 <tr>
                                     <td>${escapeHtml(row.name)}</td>
-                                    <td>${row.totalDays.toFixed(1)}</td>
                                     <td>${row.isSeminar ? 'N/A' : targetLabel}</td>
                                     <td>${row.isSeminar ? 'N/A' : plannedPct}</td>
-                                    <td>${row.isSeminar ? 'N/A' : actualPct}</td>
+                                    <td>${row.totalDays.toFixed(1)}</td>
+                                    <td>${actualPct}</td>
                                     <td><span class="status-chip ${status.className}">${escapeHtml(status.text)}</span></td>
                                 </tr>`;
                         }).join('')}
@@ -442,9 +491,9 @@
                         <thead>
                             <tr>
                                 <th>עובד/ת</th>
-                                <th>ימים בפועל</th>
                                 <th>יעד לתקופה</th>
                                 <th>אחוז משרה מיועד</th>
+                                <th>ימים בפועל</th>
                                 <th>אחוז משרה בפועל</th>
                                 <th>סטטוס</th>
                             </tr>
@@ -465,10 +514,10 @@
                                 return `
                                     <tr>
                                         <td>${escapeHtml(emp.empName)}</td>
-                                        <td>${emp.actualDays.toFixed(1)}</td>
                                         <td>${emp.isSeminar ? 'N/A' : targetLabel}</td>
                                         <td>${emp.isSeminar ? 'N/A' : plannedPct}</td>
-                                        <td>${emp.isSeminar ? 'N/A' : actualPct}</td>
+                                        <td>${emp.actualDays.toFixed(1)}</td>
+                                        <td>${actualPct}</td>
                                         <td><span class="status-chip ${status.className}">${escapeHtml(status.text)}</span></td>
                                     </tr>`;
                             }).join('')}
