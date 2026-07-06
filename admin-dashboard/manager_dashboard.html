@@ -5048,7 +5048,7 @@
             };
 
             sessionStorage.setItem('researcherPdfReportData', JSON.stringify(payload));
-            const url = `researcher_pdf_report.html?v=20260705-2`;
+            const url = `researcher_pdf_report.html?v=20260706-1`;
             window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
         };
 
@@ -5815,32 +5815,6 @@
                 </tr>`;
             });
 
-            // Add seminar summary row if not in seminar mode and there are seminar hours
-            if (!isSeminarMode && totalSeminarHours > 0) {
-                // Calculate seminar actual percent: sum of (seminarHours/totalHours) per employee
-                let seminarActualPctSum = 0;
-                let seminarActualPctHasValue = false;
-                results.forEach(r => {
-                    if (r.seminarHours > 0) {
-                        const empTotalHours = r.mappedTotalHours != null ? r.mappedTotalHours : Number(r.empTotalDaysAll || 0) * HOURS_PER_DAY;
-                        if (empTotalHours > 0) {
-                            const pct = (r.seminarHours / empTotalHours) * 100;
-                            seminarActualPctSum += roundToSingleDecimal(pct);
-                            seminarActualPctHasValue = true;
-                        }
-                    }
-                });
-                const seminarActualPctLabel = seminarActualPctHasValue ? `${roundToSingleDecimal(seminarActualPctSum).toFixed(1)}%` : 'N/A';
-
-                html += `<tr style="background:#f0fdf4; border-top: 2px solid #86efac;">
-                    <td data-label="עובד/ת" style="font-weight:600; color:#059669;">מכון - סמינר/קורס/הכשרה</td>
-                    <td data-label="יעד לתקופה" style="text-align:center">N/A</td>
-                    <td data-label="אחוז משרה מיועד" style="text-align:center">N/A</td>
-                    <td data-label="ימים בפועל" style="text-align:center">${totalSeminarDays.toFixed(1)}</td>
-                    <td data-label="אחוז משרה בפועל" style="text-align:center">${seminarActualPctLabel}</td>
-                    <td data-label="סטטוס" class="col-status" style="text-align:center"><span class="status-chip">${formatHours(totalSeminarHours)} שעות</span></td>
-                </tr>`;
-            }
 
             // Per-employee categorizations section
             html += `</tbody></table></div></div>`;

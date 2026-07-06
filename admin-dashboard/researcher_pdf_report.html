@@ -340,34 +340,6 @@
                 html += `<div class="section-note">מחציות מכוסות: ${halfYearLabel}</div>`;
             }
 
-            // Calculate seminar row if needed
-            let seminarRowHtml = '';
-            const totalSeminarHours = Number(reportData.totalSeminarHours || 0);
-            if (!isSeminarMode && totalSeminarHours > 0) {
-                const totalSeminarDays = roundToSingleDecimal(totalSeminarHours / HOURS_PER_DAY);
-                let seminarActualPctSum = 0;
-                let seminarActualPctHasValue = false;
-                results.forEach(r => {
-                    if (r.seminarHours > 0) {
-                        const empTotalHours = r.mappedTotalHours != null ? r.mappedTotalHours : Number(r.empTotalDaysAll || 0) * HOURS_PER_DAY;
-                        if (empTotalHours > 0) {
-                            const pct = (r.seminarHours / empTotalHours) * 100;
-                            seminarActualPctSum += roundToSingleDecimal(pct);
-                            seminarActualPctHasValue = true;
-                        }
-                    }
-                });
-                const seminarActualPctLabel = seminarActualPctHasValue ? `${roundToSingleDecimal(seminarActualPctSum).toFixed(1)}%` : 'N/A';
-
-                seminarRowHtml = `<tr style="background:#f0fdf4; border-top: 2px solid #86efac;">
-                    <td style="font-weight:600; color:#059669; text-align:right;">מכון - סמינר/קורס/הכשרה</td>
-                    <td>N/A</td>
-                    <td>N/A</td>
-                    <td>${totalSeminarDays.toFixed(1)}</td>
-                    <td>${seminarActualPctLabel}</td>
-                    <td><span class="status-chip" style="background:#059669;">${formatHours(totalSeminarHours)} שעות</span></td>
-                </tr>`;
-            }
 
             html += `<div class="section"><div class="section-title">פירוט לפי עובדים</div>
                 <table>
@@ -412,7 +384,6 @@
                                     <td><span class="status-chip ${status.className}">${escapeHtml(status.text)}</span></td>
                                 </tr>`;
                         }).join('')}
-                        ${seminarRowHtml}
                     </tbody>
                 </table>
             </div>`;
