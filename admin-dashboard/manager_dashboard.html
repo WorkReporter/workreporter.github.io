@@ -11,7 +11,7 @@
     <title>מערכת דיווח שעות - ניהול</title>
     <script>
         (function () {
-            var CURRENT_CLIENT_VERSION = '20260708-1';
+            var CURRENT_CLIENT_VERSION = '20260708-2';
             var params = new URLSearchParams(window.location.search);
             var currentVersion = params.get('v');
             if (currentVersion && currentVersion !== CURRENT_CLIENT_VERSION) {
@@ -5215,7 +5215,7 @@
             };
 
             sessionStorage.setItem('researcherPdfReportData', JSON.stringify(payload));
-            const url = `researcher_pdf_report.html?v=20260708-1`;
+            const url = `researcher_pdf_report.html?v=20260708-2`;
             window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
         };
 
