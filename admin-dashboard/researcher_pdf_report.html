@@ -535,6 +535,19 @@
             document.getElementById('report-page').style.display = 'block';
         }
 
+        function getReportFileNameBase() {
+            try {
+                const payload = JSON.parse(sessionStorage.getItem('researcherPdfReportData') || '{}');
+                if (payload.reportMode === 'all') return 'report_all';
+                const name = (payload.reportData?.researcherName || '').trim();
+                if (!name) return 'report';
+                const safeName = name.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_');
+                return `report_${safeName}`;
+            } catch (e) {
+                return 'report';
+            }
+        }
+
         async function generatePDF() {
             const btn = document.querySelector('.btn-primary');
             const infoEl = document.getElementById('generated-info');
@@ -578,7 +591,7 @@
                 }
 
                 const dateStr = new Date().toISOString().slice(0, 10);
-                pdf.save(`researchers_report_${dateStr}.pdf`);
+                pdf.save(`${getReportFileNameBase()}_${dateStr}.pdf`);
                 infoEl.textContent = 'הקובץ נשמר בהצלחה.';
             } catch (error) {
                 console.error('PDF Generation failed:', error);

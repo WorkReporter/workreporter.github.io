@@ -11,7 +11,7 @@
     <title>מערכת דיווח שעות - ניהול</title>
     <script>
         (function () {
-            var CURRENT_CLIENT_VERSION = '20260705-2';
+            var CURRENT_CLIENT_VERSION = '20260708-1';
             var params = new URLSearchParams(window.location.search);
             var currentVersion = params.get('v');
             if (currentVersion && currentVersion !== CURRENT_CLIENT_VERSION) {
@@ -2637,7 +2637,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-        import { getDatabase, ref, get, set, query, orderByChild, equalTo } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+        import { getDatabase, ref, get, set, query, orderByChild, equalTo, onValue } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
         // Firebase configuration - Replace with your config
         const firebaseConfig = {
@@ -2657,6 +2657,75 @@
 
         // Make Firebase available globally (include signOut and set)
         window.firebaseApp = { app, auth, db, get, ref, set, query, orderByChild, equalTo, signOut };
+
+        // ---------- Connectivity monitor ----------
+        // Warn the manager when the internet / Firebase connection is lost, so they
+        // know the data on screen may be stale. Combines navigator.onLine with the
+        // Firebase '.info/connected' signal (debounced to avoid flicker).
+        (function initConnectivityMonitor() {
+            let navOnline = navigator.onLine !== false;
+            let fbConnected = true;
+            let fbDisconnectTimer = null;
+            let reconnectTimer = null;
+            let bannerEl = null;
+
+            function isOnline() { return navOnline && fbConnected; }
+
+            function ensureBanner() {
+                if (bannerEl) return bannerEl;
+                const style = document.createElement('style');
+                style.textContent =
+                    '#conn-banner{position:fixed;top:0;left:0;right:0;z-index:99999;' +
+                    'padding:10px 16px;text-align:center;font-weight:700;font-size:0.95rem;' +
+                    'color:#fff;background:#c0392b;box-shadow:0 2px 8px rgba(0,0,0,0.2);' +
+                    'transform:translateY(-100%);transition:transform .25s ease;direction:rtl;}' +
+                    '#conn-banner.show{transform:translateY(0);}' +
+                    '#conn-banner.online{background:#27ae60;}';
+                document.head.appendChild(style);
+                const banner = document.createElement('div');
+                banner.id = 'conn-banner';
+                banner.setAttribute('role', 'status');
+                banner.setAttribute('aria-live', 'assertive');
+                document.body.appendChild(banner);
+                bannerEl = banner;
+                return banner;
+            }
+
+            function render() {
+                const banner = ensureBanner();
+                if (isOnline()) {
+                    if (banner.classList.contains('show') && !banner.classList.contains('online')) {
+                        banner.classList.add('online');
+                        banner.textContent = 'החיבור לאינטרנט חזר.';
+                        if (reconnectTimer) clearTimeout(reconnectTimer);
+                        reconnectTimer = setTimeout(() => banner.classList.remove('show', 'online'), 2500);
+                    } else {
+                        banner.classList.remove('show', 'online');
+                    }
+                } else {
+                    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+                    banner.classList.remove('online');
+                    banner.textContent = 'אין חיבור לאינטרנט — ייתכן שהנתונים המוצגים אינם מעודכנים.';
+                    banner.classList.add('show');
+                }
+            }
+
+            window.addEventListener('online', () => { navOnline = true; render(); });
+            window.addEventListener('offline', () => { navOnline = false; render(); });
+            try {
+                onValue(ref(db, '.info/connected'), (snap) => {
+                    if (snap.val() === true) {
+                        if (fbDisconnectTimer) { clearTimeout(fbDisconnectTimer); fbDisconnectTimer = null; }
+                        fbConnected = true;
+                        render();
+                    } else {
+                        if (fbDisconnectTimer) clearTimeout(fbDisconnectTimer);
+                        fbDisconnectTimer = setTimeout(() => { fbConnected = false; render(); }, 2500);
+                    }
+                });
+            } catch (e) { /* rely on navigator.onLine */ }
+            render();
+        })();
     </script>
 
     <div class="header">
@@ -5048,7 +5117,7 @@
             };
 
             sessionStorage.setItem('researcherPdfReportData', JSON.stringify(payload));
-            const url = `researcher_pdf_report.html?v=20260706-1`;
+            const url = `researcher_pdf_report.html?v=20260708-1`;
             window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
         };
 

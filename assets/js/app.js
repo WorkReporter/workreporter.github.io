@@ -1279,31 +1279,53 @@
             if (!currentUser) return;
 
             const weeklyKey = `weekly_${reportData.weekStart}_${reportData.weekEnd}`;
-            database.ref('reports/' + currentUser.uid + '/' + weeklyKey).set({
-                ...reportData,
-                entries: weeklyEntries,
-                type: 'weekly',
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            }).then(() => {
-                showPopup('הדיווח השבועי נשמר בהצלחה!');
-                setTimeout(() => {
-                    showScreen('main');
-                    clearReportForm();
-                    loadReports(currentUser.uid);
-                }, 1200);
-            }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
+            saveReportGuarded(
+                database.ref('reports/' + currentUser.uid + '/' + weeklyKey),
+                { ...reportData, entries: weeklyEntries, type: 'weekly', timestamp: firebase.database.ServerValue.TIMESTAMP },
+                'הדיווח השבועי נשמר בהצלחה!'
+            );
             return;
         }
 
         if (!currentUser) return;
         // אנו יודעים ש-isWeekly הוא false כאן, כי בלוק ה-weekly מבצע return
         const reportKey = `daily_${reportData.date}`;
-        database.ref('reports/' + currentUser.uid + '/' + reportKey).set(reportData).then(() => {
-            showPopup('הדיווח נוסף/עודכן בהצלחה!');
-            setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
-        }).catch((error) => showError('שגיאה בשמירת הדיווח: ' + error.message));
+        saveReportGuarded(
+            database.ref('reports/' + currentUser.uid + '/' + reportKey),
+            reportData,
+            'הדיווח נוסף/עודכן בהצלחה!'
+        );
     }
     window.submitReport = submitReport;
+
+    // Save a report node with offline protection. Blocks up front when offline and
+    // guards against RTDB .set() hanging forever (it never resolves/rejects while
+    // offline). On failure the form data is left intact so nothing is lost.
+    function saveReportGuarded(reportRef, payload, successMessage) {
+        if (typeof window.isAppOnline === 'function' && !window.isAppOnline()) {
+            showPopup('אין חיבור לאינטרנט — הדיווח לא נשמר. הנתונים נשמרו בטופס; נסה/י שוב כשהחיבור יחזור.', 'error', { persist: true });
+            return;
+        }
+        const SAVE_TIMEOUT_MS = 10000;
+        let settled = false;
+        const timer = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            showPopup('השמירה לא הושלמה — ייתכן שאין חיבור לאינטרנט. הנתונים נשמרו בטופס; נסה/י שוב.', 'error', { persist: true });
+        }, SAVE_TIMEOUT_MS);
+        reportRef.set(payload).then(() => {
+            if (settled) return;            // already timed out — do not navigate away
+            settled = true;
+            clearTimeout(timer);
+            showPopup(successMessage);
+            setTimeout(() => { showScreen('main'); clearReportForm(); loadReports(currentUser.uid); }, 1200);
+        }).catch((error) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            showError('שגיאה בשמירת הדיווח: ' + error.message);
+        });
+    }
 
     function clearReportForm() {
         const workEntries = document.getElementById('work-entries');
@@ -2645,7 +2667,7 @@
     function getInputValue(id) { const el = document.getElementById(id); return el ? el.value : ''; }
     function setHTML(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
     function toggleHidden(id, isHidden) { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', isHidden); }
-    function showPopup(message, type = 'success') {
+    function showPopup(message, type = 'success', options = {}) {
         const popup = document.createElement('div');
         popup.className = 'popup';
         popup.setAttribute('role', 'dialog');
@@ -2665,6 +2687,21 @@
                 break;
         }
 
+        if (options.persist) {
+            // Persistent message: stays until the user dismisses it. Used for
+            // save-critical failures (e.g. offline) so they are not missed.
+            popup.innerHTML = `<div class="popup-content"><div class="${innerClass}">${message}` +
+                `<button type="button" class="popup-dismiss" aria-label="סגור" ` +
+                `style="margin-inline-start:12px;background:none;border:none;font-size:1.2em;cursor:pointer;color:inherit;">×</button>` +
+                `</div></div>`;
+            document.body.appendChild(popup);
+            const dismissBtn = popup.querySelector('.popup-dismiss');
+            if (dismissBtn) dismissBtn.addEventListener('click', () => {
+                if (popup.parentNode) document.body.removeChild(popup);
+            });
+            return popup;
+        }
+
         popup.innerHTML = `<div class="popup-content"><div class="${innerClass}">${message}</div></div>`;
         document.body.appendChild(popup);
         setTimeout(() => {
@@ -2672,6 +2709,98 @@
         }, 1000);
     }
     function showError(message) { showPopup(message, 'error'); }
+
+    // ---------- Connectivity monitor ----------
+    // Detect loss of internet / Firebase connection and warn the user so that
+    // data is not silently entered while offline (RTDB .set() hangs forever when
+    // offline and never resolves/rejects). Combines two signals:
+    //   1. navigator.onLine + online/offline events (fast, browser-level)
+    //   2. Firebase RTDB '.info/connected' (authoritative link to the backend)
+    let _navOnline = (typeof navigator !== 'undefined') ? navigator.onLine !== false : true;
+    let _fbConnected = true;            // assume connected until told otherwise
+    let _fbDisconnectTimer = null;      // debounce '.info/connected' flapping
+    let _connBannerEl = null;
+    let _connReconnectTimer = null;
+
+    function isAppOnline() {
+        return _navOnline && _fbConnected;
+    }
+    window.isAppOnline = isAppOnline;
+
+    function ensureConnBanner() {
+        if (_connBannerEl) return _connBannerEl;
+        if (!document.getElementById('conn-banner-style')) {
+            const style = document.createElement('style');
+            style.id = 'conn-banner-style';
+            style.textContent =
+                '#conn-banner{position:fixed;top:0;left:0;right:0;z-index:99999;' +
+                'padding:10px 16px;text-align:center;font-weight:700;font-size:0.95rem;' +
+                'color:#fff;background:#c0392b;box-shadow:0 2px 8px rgba(0,0,0,0.2);' +
+                'transform:translateY(-100%);transition:transform .25s ease;direction:rtl;}' +
+                '#conn-banner.show{transform:translateY(0);}' +
+                '#conn-banner.online{background:#27ae60;}';
+            document.head.appendChild(style);
+        }
+        const banner = document.createElement('div');
+        banner.id = 'conn-banner';
+        banner.setAttribute('role', 'status');
+        banner.setAttribute('aria-live', 'assertive');
+        document.body.appendChild(banner);
+        _connBannerEl = banner;
+        return banner;
+    }
+
+    function renderConnState() {
+        const banner = ensureConnBanner();
+        if (isAppOnline()) {
+            // Show a brief "reconnected" confirmation, then hide.
+            if (banner.classList.contains('show') && !banner.classList.contains('online')) {
+                banner.classList.add('online');
+                banner.textContent = 'החיבור לאינטרנט חזר.';
+                if (_connReconnectTimer) clearTimeout(_connReconnectTimer);
+                _connReconnectTimer = setTimeout(() => {
+                    banner.classList.remove('show', 'online');
+                }, 2500);
+            } else {
+                banner.classList.remove('show', 'online');
+            }
+        } else {
+            if (_connReconnectTimer) { clearTimeout(_connReconnectTimer); _connReconnectTimer = null; }
+            banner.classList.remove('online');
+            banner.textContent = 'אין חיבור לאינטרנט — נתונים שתזין/י לא יישמרו עד שהחיבור יחזור.';
+            banner.classList.add('show');
+        }
+    }
+
+    function initConnectivityMonitor() {
+        try {
+            _navOnline = navigator.onLine !== false;
+            window.addEventListener('online', () => { _navOnline = true; renderConnState(); });
+            window.addEventListener('offline', () => { _navOnline = false; renderConnState(); });
+
+            // Firebase backend connection state (debounced to avoid flicker during
+            // the reconnect handshake).
+            try {
+                database.ref('.info/connected').on('value', (snap) => {
+                    const connected = snap.val() === true;
+                    if (connected) {
+                        if (_fbDisconnectTimer) { clearTimeout(_fbDisconnectTimer); _fbDisconnectTimer = null; }
+                        _fbConnected = true;
+                        renderConnState();
+                    } else {
+                        if (_fbDisconnectTimer) clearTimeout(_fbDisconnectTimer);
+                        _fbDisconnectTimer = setTimeout(() => {
+                            _fbConnected = false;
+                            renderConnState();
+                        }, 2500);
+                    }
+                });
+            } catch (e) { /* .info/connected unavailable — rely on navigator */ }
+
+            renderConnState();
+        } catch (e) { /* never let connectivity monitor break the app */ }
+    }
+
     function formatDate(date) {
         // Fix timezone issue by creating date in local timezone
         const year = date.getFullYear();
@@ -2838,6 +2967,7 @@
 
         // initial
         init();
+        initConnectivityMonitor();
         processEmailActionLink();
 
         // Update weekly date range AND toggle button state when report date changes
