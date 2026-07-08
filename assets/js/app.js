@@ -2767,7 +2767,7 @@
         } else {
             if (_connReconnectTimer) { clearTimeout(_connReconnectTimer); _connReconnectTimer = null; }
             banner.classList.remove('online');
-            banner.textContent = 'אין חיבור לאינטרנט — נתונים שתזין/י לא יישמרו עד שהחיבור יחזור.';
+            banner.textContent = 'אין חיבור לרשת — נסה/י לרענן את העמוד. נתונים שתזין/י לא יישמרו עד שהחיבור יחזור.';
             banner.classList.add('show');
         }
     }

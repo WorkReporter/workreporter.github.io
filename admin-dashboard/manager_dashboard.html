@@ -2658,34 +2658,55 @@
         // Make Firebase available globally (include signOut and set)
         window.firebaseApp = { app, auth, db, get, ref, set, query, orderByChild, equalTo, signOut };
 
-        // ---------- Connectivity monitor ----------
-        // Warn the manager when the internet / Firebase connection is lost, so they
-        // know the data on screen may be stale. Combines navigator.onLine with the
-        // Firebase '.info/connected' signal (debounced to avoid flicker).
+        // ---------- Connectivity & health monitor ----------
+        // Warn the manager when something is wrong so they know the data on screen may
+        // be stale or broken. Covers three cases, in priority order:
+        //   1. No network — navigator.onLine + Firebase '.info/connected' (debounced).
+        //   2. Database / app error — failed DB subscription, uncaught JS errors, or
+        //      unhandled promise rejections.
+        // In every problem case a "רענון העמוד" button lets the manager reload.
         (function initConnectivityMonitor() {
             let navOnline = navigator.onLine !== false;
             let fbConnected = true;
+            let hasAppError = false;
+            let appErrorMsg = '';
             let fbDisconnectTimer = null;
             let reconnectTimer = null;
             let bannerEl = null;
-
-            function isOnline() { return navOnline && fbConnected; }
+            let textEl = null;
+            let refreshBtn = null;
 
             function ensureBanner() {
                 if (bannerEl) return bannerEl;
                 const style = document.createElement('style');
                 style.textContent =
                     '#conn-banner{position:fixed;top:0;left:0;right:0;z-index:99999;' +
-                    'padding:10px 16px;text-align:center;font-weight:700;font-size:0.95rem;' +
+                    'padding:10px 16px;font-weight:700;font-size:0.95rem;' +
                     'color:#fff;background:#c0392b;box-shadow:0 2px 8px rgba(0,0,0,0.2);' +
-                    'transform:translateY(-100%);transition:transform .25s ease;direction:rtl;}' +
+                    'transform:translateY(-100%);transition:transform .25s ease;direction:rtl;' +
+                    'display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}' +
                     '#conn-banner.show{transform:translateY(0);}' +
-                    '#conn-banner.online{background:#27ae60;}';
+                    '#conn-banner.online{background:#27ae60;}' +
+                    '#conn-banner.warn{background:#e67e22;}' +
+                    '#conn-banner .conn-refresh{background:#fff;color:#c0392b;border:none;' +
+                    'border-radius:6px;padding:5px 14px;font-weight:700;font-size:0.9rem;' +
+                    'cursor:pointer;font-family:inherit;}' +
+                    '#conn-banner.warn .conn-refresh{color:#e67e22;}' +
+                    '#conn-banner .conn-refresh:hover{opacity:0.9;}';
                 document.head.appendChild(style);
                 const banner = document.createElement('div');
                 banner.id = 'conn-banner';
                 banner.setAttribute('role', 'status');
                 banner.setAttribute('aria-live', 'assertive');
+                textEl = document.createElement('span');
+                textEl.className = 'conn-text';
+                refreshBtn = document.createElement('button');
+                refreshBtn.type = 'button';
+                refreshBtn.className = 'conn-refresh';
+                refreshBtn.textContent = 'רענון העמוד';
+                refreshBtn.addEventListener('click', () => location.reload());
+                banner.appendChild(textEl);
+                banner.appendChild(refreshBtn);
                 document.body.appendChild(banner);
                 bannerEl = banner;
                 return banner;
@@ -2693,25 +2714,53 @@
 
             function render() {
                 const banner = ensureBanner();
-                if (isOnline()) {
-                    if (banner.classList.contains('show') && !banner.classList.contains('online')) {
-                        banner.classList.add('online');
-                        banner.textContent = 'החיבור לאינטרנט חזר.';
-                        if (reconnectTimer) clearTimeout(reconnectTimer);
-                        reconnectTimer = setTimeout(() => banner.classList.remove('show', 'online'), 2500);
-                    } else {
-                        banner.classList.remove('show', 'online');
-                    }
-                } else {
+                if (!navOnline || !fbConnected) {
+                    // No network / DB link — highest priority.
+                    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+                    banner.classList.remove('online', 'warn');
+                    textEl.textContent = 'אין חיבור לרשת — נסה/י לרענן את העמוד. ייתכן שהנתונים המוצגים אינם מעודכנים.';
+                    refreshBtn.style.display = '';
+                    banner.classList.add('show');
+                } else if (hasAppError) {
+                    // Online, but the app hit a problem (DB error, JS error, etc.).
                     if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
                     banner.classList.remove('online');
-                    banner.textContent = 'אין חיבור לאינטרנט — ייתכן שהנתונים המוצגים אינם מעודכנים.';
+                    banner.classList.add('warn');
+                    textEl.textContent = appErrorMsg || 'אירעה תקלה בטעינת הנתונים — נסה/י לרענן את העמוד.';
+                    refreshBtn.style.display = '';
                     banner.classList.add('show');
+                } else if (banner.classList.contains('show') && !banner.classList.contains('online')) {
+                    // Recovered from a network problem — flash a brief confirmation.
+                    banner.classList.remove('warn');
+                    banner.classList.add('online');
+                    textEl.textContent = 'החיבור חזר לתקינות.';
+                    refreshBtn.style.display = 'none';
+                    if (reconnectTimer) clearTimeout(reconnectTimer);
+                    reconnectTimer = setTimeout(() => banner.classList.remove('show', 'online'), 2500);
+                } else {
+                    banner.classList.remove('show', 'online', 'warn');
                 }
             }
 
+            // Flag an app-level problem. Sticks until the manager refreshes, since we
+            // can't reliably know the underlying issue has cleared.
+            function reportAppError(msg) {
+                hasAppError = true;
+                if (msg) appErrorMsg = msg;
+                render();
+            }
+            window.reportAppError = reportAppError;
+
             window.addEventListener('online', () => { navOnline = true; render(); });
             window.addEventListener('offline', () => { navOnline = false; render(); });
+            // Uncaught JS errors (ignore resource-load errors, which have no .error).
+            window.addEventListener('error', (e) => {
+                if (e && e.error) reportAppError('אירעה תקלה בעמוד — נסה/י לרענן את העמוד.');
+            });
+            window.addEventListener('unhandledrejection', () => {
+                reportAppError('אירעה תקלה בטעינת הנתונים — נסה/י לרענן את העמוד.');
+            });
+
             try {
                 onValue(ref(db, '.info/connected'), (snap) => {
                     if (snap.val() === true) {
@@ -2722,9 +2771,52 @@
                         if (fbDisconnectTimer) clearTimeout(fbDisconnectTimer);
                         fbDisconnectTimer = setTimeout(() => { fbConnected = false; render(); }, 2500);
                     }
+                }, (err) => {
+                    // Subscription failed — DB unreachable or permission issue.
+                    reportAppError('שגיאה בחיבור למסד הנתונים — נסה/י לרענן את העמוד.');
                 });
-            } catch (e) { /* rely on navigator.onLine */ }
+            } catch (e) {
+                reportAppError('שגיאה בחיבור למסד הנתונים — נסה/י לרענן את העמוד.');
+            }
             render();
+        })();
+
+        // Race a Firebase write against a timeout, so a silently-dropped connection or an
+        // expired token can never leave a save() promise hanging forever with no feedback.
+        // Rejects with Error('SAVE_TIMEOUT') so callers can give a connection-specific message.
+        window.saveWithTimeout = function saveWithTimeout(savePromise, ms) {
+            let timer;
+            const timeout = new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error('SAVE_TIMEOUT')), ms || 10000);
+            });
+            return Promise.race([savePromise, timeout]).finally(() => clearTimeout(timer));
+        };
+
+        // When the manager returns to a tab that sat in the background, the auth token may
+        // have expired or the socket dropped silently while '.info/connected' still reads OK.
+        // Force a token refresh on resume (after a meaningful idle gap) and warn if it fails.
+        (function initTokenFreshnessCheck() {
+            let hiddenSince = null;
+            const STALE_MS = 60 * 1000; // ignore quick tab switches
+            document.addEventListener('visibilitychange', async () => {
+                if (document.visibilityState === 'hidden') {
+                    hiddenSince = Date.now();
+                    return;
+                }
+                const gap = hiddenSince ? Date.now() - hiddenSince : 0;
+                hiddenSince = null;
+                if (gap < STALE_MS) return;
+                const auth = window.firebaseApp && window.firebaseApp.auth;
+                const user = auth && auth.currentUser;
+                if (!user) return; // not logged in — nothing to refresh
+                try {
+                    await user.getIdToken(true); // force refresh; throws if the session is dead
+                } catch (e) {
+                    if (window.reportAppError) {
+                        window.reportAppError('החיבור למערכת פג בזמן שהעמוד לא היה פעיל — יש לרענן את העמוד ולהתחבר מחדש.');
+                    }
+                }
+            });
         })();
     </script>
 
@@ -3770,12 +3862,18 @@
                 const categRef = ref(db, path);
                 const payload = Object.fromEntries(dataMap.entries());
                 console.log('[SAVE] Payload to save:', payload);
-                await set(categRef, payload);
+                await window.saveWithTimeout(set(categRef, payload));
                 console.log('[SAVE]  Successfully saved to Firebase at:', path);
                 showToast(' הקיטלוגים נשמרו בהצלחה', 'success');
             } catch (error) {
                 console.error('[SAVE] ❌ Failed to save:', error);
-                showToast('❌ שגיאה בשמירת הקיטלוגים', 'error');
+                if (error && error.message === 'SAVE_TIMEOUT') {
+                    const msg = 'השמירה לא הושלמה — ייתכן שהחיבור נותק. נסה/י לרענן את העמוד.';
+                    showToast('❌ ' + msg, 'error');
+                    if (window.reportAppError) window.reportAppError(msg);
+                } else {
+                    showToast('❌ שגיאה בשמירת הקיטלוגים', 'error');
+                }
             }
         }
 
@@ -6541,9 +6639,14 @@
                 showScreen('hub-screen');
             }
 
+            // Tracks whether this session was ever authenticated, so a later null from
+            // onAuthStateChanged is treated as a lost session (warn) and not the normal
+            // "not logged in yet" state on first load.
+            let hadAuthUser = false;
             window.firebaseApp.auth.onAuthStateChanged(async (user) => {
                 AppState.currentUser = user;
                 if (user) {
+                    hadAuthUser = true;
                     try {
                         const { db, ref, get } = window.firebaseApp;
                         const userRef = ref(db, `users/${user.uid}`);
@@ -6566,6 +6669,10 @@
                     sessionStorage.removeItem('mgr_dashboard_name');
                     document.getElementById('header-name').textContent = ' מערכת דיווח פעילות';
                     document.getElementById('employees-list').innerHTML = '<div class="empty-state">יש להתחבר כדי לגשת למערכת</div>';
+                    // Session was authenticated and is now null → lost session, not first load.
+                    if (hadAuthUser && window.reportAppError) {
+                        window.reportAppError('נותקת מהמערכת (ייתכן שפג תוקף החיבור) — יש לרענן את העמוד ולהתחבר מחדש.');
+                    }
                 }
             });
             generateCalendar();
@@ -6766,7 +6873,7 @@
 
                 // Update the employee's active researchers
                 const employeeActiveRef = ref(db, `users/${AppState.selectedEmployee.id}/activeResearchers`);
-                await set(employeeActiveRef, modalTempActiveResearchers);
+                await window.saveWithTimeout(set(employeeActiveRef, modalTempActiveResearchers));
 
                 console.log('Employee active researchers saved successfully');
 
@@ -6784,7 +6891,13 @@
                 alert('החוקרים הפעילים נשמרו בהצלחה!');
             } catch (error) {
                 console.error('Error saving researchers:', error);
-                alert('שגיאה בשמירת החוקרים: ' + error.message);
+                if (error && error.message === 'SAVE_TIMEOUT') {
+                    const msg = 'השמירה לא הושלמה — ייתכן שהחיבור נותק. נסה/י לרענן את העמוד.';
+                    alert(msg);
+                    if (window.reportAppError) window.reportAppError(msg);
+                } else {
+                    alert('שגיאה בשמירת החוקרים: ' + error.message);
+                }
             }
         };
 
@@ -6827,11 +6940,14 @@
                     ...settings
                 };
 
-                await set(settingsRef, updatedSettings);
+                await window.saveWithTimeout(set(settingsRef, updatedSettings));
                 console.log('Backdate settings saved:', updatedSettings);
                 return true;
             } catch (error) {
                 console.error('Error saving backdate settings:', error);
+                if (error && error.message === 'SAVE_TIMEOUT' && window.reportAppError) {
+                    window.reportAppError('השמירה לא הושלמה — ייתכן שהחיבור נותק. נסה/י לרענן את העמוד.');
+                }
                 return false;
             }
         }
