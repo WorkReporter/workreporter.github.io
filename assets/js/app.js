@@ -127,7 +127,7 @@
         managedMode = null;
         currentResearcherSettingsDate = null;
         // Navigate back to manager dashboard
-        window.location.href = '/admin-dashboard/manager_dashboard.html?v=20261018-1';
+        window.location.href = '/admin-dashboard/manager_dashboard.html?v=20261018-2';
     }
     window.exitManagedMode = exitManagedMode;
 
@@ -190,7 +190,7 @@
                     if (isAdmin && managedParams?.uid) {
                         await enterManagedResearchersMode(managedParams.uid, managedParams.name, managedParams.date);
                     } else if (isAdmin) {
-                        window.location.href = '/admin-dashboard/manager_dashboard.html?v=20261018-1';
+                        window.location.href = '/admin-dashboard/manager_dashboard.html?v=20261018-2';
                     } else {
                         showScreen('main');
                     }
@@ -207,7 +207,7 @@
                     if (isAdmin && managedParams?.uid) {
                         await enterManagedResearchersMode(managedParams.uid, managedParams.name, managedParams.date);
                     } else if (isAdmin) {
-                        window.location.href = '/admin-dashboard/manager_dashboard.html?v=20261018-1';
+                        window.location.href = '/admin-dashboard/manager_dashboard.html?v=20261018-2';
                     } else {
                         showScreen('main');
                     }

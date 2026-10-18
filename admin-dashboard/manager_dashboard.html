@@ -11,7 +11,7 @@
     <title>מערכת דיווח שעות - ניהול</title>
     <script>
         (function () {
-            var CURRENT_CLIENT_VERSION = '20261018-1';
+            var CURRENT_CLIENT_VERSION = '20261018-2';
             var params = new URLSearchParams(window.location.search);
             var currentVersion = params.get('v');
             if (currentVersion && currentVersion !== CURRENT_CLIENT_VERSION) {
@@ -2659,7 +2659,7 @@
             }
         }
 
-        /* Tooltip עבור אחוז משרה בפועל */
+        /* Tooltip עבור בפועל (% משרה) */
         .help-tooltip {
             display: inline-flex;
             align-items: center;
@@ -3334,7 +3334,7 @@
 
         const CACHE_PREFIX = 'reportCategorizationCache_';
         const CATEGORIZATIONS_DB_PATH = 'managerSelectionPreferences';
-        const ACTUAL_PCT_HEADER_HTML = 'אחוז משרה בפועל';
+        const ACTUAL_PCT_HEADER_HTML = 'בפועל (% משרה)';
 
         // Toast notification function
         function showToast(message, type = 'success') {
@@ -3707,10 +3707,10 @@
                 return `
                     <tr id="${sectionId}-row-${idx}-main" class="row-main">
                         <td data-label="חוקר/קטגוריה" style="font-weight:600;">${row.name}</td>
-                        <td data-label="יעד לתקופה" style="text-align:center;">${plannedLabel}</td>
-                        ${includePercentColumns ? `<td data-label="אחוז משרה מיועד" style="text-align:center;">${plannedPercentLabel}</td>` : ''}
+                        <td data-label="יעד (ימים)" style="text-align:center;">${plannedLabel}</td>
+                        ${includePercentColumns ? `<td data-label="יעד (% משרה)" style="text-align:center;">${plannedPercentLabel}</td>` : ''}
                         <td data-label="בפועל (ימים)" style="text-align:center;">${row.actualDays.toFixed(1)} ימים</td>
-                        ${includePercentColumns ? `<td data-label="אחוז משרה בפועל" style="text-align:center;">${actualPercentLabel}</td>` : ''}
+                        ${includePercentColumns ? `<td data-label="בפועל (% משרה)" style="text-align:center;">${actualPercentLabel}</td>` : ''}
                         <td data-label="פעולות" class="col-action" style="text-align:center;"><button id="${sectionId}-row-${idx}-btn" class="row-toggle-btn" onclick="toggleComparisonRow('${sectionId}', ${idx})">פרטים</button></td>
                     </tr>
                     <tr id="${sectionId}-row-${idx}-detail" class="row-detail">
@@ -3744,8 +3744,8 @@
                             <thead>
                                 <tr>
                                     <th>חוקר/קטגוריה</th>
-                                    <th>יעד לתקופה</th>
-                                    ${includePercentColumns ? '<th>אחוז משרה מיועד</th>' : ''}
+                                    <th>יעד (ימים)</th>
+                                    ${includePercentColumns ? '<th>יעד (% משרה)</th>' : ''}
                                     <th>בפועל (ימים)</th>
                                     ${includePercentColumns ? `<th>${ACTUAL_PCT_HEADER_HTML}</th>` : ''}
                                     <th class="col-action">פעולות</th>
@@ -3757,10 +3757,10 @@
                             <tfoot>
                                 <tr>
                                     <td data-label="סיכום" style="font-weight:700;">${includeAllInTotals ? 'סה"כ' : 'סה"כ*'}</td>
-                                    <td data-label="יעד לתקופה" style="text-align:center; font-weight:700;">${totals.plannedDaysComparable.toFixed(1)}</td>
-                                    ${includePercentColumns ? '<td data-label="אחוז משרה מיועד" style="text-align:center;">—</td>' : ''}
+                                    <td data-label="יעד (ימים)" style="text-align:center; font-weight:700;">${totals.plannedDaysComparable.toFixed(1)}</td>
+                                    ${includePercentColumns ? '<td data-label="יעד (% משרה)" style="text-align:center;">—</td>' : ''}
                                     <td data-label="בפועל (ימים)" style="text-align:center; font-weight:700;">${totals.actualDaysTotal.toFixed(1)}</td>
-                                    ${includePercentColumns ? '<td data-label="אחוז משרה בפועל" style="text-align:center;">—</td>' : ''}
+                                    ${includePercentColumns ? '<td data-label="בפועל (% משרה)" style="text-align:center;">—</td>' : ''}
                                     <td data-label="הערה" class="col-action" style="text-align:center;">—</td>
                                 </tr>
                             </tfoot>
@@ -5358,7 +5358,7 @@
                 const comparisonColumns = [
                     { key: 'category', header: 'חוקר/קטגוריה' },
                     { key: 'plannedHalf', header: 'תכנון למחצית' },
-                    { key: 'plannedPeriod', header: 'יעד לתקופה (ימים)' },
+                    { key: 'plannedPeriod', header: 'יעד (ימים)' },
                     { key: 'actual', header: 'בפועל (ימים [שעות])' },
                     { key: 'diff', header: 'פער (ימים)' },
                     { key: 'status', header: 'סטטוס' }
@@ -5414,7 +5414,7 @@
             };
             sessionStorage.setItem('pdfReportData', JSON.stringify(pdfReportData));
 
-            const url = `pdf_report.html`;
+            const url = `pdf_report.html?v=20261018-2`;
             window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
         };
 
@@ -5446,7 +5446,7 @@
             };
 
             sessionStorage.setItem('researcherPdfReportData', JSON.stringify(payload));
-            const url = `researcher_pdf_report.html?v=20261018-1`;
+            const url = `researcher_pdf_report.html?v=20261018-2`;
             window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
         };
 
@@ -6157,9 +6157,9 @@
                 <div class="summary-card"><div class="sc-label">סה"כ יעד</div><div class="sc-value">${totalTargetDays > 0 ? totalTargetDays.toFixed(1) : 'N/A'}</div></div>
             </div>`;
 
-            const pctHeader = isSeminarMode ? '' : `<th style="text-align:center">אחוז משרה מיועד</th>`;
+            const pctHeader = isSeminarMode ? '' : `<th style="text-align:center">יעד (% משרה)</th>`;
             const actualPctHeader = isSeminarMode ? '' : `<th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>`;
-            const targetHeader = isSeminarMode ? '' : `<th style="text-align:center">יעד לתקופה</th>`;
+            const targetHeader = isSeminarMode ? '' : `<th style="text-align:center">יעד (ימים)</th>`;
 
             html += `<div class="report-section"><h3 class="section-title">פירוט לפי עובדים</h3>
             <div class="comparison-table-wrap"><table class="stats-table" style="margin-bottom:0;">
@@ -6167,7 +6167,7 @@
                     <th>עובד/ת</th>
                     ${targetHeader}
                     ${pctHeader}
-                    <th style="text-align:center">ימים בפועל</th>
+                    <th style="text-align:center">בפועל (ימים)</th>
                     ${actualPctHeader}
                     <th class="col-status" style="text-align:center">סטטוס</th>
                 </tr></thead><tbody>`;
@@ -6205,10 +6205,10 @@
                 }
                 html += `<tr>
                     <td data-label="עובד/ת" style="font-weight:600">${r.empName}</td>
-                    ${!isSeminarMode ? `<td data-label="יעד לתקופה" style="text-align:center">${targetLabel}</td>` : ''}
-                    ${!isSeminarMode ? `<td data-label="אחוז משרה מיועד" style="text-align:center">${pctLabel}</td>` : ''}
-                    <td data-label="ימים בפועל" style="text-align:center">${r.actualDays.toFixed(1)}</td>
-                    ${!isSeminarMode ? `<td data-label="אחוז משרה בפועל" style="text-align:center">${actualPctLabel}</td>` : ''}
+                    ${!isSeminarMode ? `<td data-label="יעד (ימים)" style="text-align:center">${targetLabel}</td>` : ''}
+                    ${!isSeminarMode ? `<td data-label="יעד (% משרה)" style="text-align:center">${pctLabel}</td>` : ''}
+                    <td data-label="בפועל (ימים)" style="text-align:center">${r.actualDays.toFixed(1)}</td>
+                    ${!isSeminarMode ? `<td data-label="בפועל (% משרה)" style="text-align:center">${actualPctLabel}</td>` : ''}
                     <td data-label="סטטוס" class="col-status" style="text-align:center"><span class="status-chip ${statusClass}">${status}</span></td>
                 </tr>`;
             });
@@ -6549,9 +6549,9 @@
                 </colgroup>
                 <thead><tr>
                     <th>חוקר/ת</th>
-                    <th style="text-align:center">יעד לתקופה</th>
-                    <th style="text-align:center">אחוז משרה מיועד</th>
-                    <th style="text-align:center">ימים בפועל</th>
+                    <th style="text-align:center">יעד (ימים)</th>
+                    <th style="text-align:center">יעד (% משרה)</th>
+                    <th style="text-align:center">בפועל (ימים)</th>
                     <th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>
                     <th class="col-action" style="text-align:center">פירוט</th>
                 </tr></thead><tbody>`;
@@ -6607,10 +6607,10 @@
                 html += `
                     <tr id="all-researchers-row-${idx}-main" class="row-main">
                         <td data-label="חוקר/ת" style="font-weight:600">${row.name}</td>
-                        <td data-label="יעד לתקופה" style="text-align:center">${targetLabel}</td>
-                        <td data-label="אחוז משרה מיועד" style="text-align:center">${row.isSeminar ? 'N/A' : plannedPctLabel}</td>
-                        <td data-label="ימים בפועל" style="text-align:center">${row.totalDays.toFixed(1)}</td>
-                        <td data-label="אחוז משרה בפועל" style="text-align:center">${actualPctLabel}</td>
+                        <td data-label="יעד (ימים)" style="text-align:center">${targetLabel}</td>
+                        <td data-label="יעד (% משרה)" style="text-align:center">${row.isSeminar ? 'N/A' : plannedPctLabel}</td>
+                        <td data-label="בפועל (ימים)" style="text-align:center">${row.totalDays.toFixed(1)}</td>
+                        <td data-label="בפועל (% משרה)" style="text-align:center">${actualPctLabel}</td>
                         <td data-label="פירוט" class="col-action" style="text-align:center;"><button id="all-researchers-row-${idx}-btn" class="row-toggle-btn" onclick="toggleComparisonRow('all-researchers', ${idx})">פרטים</button></td>
                     </tr>
                     <tr id="all-researchers-row-${idx}-detail" class="row-detail">
@@ -6628,9 +6628,9 @@
                                     <thead>
                                         <tr>
                                             <th>עובד/ת</th>
-                                            <th style="text-align:center">יעד לתקופה</th>
-                                            <th style="text-align:center">אחוז משרה מיועד</th>
-                                            <th style="text-align:center">ימים בפועל</th>
+                                            <th style="text-align:center">יעד (ימים)</th>
+                                            <th style="text-align:center">יעד (% משרה)</th>
+                                            <th style="text-align:center">בפועל (ימים)</th>
                                             <th style="text-align:center">${ACTUAL_PCT_HEADER_HTML}</th>
                                             <th class="col-status" style="text-align:center">סטטוס</th>
                                         </tr>
@@ -6674,10 +6674,10 @@
                                             return `
                                                 <tr>
                                                     <td data-label="עובד/ת" style="font-weight:600">${emp.empName}</td>
-                                                    <td data-label="יעד לתקופה" style="text-align:center">${empTarget}</td>
-                                                    <td data-label="אחוז משרה מיועד" style="text-align:center">${emp.isSeminar ? 'N/A' : empPlannedPct}</td>
-                                                    <td data-label="ימים בפועל" style="text-align:center">${emp.actualDays.toFixed(1)}</td>
-                                                    <td data-label="אחוז משרה בפועל" style="text-align:center">${empActualPct}</td>
+                                                    <td data-label="יעד (ימים)" style="text-align:center">${empTarget}</td>
+                                                    <td data-label="יעד (% משרה)" style="text-align:center">${emp.isSeminar ? 'N/A' : empPlannedPct}</td>
+                                                    <td data-label="בפועל (ימים)" style="text-align:center">${emp.actualDays.toFixed(1)}</td>
+                                                    <td data-label="בפועל (% משרה)" style="text-align:center">${empActualPct}</td>
                                                     <td data-label="סטטוס" class="col-status" style="text-align:center"><span class="status-chip ${empStatusClass}">${empStatus}</span></td>
                                                 </tr>`;
                                         }).join('')}
@@ -6773,10 +6773,10 @@
             });
             const cols = [
                 { key: 'name', header: 'עובד/ת' },
-                { key: 'targetDays', header: 'יעד לתקופה' },
-                { key: 'plannedPct', header: 'אחוז משרה מיועד' },
-                { key: 'actualDays', header: 'ימים בפועל' },
-                { key: 'actualPct', header: 'אחוז משרה בפועל' }
+                { key: 'targetDays', header: 'יעד (ימים)' },
+                { key: 'plannedPct', header: 'יעד (% משרה)' },
+                { key: 'actualDays', header: 'בפועל (ימים)' },
+                { key: 'actualPct', header: 'בפועל (% משרה)' }
             ];
             csv += toCsv(rows, cols);
             const dateForFile = new Date().toISOString().slice(0, 10);
@@ -6826,10 +6826,10 @@
 
             const summaryCols = [
                 { key: 'name', header: 'חוקר/ת' },
-                { key: 'targetDays', header: 'יעד לתקופה' },
-                { key: 'plannedPct', header: 'אחוז משרה מיועד' },
-                { key: 'actualDays', header: 'ימים בפועל' },
-                { key: 'actualPct', header: 'אחוז משרה בפועל' }
+                { key: 'targetDays', header: 'יעד (ימים)' },
+                { key: 'plannedPct', header: 'יעד (% משרה)' },
+                { key: 'actualDays', header: 'בפועל (ימים)' },
+                { key: 'actualPct', header: 'בפועל (% משרה)' }
             ];
 
             csv += 'סיכום לפי חוקרים\n';
@@ -6837,10 +6837,10 @@
 
             const detailCols = [
                 { key: 'name', header: 'עובד/ת' },
-                { key: 'targetDays', header: 'יעד לתקופה' },
-                { key: 'plannedPct', header: 'אחוז משרה מיועד' },
-                { key: 'actualDays', header: 'ימים בפועל' },
-                { key: 'actualPct', header: 'אחוז משרה בפועל' }
+                { key: 'targetDays', header: 'יעד (ימים)' },
+                { key: 'plannedPct', header: 'יעד (% משרה)' },
+                { key: 'actualDays', header: 'בפועל (ימים)' },
+                { key: 'actualPct', header: 'בפועל (% משרה)' }
             ];
 
             data.summaryRows.forEach(row => {
