@@ -11,7 +11,7 @@
     <title>מערכת דיווח שעות - ניהול</title>
     <script>
         (function () {
-            var CURRENT_CLIENT_VERSION = '20260708-2';
+            var CURRENT_CLIENT_VERSION = '20261018-1';
             var params = new URLSearchParams(window.location.search);
             var currentVersion = params.get('v');
             if (currentVersion && currentVersion !== CURRENT_CLIENT_VERSION) {
@@ -2347,6 +2347,99 @@
             gap: 0.75rem;
         }
 
+        .researchers-picker {
+            max-width: 420px;
+            margin: 0 auto 1rem;
+            position: relative;
+        }
+
+        .researchers-picker-toggle {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 1rem 1.25rem;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #334155;
+            cursor: pointer;
+            text-align: right;
+        }
+
+        .researchers-picker-toggle:hover,
+        .researchers-picker.open .researchers-picker-toggle {
+            border-color: #3b82f6;
+        }
+
+        .researchers-picker.open .researchers-picker-toggle .material-symbols-outlined {
+            transform: rotate(180deg);
+        }
+
+        .researchers-picker-panel {
+            display: none;
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .researchers-picker.open .researchers-picker-panel {
+            display: block;
+        }
+
+        .researchers-picker-panel .researchers-search-wrap {
+            margin-bottom: 0.5rem;
+        }
+
+        .researchers-picker-panel .researchers-search-icon {
+            top: 50%;
+        }
+
+        .researchers-picker-options {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .researchers-picker-option {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.55rem 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: #334155;
+        }
+
+        .researchers-picker-option:hover {
+            background: #f1f5f9;
+        }
+
+        .researchers-picker-option input {
+            width: 1.05rem;
+            height: 1.05rem;
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+
+        .researchers-picker-option.select-all {
+            font-weight: 600;
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 0.25rem;
+        }
+
+        .researchers-picker-option.seminar {
+            color: #047857;
+        }
+
         .researchers-actions .employee-button {
             padding: 1.1rem;
             font-weight: 600;
@@ -2884,25 +2977,37 @@
         <!-- Researchers List Screen -->
         <div id="researchers-screen" class="screen">
             <h1 class="screen-title">חוקרות וחוקרים פעילים</h1>
-            <div class="researchers-actions">
-                <button type="button" class="employee-button" onclick="showAllResearchersDatesScreen()"
-                    style="border-right: 4px solid #f59e0b; background: #fff7ed;">
-                    דו"ח לכל החוקרים
+            <div class="researchers-picker" id="researchers-picker">
+                <button type="button" class="researchers-picker-toggle" id="researchers-picker-toggle"
+                    onclick="toggleResearchersPicker()" aria-haspopup="listbox" aria-expanded="false">
+                    <span id="researchers-picker-label">בחירת חוקרות וחוקרים</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
                 </button>
+                <div class="researchers-picker-panel" id="researchers-picker-panel">
+                    <div class="researchers-search-wrap">
+                        <span class="material-symbols-outlined researchers-search-icon" aria-hidden="true">search</span>
+                        <input
+                            type="search"
+                            id="researchers-search-input"
+                            class="researchers-search-input"
+                            placeholder="חיפוש חוקר/ת..."
+                            autocomplete="off"
+                            oninput="filterResearchersList(this.value)">
+                    </div>
+                    <label class="researchers-picker-option select-all">
+                        <input type="checkbox" id="researchers-select-all" onchange="toggleAllResearchers(this.checked)">
+                        <span>סמן הכל</span>
+                    </label>
+                    <div class="researchers-picker-options" id="researchers-list">
+                        <div class="loading">טוען רשימת חוקרות וחוקרים...</div>
+                    </div>
+                </div>
             </div>
-            <div class="researchers-search-wrap">
-                <span class="material-symbols-outlined researchers-search-icon" aria-hidden="true">search</span>
-                <input
-                    type="search"
-                    id="researchers-search-input"
-                    class="researchers-search-input"
-                    placeholder="חיפוש חוקר/ת..."
-                    autocomplete="off"
-                    oninput="filterResearchersList(this.value)">
-                <div class="researchers-search-hint">הקלדה תסנן את הרשימה בזמן אמת</div>
-            </div>
-            <div class="employees-list" id="researchers-list">
-                <div class="loading">טוען רשימת חוקרות וחוקרים...</div>
+            <div class="researchers-actions">
+                <button type="button" class="generate-report-btn" id="researchers-continue-btn"
+                    onclick="continueWithSelectedResearchers()" disabled>
+                    המשך לבחירת תאריכים
+                </button>
             </div>
             <div style="text-align: center; margin-top: 1rem;">
                 <button class="back-btn" style="max-width:400px; margin:0 auto;" onclick="showHubScreen()">חזרה</button>
@@ -3065,6 +3170,13 @@
                         </button>
                     </div>
                     <div id="task-details-body" class="task-details-body"></div>
+                </div>
+
+                <div class="action-buttons" id="final-bottom-actions" style="display: none; margin-top: 2rem;">
+                    <button class="action-btn back" onclick="showIntermediateScreen()">
+                        <span class="material-symbols-outlined action-btn-icon">arrow_back</span>
+                        <span>חזרה</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -4015,40 +4127,156 @@
         function showScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
+            window.scrollTo(0, 0);
         }
 
         function showHubScreen() { showScreen('hub-screen'); }
         function showEmployeesScreen() { showScreen('employees-screen'); renderEmployeesList(); }
 
         // ---- Per-Researcher Report Navigation ----
+        const RESEARCHERS_SEMINAR_ENTRY = 'מכון - סמינר/קורס/הכשרה';
+
+        // Global researchers list + researchers that are active for any of the manager's employees
+        // (e.g. an employee who also serves a researcher outside the global list).
+        async function loadResearchersForReports() {
+            const names = new Set();
+            const addName = (name) => {
+                const clean = String(name || '').trim();
+                if (clean && clean !== RESEARCHERS_SEMINAR_ENTRY) names.add(clean);
+            };
+
+            (await loadAllResearchers()).forEach(addName);
+
+            try {
+                if (!AppState.employees || AppState.employees.length === 0) {
+                    AppState.employees = await loadEmployeesForManager(AppState.managerName);
+                }
+                (AppState.employees || []).forEach(emp => {
+                    const active = emp.activeResearchers;
+                    const list = Array.isArray(active) ? active : (active && typeof active === 'object' ? Object.values(active) : []);
+                    list.forEach(addName);
+                });
+            } catch (error) {
+                console.error('Error loading employees active researchers:', error);
+            }
+
+            return Array.from(names).sort((a, b) => a.localeCompare(b, 'he'));
+        }
+
+        function getResearcherPickerOptions() {
+            return [...(AppState.researcherPickerOptions || []), RESEARCHERS_SEMINAR_ENTRY];
+        }
+
         async function showResearchersListScreen() {
             showScreen('researchers-screen');
             const searchInput = document.getElementById('researchers-search-input');
             if (searchInput) {
                 searchInput.value = '';
             }
+            if (!(AppState.researcherPickerSelection instanceof Set)) {
+                AppState.researcherPickerSelection = new Set();
+            }
             const container = document.getElementById('researchers-list');
             container.innerHTML = '<div class="loading">טוען רשימת חוקרות וחוקרים...</div>';
+            updateResearchersPickerSummary();
             try {
-                const researchers = await loadAllResearchers();
-                container.dataset.researchers = JSON.stringify(researchers);
-                renderResearchersList(researchers, searchInput ? searchInput.value : '');
+                AppState.researcherPickerOptions = await loadResearchersForReports();
+                const available = new Set(getResearcherPickerOptions());
+                AppState.researcherPickerSelection = new Set(
+                    [...AppState.researcherPickerSelection].filter(name => available.has(name))
+                );
+                renderResearchersList(AppState.researcherPickerOptions, '');
             } catch (error) {
                 console.error('Error loading researchers:', error);
                 container.innerHTML = '<div class="empty-state">שגיאה בטעינת רשימת החוקרות והחוקרים</div>';
             }
-            if (searchInput) {
-                setTimeout(() => searchInput.focus(), 0);
-            }
+            updateResearchersPickerSummary();
         }
         window.showResearchersListScreen = showResearchersListScreen;
+
+        window.toggleResearchersPicker = function (forceOpen) {
+            const picker = document.getElementById('researchers-picker');
+            const toggle = document.getElementById('researchers-picker-toggle');
+            if (!picker) return;
+            const open = typeof forceOpen === 'boolean' ? forceOpen : !picker.classList.contains('open');
+            picker.classList.toggle('open', open);
+            if (toggle) toggle.setAttribute('aria-expanded', String(open));
+            if (open) {
+                const searchInput = document.getElementById('researchers-search-input');
+                if (searchInput) setTimeout(() => searchInput.focus(), 0);
+            }
+        };
+
+        document.addEventListener('click', (event) => {
+            const picker = document.getElementById('researchers-picker');
+            if (picker && picker.classList.contains('open') && !picker.contains(event.target)) {
+                window.toggleResearchersPicker(false);
+            }
+        });
+
+        window.toggleResearcherSelected = function (checkbox) {
+            const name = checkbox.value;
+            if (checkbox.checked) AppState.researcherPickerSelection.add(name);
+            else AppState.researcherPickerSelection.delete(name);
+            updateResearchersPickerSummary();
+        };
+
+        window.toggleAllResearchers = function (checked) {
+            AppState.researcherPickerSelection = checked ? new Set(getResearcherPickerOptions()) : new Set();
+            document.querySelectorAll('#researchers-list input[type="checkbox"]').forEach(cb => {
+                cb.checked = checked;
+            });
+            updateResearchersPickerSummary();
+        };
+
+        function updateResearchersPickerSummary() {
+            const selection = AppState.researcherPickerSelection || new Set();
+            const total = getResearcherPickerOptions().length;
+            const count = selection.size;
+            const labelEl = document.getElementById('researchers-picker-label');
+            const selectAllEl = document.getElementById('researchers-select-all');
+            const continueBtn = document.getElementById('researchers-continue-btn');
+
+            if (labelEl) {
+                if (count === 0) labelEl.textContent = 'בחירת חוקרות וחוקרים';
+                else if (count === total && total > 1) labelEl.textContent = `כל החוקרות והחוקרים (${count})`;
+                else if (count === 1) labelEl.textContent = [...selection][0];
+                else labelEl.textContent = `נבחרו ${count} חוקרות/חוקרים`;
+            }
+            if (selectAllEl) {
+                selectAllEl.checked = total > 0 && count === total;
+                selectAllEl.indeterminate = count > 0 && count < total;
+            }
+            if (continueBtn) continueBtn.disabled = count === 0;
+        }
+
+        window.continueWithSelectedResearchers = function () {
+            const selection = [...(AppState.researcherPickerSelection || [])];
+            if (selection.length === 0) return;
+            window.toggleResearchersPicker(false);
+
+            if (selection.length === 1) {
+                AppState.researcherReportFilter = null;
+                showResearcherDatesScreen(selection[0]);
+                return;
+            }
+
+            const allSelected = selection.length === getResearcherPickerOptions().length;
+            AppState.researcherReportMode = 'all';
+            AppState.selectedResearcher = null;
+            AppState.researcherReportData = null;
+            AppState.allResearchersReportData = null;
+            AppState.researcherReportFilter = allSelected ? null : selection;
+            showResearcherDatesScreen();
+        };
 
         function renderResearchersList(researchers, filterText = '') {
             const container = document.getElementById('researchers-list');
             if (!container) return;
 
             const query = (filterText || '').trim().toLowerCase();
-            const SEMINAR_ENTRY = 'מכון - סמינר/קורס/הכשרה';
+            const SEMINAR_ENTRY = RESEARCHERS_SEMINAR_ENTRY;
+            const selection = AppState.researcherPickerSelection || new Set();
             const visibleResearchers = (researchers || []).filter(name =>
                 !query || name.toLowerCase().includes(query)
             );
@@ -4080,43 +4308,46 @@
                 return `${before}<span class="researchers-search-match">${match}</span>${after}`;
             };
 
-            let buttonsHtml = '';
+            const optionHtml = (name, extraClass = '') => `
+                <label class="researchers-picker-option ${extraClass}">
+                    <input type="checkbox" value="${escapeHtml(name)}" ${selection.has(name) ? 'checked' : ''}
+                        onchange="toggleResearcherSelected(this)">
+                    <span>${highlightMatch(name)}</span>
+                </label>`;
+
+            let optionsHtml = '';
             if (showSeminarEntry) {
-                buttonsHtml += `<button type="button" class="employee-button" onclick="showResearcherDatesScreen('${SEMINAR_ENTRY}')"
-                    style="border-right: 4px solid #10b981; background: #f0fdf4;">
-                    ${highlightMatch(SEMINAR_ENTRY)}
-                </button>`;
+                optionsHtml += optionHtml(SEMINAR_ENTRY, 'seminar');
             }
+            optionsHtml += visibleResearchers.map(name => optionHtml(name)).join('');
 
-            buttonsHtml += visibleResearchers.map(name => `
-                <button type="button" class="employee-button" onclick="showResearcherDatesScreen('${name.replace(/'/g, "\\'")}')"
-                    style="border-right: 4px solid #3b82f6;">
-                    ${highlightMatch(name)}
-                </button>`).join('');
-
-            container.innerHTML = buttonsHtml;
+            container.innerHTML = optionsHtml;
         }
 
         window.filterResearchersList = function (value) {
-            const container = document.getElementById('researchers-list');
-            if (!container) return;
-
-            let researchers = [];
-            try {
-                researchers = JSON.parse(container.dataset.researchers || '[]');
-            } catch (error) {
-                researchers = [];
-            }
-
-            renderResearchersList(researchers, value);
+            renderResearchersList(AppState.researcherPickerOptions || [], value);
         };
+
+        function getResearcherReportFilterTitle() {
+            const filter = AppState.researcherReportFilter;
+            if (!Array.isArray(filter) || filter.length === 0) return 'דו"ח לכל החוקרים';
+            return filter.length <= 3
+                ? `דו"ח עבור ${filter.join(', ')}`
+                : `דו"ח עבור ${filter.length} חוקרות/חוקרים`;
+        }
 
         function updateResearcherDatesScreenUI() {
             const titleEl = document.getElementById('researcher-dates-title');
             const buttonEl = document.getElementById('generate-researcher-report-btn');
             if (AppState.researcherReportMode === 'all') {
-                if (titleEl) titleEl.textContent = 'כל החוקרים - בחירת טווח תאריכים';
-                if (buttonEl) buttonEl.textContent = 'הפקת דו"ח לכל החוקרים';
+                const filter = AppState.researcherReportFilter;
+                const hasFilter = Array.isArray(filter) && filter.length > 0;
+                if (titleEl) {
+                    titleEl.textContent = hasFilter
+                        ? `${filter.length <= 3 ? filter.join(', ') : `${filter.length} חוקרות/חוקרים`} - בחירת טווח תאריכים`
+                        : 'כל החוקרים - בחירת טווח תאריכים';
+                }
+                if (buttonEl) buttonEl.textContent = hasFilter ? 'הפקת דו"ח לחוקרים שנבחרו' : 'הפקת דו"ח לכל החוקרים';
             } else {
                 if (titleEl) titleEl.textContent = `${AppState.selectedResearcher} - בחירת טווח תאריכים`;
                 if (buttonEl) buttonEl.textContent = 'הפקת דו"ח לפי חוקר';
@@ -4151,6 +4382,7 @@
             AppState.selectedResearcher = null;
             AppState.researcherReportData = null;
             AppState.allResearchersReportData = null;
+            AppState.researcherReportFilter = null;
             updateResearcherDatesScreenUI();
             showResearcherDatesScreen();
         }
@@ -4169,10 +4401,8 @@
                 document.getElementById('calendar-title').textContent = `${employee.firstName} ${employee.lastName} - פעילות`;
             }
             if (shouldResetDates) {
-                const today = new Date();
-                const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                AppState.selectedStartDate = firstOfMonth;
-                AppState.selectedEndDate = today;
+                AppState.selectedStartDate = null;
+                AppState.selectedEndDate = null;
             }
             syncCalendarDateInputs();
             updateDateSelection();
@@ -5005,6 +5235,7 @@
 
             document.getElementById('chart-section').style.display = 'block';
             document.getElementById('final-actions').style.display = 'flex';
+            document.getElementById('final-bottom-actions').style.display = 'flex';
             createPieChart(data);
         }
 
@@ -5215,7 +5446,7 @@
             };
 
             sessionStorage.setItem('researcherPdfReportData', JSON.stringify(payload));
-            const url = `researcher_pdf_report.html?v=20260708-2`;
+            const url = `researcher_pdf_report.html?v=20261018-1`;
             window.open(url, '_blank', 'width=1024,height=768,scrollbars=yes,resizable=yes');
         };
 
@@ -6094,7 +6325,12 @@
             const includeCategorized = true;
             const includeRelative = true;
 
-            document.getElementById('researcher-report-title').textContent = 'דו"ח לכל החוקרים';
+            const reportFilter = Array.isArray(AppState.researcherReportFilter) && AppState.researcherReportFilter.length > 0
+                ? new Set(AppState.researcherReportFilter)
+                : null;
+            const reportTitle = getResearcherReportFilterTitle();
+
+            document.getElementById('researcher-report-title').textContent = reportTitle;
             document.getElementById('researcher-report-subtitle').textContent = `לתקופה ${startDisplay} - ${endDisplay}`;
             document.getElementById('researcher-report-content').innerHTML = '<div class="loading">טוען נתונים מכל העובדים...</div>';
             document.getElementById('researcher-csv-btn').style.display = 'none';
@@ -6111,7 +6347,9 @@
                 const summaryMap = new Map();
 
                 // חדש: אתחול כל החוקרים הפעילים כדי שיופיעו גם אם אין להם פעילות בטווח
-                const activeResearchers = await loadAllResearchers();
+                const activeResearchers = reportFilter
+                    ? Array.from(reportFilter)
+                    : await loadResearchersForReports();
 
                 activeResearchers.forEach(name => {
                     if (!summaryMap.has(name)) {
@@ -6123,7 +6361,7 @@
                             plannedPercentSum: 0,
                             plannedPercentWeight: 0,
                             employees: [],
-                            isSeminar: false
+                            isSeminar: name === RESEARCHERS_SEMINAR_ENTRY
                         });
                     }
                 });
@@ -6186,6 +6424,7 @@
                     });
 
                     hoursByResearcher.forEach((actualHours, name) => {
+                        if (reportFilter && !reportFilter.has(name)) return;
                         const settings = targetMap.get(name) || {};
                         const targetDays = settings.targetDays ?? null;
 
@@ -6258,6 +6497,7 @@
                 const totalTargetDays = summaryRows.reduce((sum, row) => sum + (row.totalTargetDays || 0), 0);
 
                 AppState.allResearchersReportData = {
+                    reportTitle,
                     summaryRows,
                     totalActualHours,
                     totalTargetDays,
@@ -6548,7 +6788,7 @@
             if (!data) { alert('אין נתונים לייצוא'); return; }
             const startDisplay = AppState.researcherStartDate.toLocaleDateString('he-IL');
             const endDisplay = AppState.researcherEndDate.toLocaleDateString('he-IL');
-            let csv = `דו"ח לכל החוקרים\nתקופה: ${startDisplay} - ${endDisplay}\n\n`;
+            let csv = `${data.reportTitle || 'דו"ח לכל החוקרים'}\nתקופה: ${startDisplay} - ${endDisplay}\n\n`;
 
             const summaryRows = data.summaryRows.map(row => {
                 let plannedPctSum = 0;

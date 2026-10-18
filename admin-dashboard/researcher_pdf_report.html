@@ -401,7 +401,7 @@
             const totalActualDays = roundToSingleDecimal(totalActualHours / HOURS_PER_DAY);
             const halfYearLabel = buildHalfYearLabel(reportData.halfYearKeys);
 
-            document.getElementById('report-title').textContent = 'דו"ח לכל החוקרים';
+            document.getElementById('report-title').textContent = reportData.reportTitle || 'דו"ח לכל החוקרים';
 
             const summaryCards = [
                 { label: 'חוקרות/חוקרים בדו"ח', value: summaryRows.length },
